@@ -1,0 +1,18 @@
+Options -Indexes
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Bloque l'accès direct aux dossiers internes et fichiers sensibles.
+    RewriteRule ^(data|lib|templates)(/|$) - [F,L]
+    RewriteRule ^(config\.php|config\.php\.example|seed[a-z_]*\.php|\.gitignore)$ - [F,L]
+    RewriteRule \.(sqlite|sqlite-journal|sqlite-wal|sqlite-shm|log)$ - [F,L]
+
+    # Si le fichier existe sur disque (ex: public/style.css), sert tel quel.
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # Sinon, route vers le front controller.
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>

@@ -1,0 +1,32 @@
+<?php
+// Copy this file to config.php and edit the values.
+
+return [
+    // Public URL of the app (no trailing slash). Used in magic-link emails.
+    'app_url' => 'http://localhost:8000',
+
+    // Admin credentials. The username/password below are the ONLY way
+    // to log in as administrator. Pick something solid in production.
+    'admin' => [
+        'username' => 'admin',
+        'password' => 'changeme',
+    ],
+
+    // SQLite database file.
+    'db_path' => __DIR__ . '/data/app.sqlite',
+
+    // SMTP configuration. If 'host' is empty, magic links are written
+    // to data/mail.log instead of being sent (useful in dev).
+    'smtp' => [
+        'host'       => '',           // e.g. 'smtp.gmail.com'
+        'port'       => 587,
+        'encryption' => 'tls',        // 'tls' (STARTTLS), 'ssl' (implicit), or '' (none)
+        'username'   => '',
+        'password'   => '',
+        'from'       => 'no-reply@example.com',
+        'from_name'  => 'mmidate',
+    ],
+
+    // Magic link lifetime, seconds (default 1h).
+    'magic_link_ttl' => 3600,
+];
