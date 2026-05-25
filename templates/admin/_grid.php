@@ -2,6 +2,9 @@
 // Shared grid renderer.
 // Expects: $dates, $participants, $votes (map participant_id => choice_id => value)
 $symbols = ['yes' => '✓', 'no' => '✗', 'maybe' => '?'];
+$hl = $GLOBALS['CONFIG']['highlight'] ?? ['yes_min' => 2, 'yesmaybe_min' => 2];
+$yes_min      = (int)$hl['yes_min'];
+$yesmaybe_min = (int)$hl['yesmaybe_min'];
 ?>
 <div class="grid-wrap">
 <table class="vote-grid">
@@ -25,8 +28,15 @@ $symbols = ['yes' => '✓', 'no' => '✗', 'maybe' => '?'];
           $v = $votes[$p['id']][$c['id']] ?? null;
           if ($v && isset($counts[$v])) $counts[$v]++;
         }
+        if ($counts['yes'] >= $yes_min) {
+            $status = 'ok';
+        } elseif (($counts['yes'] + $counts['maybe']) >= $yesmaybe_min) {
+            $status = 'warn';
+        } else {
+            $status = 'bad';
+        }
     ?>
-      <tr>
+      <tr class="row-<?= $status ?>">
         <?php if ($first): ?>
           <th class="date-cell" rowspan="<?= $rows ?>"><?= e(fmt_day($d['day'])) ?><br><span class="muted small"><?= e($d['day']) ?></span></th>
         <?php endif; $first = false; ?>
@@ -38,7 +48,7 @@ $symbols = ['yes' => '✓', 'no' => '✗', 'maybe' => '?'];
         ?>
           <td class="vote-cell <?= $cls ?>"><?= $sym ?></td>
         <?php endforeach; ?>
-        <td class="summary-cell">
+        <td class="summary-cell status-<?= $status ?>">
           <span class="v-yes"><?= $counts['yes'] ?>✓</span>
           <span class="v-maybe"><?= $counts['maybe'] ?>?</span>
           <span class="v-no"><?= $counts['no'] ?>✗</span>

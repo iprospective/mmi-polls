@@ -29,4 +29,13 @@ return [
 
     // Magic link lifetime, seconds (default 1h).
     'magic_link_ttl' => 3600,
+
+    // Mise en couleur du récap dans la grille :
+    //   vert   si nb de "oui"            >= yes_min
+    //   sinon jaune si (oui + peut-être) >= yesmaybe_min
+    //   sinon rouge.
+    'highlight' => [
+        'yes_min'      => 2,
+        'yesmaybe_min' => 2,
+    ],
 ];
