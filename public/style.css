@@ -83,12 +83,38 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   border-bottom: 1px solid var(--border);
 }
 .topbar .brand {
-  font-weight: 700;
-  font-size: 1.05rem;
-  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
   color: var(--fg);
+  line-height: 1;
 }
 .topbar .brand:hover { text-decoration: none; color: var(--fg); }
+.brand-logo {
+  height: 36px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+}
+.brand-mark {
+  font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: baseline;
+}
+.brand-prefix {
+  font-weight: 500;
+  color: var(--muted);
+}
+.brand-name {
+  font-weight: 700;
+  color: var(--fg);
+}
+@media (max-width: 480px) {
+  .brand-mark { font-size: 1.2rem; }
+  .brand-logo { height: 32px; }
+}
 .topbar nav { display: flex; gap: 1.25rem; align-items: center; }
 .topbar nav a { color: var(--fg-soft); font-weight: 500; font-size: 0.9rem; }
 .topbar nav a:hover { color: var(--fg); }
