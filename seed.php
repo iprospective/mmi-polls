@@ -17,19 +17,14 @@ $pdo = db();
 $uuid = 'b8e3a7f1-2d94-4c6a-9e5b-3f1a2c8d7e60';
 
 $title = "SOS aide Anna & Mathou pour accouchement";
-$description = <<<TXT
-On a besoin de faire une liste d'amis proches qui seraient OK pour nous emmener à la maternité de Romans au moment de l'accouchement.
-
-Si personne de nos proches n'est dispo, on peut appeler le 15, mais on est pas sûr et certain qu'ils seront dispo vite et qu'ils voudront bien nous emmener à Romans (selon la situation ils pourraient nous emmener à Valence, et j'ai vraiment envie d'accoucher à Romans pour plusieurs raisons, c'est important pour moi...). Donc l'idéal serait de se faire emmener par qqun de proche.
-
-Pour rappel le terme est prévu au 21 juin, mais je peux accoucher entre 1 mois avant et 1 semaine après, donc entre le 21 mai et le 26 juin, c'est bébé qui décidera !
-
-L'idée c'est de noter ici TOUTES VOS DISPOS.
-
-Puis, pour éviter que tout le monde se rendre dispo souvent, on essayera de choisir 2 PERSONNES "D'ASTREINTE" PAR CRENEAU, ou sur des petites périodes. Idéalement 1 personne principale qu'on appellera en 1er, et 1 personne suppléante qu'on appellera en 2ème. On vous enverra cette info quand tout le monde aura remplit ce frama.
-
-Un très GRAND MERCI de votre soutien les copains :)
-TXT;
+$description = <<<HTML
+<p>On a besoin de faire une liste d'amis proches qui seraient OK pour nous emmener à la maternité de Romans au moment de l'accouchement.</p>
+<p>Si personne de nos proches n'est dispo, on peut appeler le 15, mais on est pas sûr et certain qu'ils seront dispo vite et qu'ils voudront bien nous emmener à Romans (selon la situation ils pourraient nous emmener à Valence, et j'ai vraiment envie d'accoucher à Romans pour plusieurs raisons, c'est important pour moi...). Donc l'idéal serait de se faire emmener par qqun de proche.</p>
+<p>Pour rappel le terme est prévu au 21 juin, mais je peux accoucher entre 1 mois avant et 1 semaine après, donc entre le 21 mai et le 26 juin, c'est bébé qui décidera !</p>
+<p>L'idée c'est de noter ici <strong>TOUTES VOS DISPOS</strong>.</p>
+<p>Puis, pour éviter que tout le monde se rendre dispo souvent, on essayera de choisir <strong>2 PERSONNES "D'ASTREINTE" PAR CRENEAU</strong>, ou sur des petites périodes. Idéalement 1 personne principale qu'on appellera en 1er, et 1 personne suppléante qu'on appellera en 2ème. On vous enverra cette info quand tout le monde aura remplit ce frama.</p>
+<p>Un très <strong>GRAND MERCI</strong> de votre soutien les copains :)</p>
+HTML;
 
 $existing = $pdo->prepare("SELECT uuid FROM polls WHERE uuid = ?");
 $existing->execute([$uuid]);

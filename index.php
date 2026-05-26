@@ -20,6 +20,7 @@ require __DIR__ . '/lib/db.php';
 require __DIR__ . '/lib/helpers.php';
 require __DIR__ . '/lib/auth.php';
 require __DIR__ . '/lib/mailer.php';
+require __DIR__ . '/lib/html_sanitize.php';
 
 session_name('mmidate');
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'secure' => !empty($_SERVER['HTTPS'])]);
@@ -156,13 +157,13 @@ function route_admin_logout(): void {
 function route_admin_list(): void {
     require_admin();
     $polls = db()->query("SELECT * FROM polls ORDER BY created_at DESC")->fetchAll();
-    render('admin/list', ['page_title' => 'Sondages', 'polls' => $polls]);
+    render('admin/list', ['page_title' => 'Sondages', 'polls' => $polls, 'include_editor' => true]);
 }
 
 function route_admin_create_poll(): void {
     require_admin();
     $title = trim((string)($_POST['title'] ?? ''));
-    $desc  = trim((string)($_POST['description'] ?? ''));
+    $desc  = sanitize_html((string)($_POST['description'] ?? ''));
     if ($title === '') {
         flash_set('err', 'Titre obligatoire.');
         redirect('/admin');
@@ -185,6 +186,7 @@ function route_admin_poll(string $uuid): void {
         'dates' => $dates,
         'participants' => $participants,
         'votes' => $votes,
+        'include_editor' => true,
     ]);
 }
 
@@ -192,7 +194,7 @@ function route_admin_update_poll(string $uuid): void {
     require_admin();
     $poll = find_poll($uuid);
     $title = trim((string)($_POST['title'] ?? ''));
-    $desc  = trim((string)($_POST['description'] ?? ''));
+    $desc  = sanitize_html((string)($_POST['description'] ?? ''));
     if ($title === '') {
         flash_set('err', 'Titre obligatoire.');
         redirect('/admin/polls/' . $uuid);

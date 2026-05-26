@@ -15,7 +15,10 @@ $public_url = rtrim($GLOBALS['CONFIG']['app_url'], '/') . '/p/' . $poll['uuid'];
   <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>">
     <?= csrf_field() ?>
     <label>Titre <input type="text" name="title" value="<?= e($poll['title']) ?>" required></label>
-    <label>Description <textarea name="description" rows="4"><?= e($poll['description']) ?></textarea></label>
+    <label>Description
+      <textarea name="description" data-wysiwyg style="display:none"><?= e($poll['description']) ?></textarea>
+      <div class="wysiwyg-editor"></div>
+    </label>
     <button type="submit">Enregistrer</button>
   </form>
 </details>

@@ -1,7 +1,7 @@
 <h1><?= e($poll['title']) ?></h1>
 
 <?php if ($poll['description'] !== ''): ?>
-  <div class="card description"><?= nl2br(e($poll['description'])) ?></div>
+  <div class="card description"><?= render_description($poll['description']) ?></div>
 <?php endif; ?>
 
 <div class="card actions">

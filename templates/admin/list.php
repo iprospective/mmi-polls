@@ -7,7 +7,8 @@
     <input type="text" name="title" required>
   </label>
   <label>Description
-    <textarea name="description" rows="3"></textarea>
+    <textarea name="description" data-wysiwyg style="display:none"></textarea>
+    <div class="wysiwyg-editor"></div>
   </label>
   <button type="submit">Créer</button>
 </form>

@@ -46,34 +46,34 @@ body::before {
   inset: 0;
   background-color: transparent;
   background-image:
-    url('/public/bg/lynx.jpg'),
-    url('/public/bg/vautour.jpg'),
+    url('/public/bg/lynx.png'),
+    url('/public/bg/vautour.png'),
     url('/public/bg/violon.png'),
-    url('/public/bg/chamois.jpg');
+    url('/public/bg/chamois.png');
   background-position:
-    left   2vh,
-    right  2vh,
-    1vw   bottom,
+    left 3vh,
+    right 4vh,
+    2vw bottom,
     right bottom;
   background-repeat: no-repeat;
   background-size:
+    32vw auto,
     36vw auto,
-    42vw auto,
-    18vw auto,
-    38vw auto;
-  filter: grayscale(0.85) contrast(0.9) sepia(0.05);
-  opacity: 0.12;
+    16vw auto,
+    32vw auto;
+  filter: sepia(0.1) saturate(0.85);
+  opacity: 0.18;
   pointer-events: none;
   z-index: 0;
 }
 @media (max-width: 700px) {
   body::before {
     background-image:
-      url('/public/bg/lynx.jpg'),
+      url('/public/bg/lynx.png'),
       url('/public/bg/violon.png');
     background-position: left top, right bottom;
-    background-size: 70vw auto, 40vw auto;
-    opacity: 0.10;
+    background-size: 60vw auto, 35vw auto;
+    opacity: 0.15;
   }
 }
 body > * { position: relative; z-index: 1; }
@@ -198,7 +198,32 @@ details.card > summary::before {
 }
 details.card[open] > summary::before { transform: rotate(90deg); }
 details.card[open] > summary { margin-bottom: 0.85rem; }
-.card.description { white-space: pre-wrap; color: var(--fg-soft); }
+.card.description { color: var(--fg-soft); }
+.card.description p:first-child { margin-top: 0; }
+.card.description p:last-child  { margin-bottom: 0; }
+.card.description h2, .card.description h3, .card.description h4 { margin: 1rem 0 0.5rem; border: none; }
+.card.description ul, .card.description ol { padding-left: 1.5rem; }
+.card.description blockquote { margin: 0.5rem 0; padding-left: 0.85rem; border-left: 3px solid var(--border-strong); color: var(--muted); }
+
+/* Quill WYSIWYG */
+.wysiwyg-editor {
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  min-height: 160px;
+  font: inherit;
+  margin-top: 0;
+}
+.ql-toolbar.ql-snow {
+  border: 1px solid var(--border-strong);
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: #f8fafc;
+}
+.ql-container.ql-snow { border: none; font: inherit; font-size: 15px; }
+.ql-editor { min-height: 130px; }
+.ql-editor.ql-blank::before { color: var(--muted); font-style: normal; }
 
 .flash {
   padding: 0.65rem 0.9rem;
