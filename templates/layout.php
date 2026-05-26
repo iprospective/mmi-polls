@@ -7,14 +7,14 @@
 <link rel="icon" type="image/png" href="/public/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
 <link rel="stylesheet" href="/public/style.css">
 </head>
 <body>
 <header class="topbar">
   <a href="/" class="brand">
     <img src="/public/logo.png" alt="" class="brand-logo">
-    <span class="brand-mark"><span class="brand-prefix">mmi</span><span class="brand-name">date</span></span>
+    <span class="brand-mark"><span class="brand-prefix">MMI</span><span class="brand-name">date</span></span>
   </a>
   <nav>
     <?php if (is_admin()): ?>

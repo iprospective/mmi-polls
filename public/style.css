@@ -37,7 +37,21 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "cv11", "ss01", "ss03";
+  position: relative;
+  min-height: 100vh;
 }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url('/public/pattern.svg');
+  background-repeat: repeat;
+  background-size: 600px 400px;
+  opacity: 0.045;
+  pointer-events: none;
+  z-index: 0;
+}
+body > * { position: relative; z-index: 1; }
 
 h1, h2, h3, h4 {
   font-weight: 600;
@@ -97,23 +111,29 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   flex-shrink: 0;
 }
 .brand-mark {
-  font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
-  font-size: 1.4rem;
-  letter-spacing: -0.02em;
   display: inline-flex;
   align-items: baseline;
+  gap: 0.05em;
 }
 .brand-prefix {
-  font-weight: 500;
-  color: var(--muted);
+  font-family: "Fraunces", Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  font-size: 1.6rem;
+  letter-spacing: 0.01em;
+  color: var(--fg);
+  font-feature-settings: "ss01";
 }
 .brand-name {
+  font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
   font-weight: 700;
-  color: var(--fg);
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  color: var(--muted);
 }
 @media (max-width: 480px) {
-  .brand-mark { font-size: 1.2rem; }
-  .brand-logo { height: 32px; }
+  .brand-prefix { font-size: 1.4rem; }
+  .brand-name   { font-size: 1.1rem; }
+  .brand-logo   { height: 32px; }
 }
 .topbar nav { display: flex; gap: 1.25rem; align-items: center; }
 .topbar nav a { color: var(--fg-soft); font-weight: 500; font-size: 0.9rem; }
