@@ -44,12 +44,37 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background-image: url('/public/pattern.svg');
-  background-repeat: repeat;
-  background-size: 600px 400px;
-  opacity: 0.045;
+  background-color: transparent;
+  background-image:
+    url('/public/bg/lynx.jpg'),
+    url('/public/bg/vautour.jpg'),
+    url('/public/bg/violon.png'),
+    url('/public/bg/chamois.jpg');
+  background-position:
+    left   2vh,
+    right  2vh,
+    1vw   bottom,
+    right bottom;
+  background-repeat: no-repeat;
+  background-size:
+    36vw auto,
+    42vw auto,
+    18vw auto,
+    38vw auto;
+  filter: grayscale(0.85) contrast(0.9) sepia(0.05);
+  opacity: 0.12;
   pointer-events: none;
   z-index: 0;
+}
+@media (max-width: 700px) {
+  body::before {
+    background-image:
+      url('/public/bg/lynx.jpg'),
+      url('/public/bg/violon.png');
+    background-position: left top, right bottom;
+    background-size: 70vw auto, 40vw auto;
+    opacity: 0.10;
+  }
 }
 body > * { position: relative; z-index: 1; }
 
