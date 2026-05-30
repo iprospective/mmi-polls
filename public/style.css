@@ -350,9 +350,23 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .choices { list-style: none; padding: 0; margin: 0 0 0.5rem 0; }
 .choices li { display: flex; gap: 0.5rem; align-items: center; padding: 0.2rem 0; }
 
-/* Vote grid */
+/* Vote grid
+ * Layout: 3 colonnes "métadonnées" fixées (Date à gauche, Créneau à
+ * gauche, Récap à droite). Le bloc des participants scrolle à
+ * l'horizontale ; l'entête reste collée en haut au scroll vertical.
+ * Hauteur bornée à --grid-max-h pour permettre le scroll vertical.
+ */
+:root {
+  --col-date-w: 110px;
+  --col-slot-w: 78px;
+  --col-summary-w: 92px;
+  --grid-max-h: 70vh;
+}
+
 .grid-wrap {
-  overflow-x: auto;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: var(--grid-max-h);
   margin: 1rem 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -373,77 +387,121 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
   text-align: center;
 }
 .vote-grid tr > :last-child { border-right: none; }
+
+/* Entête : sticky top */
 .vote-grid thead th {
   background: #f1f5f9;
   font-weight: 600;
   font-size: 0.8rem;
   letter-spacing: 0.01em;
   color: var(--fg-soft);
+  text-transform: uppercase;
   position: sticky;
   top: 0;
-  z-index: 1;
-  text-transform: uppercase;
+  z-index: 3;
 }
-.vote-grid .date-cell {
+
+/* Colonnes Date / Créneau : sticky à gauche */
+.vote-grid .date-cell,
+.vote-grid thead th.date-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: var(--col-date-w);
+  width: var(--col-date-w);
   text-align: left;
-  background: #f8fafc;
   white-space: nowrap;
+  background: #f8fafc;
   font-weight: 600;
   font-size: 0.85rem;
-  border-right: 1px solid var(--border-strong);
 }
-.vote-grid .slot-cell {
+.vote-grid .slot-cell,
+.vote-grid thead th.slot-col {
+  position: sticky;
+  left: var(--col-date-w);
+  z-index: 2;
+  min-width: var(--col-slot-w);
+  width: var(--col-slot-w);
   text-align: left;
-  font-weight: 500;
   background: #f8fafc;
   color: var(--fg-soft);
+  font-weight: 500;
   font-size: 0.85rem;
+  border-right: 2px solid var(--border-strong);
 }
+/* Récap : sticky à droite */
+.vote-grid .summary-cell,
+.vote-grid thead th.summary-col {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  min-width: var(--col-summary-w);
+  width: var(--col-summary-w);
+  background: #f8fafc;
+  font-weight: 500;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  border-left: 2px solid var(--border-strong);
+}
+.vote-grid .summary-cell span { margin: 0 0.2rem; }
+
+/* Coin haut-gauche / haut-droit : sticky vertical ET horizontal */
+.vote-grid thead th.date-col,
+.vote-grid thead th.slot-col,
+.vote-grid thead th.summary-col { z-index: 4; }
+
+/* Prénoms : colonne étroite, tooltip natif via title */
 .vote-grid .participant {
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0;
   color: var(--fg);
   font-size: 0.85rem;
+  min-width: 42px;
+  width: 42px;
+  max-width: 42px;
+  cursor: help;
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
 }
-.vote-grid .v-yes   { background: var(--yes-bg);   color: var(--yes);   font-weight: 700; }
+
+/* Cellules de vote */
+.vote-grid .v-yes   { background: var(--yes-bg);   color: var(--yes);   font-weight: 700; min-width: 36px; }
 .vote-grid .v-no    { background: var(--no-bg);    color: var(--no);    font-weight: 700; }
 .vote-grid .v-maybe { background: var(--maybe-bg); color: var(--maybe); font-weight: 700; }
 .vote-grid .v-none  { color: #cbd5e1; }
-.vote-grid .summary-cell {
-  font-size: 0.78rem;
-  white-space: nowrap;
-  background: #f8fafc;
-  font-weight: 500;
-}
-.vote-grid .summary-cell span { margin: 0 0.2rem; }
 
-/* Per-row status (computed from yes_min / yesmaybe_min thresholds) */
-.vote-grid tr.row-ok   .date-cell,
-.vote-grid tr.row-ok   .slot-cell    { background: #ecfdf5; }
-.vote-grid tr.row-warn .date-cell,
-.vote-grid tr.row-warn .slot-cell    { background: #fffbeb; }
-.vote-grid tr.row-bad  .date-cell,
-.vote-grid tr.row-bad  .slot-cell    { background: #fef2f2; }
+/* Statut par créneau (ligne) : tinte la colonne Créneau seulement.
+ * La date n'est PAS colorée par le statut de la ligne — son statut
+ * est agrégé au jour (voir .date-cell.status-*). */
+.vote-grid tr.row-ok   .slot-cell { background: #ecfdf5; }
+.vote-grid tr.row-warn .slot-cell { background: #fffbeb; }
+.vote-grid tr.row-bad  .slot-cell { background: #fef2f2; }
 
+/* Statut Récap (par créneau) */
 .vote-grid .summary-cell.status-ok {
-  background: #d1fae5;
-  color: #065f46;
+  background: #d1fae5; color: #065f46; font-weight: 600;
   border-left: 3px solid var(--yes);
-  font-weight: 600;
 }
 .vote-grid .summary-cell.status-warn {
-  background: #fef3c7;
-  color: #78350f;
+  background: #fef3c7; color: #78350f; font-weight: 600;
   border-left: 3px solid var(--maybe);
-  font-weight: 600;
 }
 .vote-grid .summary-cell.status-bad {
-  background: #fee2e2;
-  color: #7f1d1d;
+  background: #fee2e2; color: #7f1d1d; font-weight: 600;
   border-left: 3px solid var(--no);
-  font-weight: 600;
 }
+
+/* Statut Date (agrégé : la journée n'est verte que si TOUS ses
+ * créneaux sont verts ; rouge si au moins un est rouge ; sinon jaune). */
+.vote-grid .date-cell.status-ok   { background: #d1fae5; color: #065f46; }
+.vote-grid .date-cell.status-warn { background: #fef3c7; color: #78350f; }
+.vote-grid .date-cell.status-bad  { background: #fee2e2; color: #7f1d1d; }
+.vote-grid .date-cell .small { color: inherit; opacity: 0.7; }
+
+/* Séparateur entre journées : trait épais en haut de la 1re ligne d'un jour. */
+.vote-grid tr.day-first > * { border-top: 2px solid var(--border-strong); }
+.vote-grid tbody tr:first-child > * { border-top: none; }
 
 .vote-grid.editable td { padding: 0.2rem; }
 .vote-grid.editable td label {
