@@ -30,12 +30,21 @@
   <nav>
     <?php if (is_admin()): ?>
       <a href="/admin">Sondages</a>
+      <a href="/admin/managers">Managers</a>
       <form method="post" action="/admin/logout" class="inline">
         <?= csrf_field() ?>
         <button type="submit" class="link">Déconnexion admin</button>
       </form>
+    <?php elseif (is_manager()): ?>
+      <a href="/manager">Mes sondages</a>
+      <span class="muted small">· <?= e($_SESSION['manager_email'] ?? '') ?></span>
+      <form method="post" action="/logout" class="inline">
+        <?= csrf_field() ?>
+        <button type="submit" class="link">Déconnexion</button>
+      </form>
     <?php else: ?>
-      <a href="/admin/login">Admin</a>
+      <a href="/login">Connexion</a>
+      <a href="/admin/login" class="muted small">Admin</a>
     <?php endif; ?>
   </nav>
 </header>

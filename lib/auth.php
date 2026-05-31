@@ -64,6 +64,49 @@ function consume_magic_link(int $poll_id, string $token): ?string {
     return $row['email'];
 }
 
+// --- Auth manager ---------------------------------------------------------
+
+function is_manager(): bool {
+    return !empty($_SESSION['manager_id']);
+}
+
+function current_manager_id(): ?int {
+    return is_manager() ? (int)$_SESSION['manager_id'] : null;
+}
+
+function require_manager(): void {
+    if (!is_manager()) redirect('/login');
+}
+
+function manager_login(int $manager_id, string $email, string $name = ''): void {
+    session_regenerate_id(true);
+    $_SESSION['manager_id'] = $manager_id;
+    $_SESSION['manager_email'] = $email;
+    $_SESSION['manager_name']  = $name;
+}
+
+function manager_logout(): void {
+    unset($_SESSION['manager_id'], $_SESSION['manager_email'], $_SESSION['manager_name']);
+    session_regenerate_id(true);
+}
+
+/**
+ * Autorise l'accès à un sondage si :
+ *  - admin global, OU
+ *  - manager connecté propriétaire du sondage.
+ * Sinon redirige vers /login.
+ */
+function require_poll_access(array $poll): void {
+    if (is_admin()) return;
+    $mid = current_manager_id();
+    if ($mid !== null && (int)$poll['manager_id'] === $mid) return;
+    if (is_manager()) {
+        http_response_code(403);
+        exit('403 — ce sondage ne vous appartient pas.');
+    }
+    redirect('/login');
+}
+
 function find_or_create_participant(int $poll_id, string $email): int {
     $pdo = db();
     $stmt = $pdo->prepare("SELECT id FROM participants WHERE poll_id = ? AND email = ?");

@@ -9,6 +9,22 @@ return [
     ['POST', '#^/admin/login$#',                                          'admin_auth',          'route_admin_login'],
     ['POST', '#^/admin/logout$#',                                         'admin_auth',          'route_admin_logout'],
 
+    // Manager (inscription, login mot de passe + magic-link, dashboard)
+    ['GET',  '#^/register$#',                                             'manager_auth',        'route_register_form'],
+    ['POST', '#^/register$#',                                             'manager_auth',        'route_register'],
+    ['GET',  '#^/login$#',                                                'manager_auth',        'route_login_form'],
+    ['POST', '#^/login$#',                                                'manager_auth',        'route_login'],
+    ['POST', '#^/login/magic$#',                                          'manager_auth',        'route_login_magic'],
+    ['GET',  '#^/auth$#',                                                 'manager_auth',        'route_consume_magic'],
+    ['POST', '#^/logout$#',                                               'manager_auth',        'route_logout'],
+    ['GET',  '#^/manager$#',                                              'manager_dashboard',   'route_manager_dashboard'],
+
+    // Admin : gestion des comptes manager
+    ['GET',  '#^/admin/managers$#',                                       'admin_managers',      'route_admin_managers'],
+    ['POST', '#^/admin/managers/(\d+)/validate$#',                        'admin_managers',      'route_admin_validate_manager'],
+    ['POST', '#^/admin/managers/(\d+)/reject$#',                          'admin_managers',      'route_admin_reject_manager'],
+    ['POST', '#^/admin/managers/(\d+)/delete$#',                          'admin_managers',      'route_admin_delete_manager'],
+
     ['GET',  '#^/admin$#',                                                'admin_polls',         'route_admin_list'],
     ['POST', '#^/admin/polls$#',                                          'admin_polls',         'route_admin_create_poll'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)$#',                             'admin_polls',         'route_admin_poll'],

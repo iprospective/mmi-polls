@@ -9,8 +9,8 @@ require_once __DIR__ . '/../services/assignments.php';
 require_once __DIR__ . '/../services/notifications.php';
 
 function route_admin_set_contact_email(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $email = trim((string)($_POST['contact_email'] ?? ''));
     if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         flash_set('err', 'Email de contact invalide.');
@@ -23,8 +23,8 @@ function route_admin_set_contact_email(string $uuid): void {
 }
 
 function route_admin_send_notifications(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $target  = (string)($_POST['target'] ?? 'all');
     $custom  = trim((string)($_POST['message'] ?? ''));
     $only_pid = (int)($_POST['participant_id'] ?? 0);

@@ -9,8 +9,8 @@ require_once __DIR__ . '/../services/participants.php';
 require_once __DIR__ . '/../services/assignments.php';
 
 function route_admin_participants_list(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $pdo = db();
 
     $stmt = $pdo->prepare("
@@ -45,8 +45,8 @@ function route_admin_participants_list(string $uuid): void {
 }
 
 function route_admin_participant_calendar(string $uuid, string $pid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $pdo  = db();
     $stmt = $pdo->prepare("SELECT * FROM participants WHERE id = ? AND poll_id = ?");
     $stmt->execute([(int)$pid, $poll['id']]);
@@ -74,8 +74,8 @@ function route_admin_participant_calendar(string $uuid, string $pid): void {
 }
 
 function route_admin_create_participant(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $name  = trim((string)($_POST['name'] ?? ''));
     $email = strtolower(trim((string)($_POST['email'] ?? '')));
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -97,8 +97,8 @@ function route_admin_create_participant(string $uuid): void {
 }
 
 function route_admin_edit_participant(string $uuid, string $pid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $pdo = db();
     $p = $pdo->prepare("SELECT * FROM participants WHERE id = ? AND poll_id = ?");
     $p->execute([(int)$pid, $poll['id']]);
@@ -119,8 +119,8 @@ function route_admin_edit_participant(string $uuid, string $pid): void {
 }
 
 function route_admin_update_participant(string $uuid, string $pid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $pdo = db();
     $p = $pdo->prepare("SELECT * FROM participants WHERE id = ? AND poll_id = ?");
     $p->execute([(int)$pid, $poll['id']]);
@@ -175,8 +175,8 @@ function route_admin_update_participant(string $uuid, string $pid): void {
 }
 
 function route_admin_delete_participant(string $uuid, string $pid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $stmt = db()->prepare("DELETE FROM participants WHERE id = ? AND poll_id = ?");
     $stmt->execute([(int)$pid, $poll['id']]);
     flash_set('ok', 'Participant supprimé.');

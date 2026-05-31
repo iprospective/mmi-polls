@@ -10,6 +10,9 @@ return [
     'admin' => [
         'username' => 'admin',
         'password' => 'changeme',
+        // Email où sont notifiées les nouvelles inscriptions manager
+        // (laisser vide pour ne rien envoyer).
+        'email'    => '',
     ],
 
     // SQLite database file.

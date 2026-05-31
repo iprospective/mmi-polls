@@ -11,27 +11,34 @@ require_once __DIR__ . '/../services/assignments.php';
 
 function route_admin_list(): void {
     require_admin();
-    $polls = db()->query("SELECT * FROM polls ORDER BY created_at DESC")->fetchAll();
+    $polls = db()->query("
+        SELECT p.*, m.email AS manager_email, m.name AS manager_name
+        FROM polls p
+        LEFT JOIN managers m ON m.id = p.manager_id
+        ORDER BY p.created_at DESC
+    ")->fetchAll();
     render('admin/list', ['page_title' => 'Sondages', 'polls' => $polls, 'include_editor' => true]);
 }
 
 function route_admin_create_poll(): void {
-    require_admin();
+    if (!is_admin() && !is_manager()) redirect('/login');
     $title = trim((string)($_POST['title'] ?? ''));
     $desc  = sanitize_html((string)($_POST['description'] ?? ''));
+    $back  = is_admin() ? '/admin' : '/manager';
     if ($title === '') {
         flash_set('err', 'Titre obligatoire.');
-        redirect('/admin');
+        redirect($back);
     }
     $uuid = uuid_v4();
-    $stmt = db()->prepare("INSERT INTO polls (uuid, title, description, created_at) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$uuid, $title, $desc, time()]);
+    $manager_id = is_admin() ? null : current_manager_id();
+    $stmt = db()->prepare("INSERT INTO polls (uuid, title, description, created_at, manager_id) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$uuid, $title, $desc, time(), $manager_id]);
     redirect('/admin/polls/' . $uuid);
 }
 
 function route_admin_poll(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $dates = poll_structure((int)$poll['id']);
     $participants = poll_participants((int)$poll['id']);
     $votes = poll_votes_map((int)$poll['id']);
@@ -47,8 +54,8 @@ function route_admin_poll(string $uuid): void {
 }
 
 function route_admin_update_poll(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $title = trim((string)($_POST['title'] ?? ''));
     $desc  = sanitize_html((string)($_POST['description'] ?? ''));
     if ($title === '') {
@@ -62,8 +69,8 @@ function route_admin_update_poll(string $uuid): void {
 }
 
 function route_admin_delete_poll(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $stmt = db()->prepare("DELETE FROM polls WHERE id = ?");
     $stmt->execute([$poll['id']]);
     flash_set('ok', 'Sondage supprimé.');

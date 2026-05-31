@@ -11,8 +11,8 @@ require_once __DIR__ . '/../services/notifications.php';
 require_once __DIR__ . '/../services/auto_fill.php';
 
 function route_admin_assignments(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $dates        = poll_structure((int)$poll['id']);
     $participants = poll_participants((int)$poll['id']);
     $votes        = poll_votes_map((int)$poll['id']);
@@ -41,8 +41,8 @@ function route_admin_assignments(string $uuid): void {
 }
 
 function route_admin_save_assignments(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $input = $_POST['assignments'] ?? [];
     if (!is_array($input)) $input = [];
 
@@ -96,8 +96,8 @@ function route_admin_save_assignments(string $uuid): void {
 }
 
 function route_admin_auto_fill_assignments(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $res = run_auto_fill_assignments((int)$poll['id']);
     $total = $res['inserted_p'] + $res['inserted_b'];
     if ($total > 0) {
@@ -110,8 +110,8 @@ function route_admin_auto_fill_assignments(string $uuid): void {
 }
 
 function route_admin_clear_assignments(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $stmt = db()->prepare("
         DELETE FROM assignments
         WHERE choice_id IN (

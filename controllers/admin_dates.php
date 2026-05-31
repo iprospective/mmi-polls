@@ -6,8 +6,8 @@ require_once __DIR__ . '/../lib/helpers.php';
 require_once __DIR__ . '/../services/polls.php';
 
 function route_admin_dates(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $dates = poll_structure((int)$poll['id']);
     render('admin/dates', [
         'page_title' => 'Dates & créneaux — ' . $poll['title'],
@@ -17,8 +17,8 @@ function route_admin_dates(string $uuid): void {
 }
 
 function route_admin_add_date(string $uuid): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $day = trim((string)($_POST['day'] ?? ''));
     $choices_raw = trim((string)($_POST['choices'] ?? ''));
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) {
@@ -45,8 +45,8 @@ function route_admin_add_date(string $uuid): void {
 }
 
 function route_admin_delete_date(string $uuid, string $date_id): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $stmt = db()->prepare("DELETE FROM poll_dates WHERE id = ? AND poll_id = ?");
     $stmt->execute([(int)$date_id, $poll['id']]);
     flash_set('ok', 'Date supprimée.');
@@ -54,8 +54,8 @@ function route_admin_delete_date(string $uuid, string $date_id): void {
 }
 
 function route_admin_add_choice(string $uuid, string $date_id): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $label = trim((string)($_POST['label'] ?? ''));
     if ($label === '') {
         flash_set('err', 'Libellé requis.');
@@ -75,8 +75,8 @@ function route_admin_add_choice(string $uuid, string $date_id): void {
 }
 
 function route_admin_delete_choice(string $uuid, string $choice_id): void {
-    require_admin();
     $poll = find_poll($uuid);
+    require_poll_access($poll);
     $stmt = db()->prepare("
         DELETE FROM poll_choices
         WHERE id = ?

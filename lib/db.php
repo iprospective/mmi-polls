@@ -78,6 +78,26 @@ function db_migrate(PDO $pdo): void {
         );
         CREATE INDEX IF NOT EXISTS idx_assignments_pid ON assignments(participant_id);
 
+        CREATE TABLE IF NOT EXISTS managers (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            email           TEXT NOT NULL UNIQUE,
+            name            TEXT NOT NULL DEFAULT '',
+            password_hash   TEXT NOT NULL,
+            status          TEXT NOT NULL DEFAULT 'pending'
+                              CHECK (status IN ('pending', 'active', 'rejected')),
+            rejection_reason TEXT NOT NULL DEFAULT '',
+            created_at      INTEGER NOT NULL,
+            validated_at    INTEGER
+        );
+
+        CREATE TABLE IF NOT EXISTS manager_magic_links (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            manager_id  INTEGER NOT NULL REFERENCES managers(id) ON DELETE CASCADE,
+            token_hash  TEXT NOT NULL UNIQUE,
+            expires_at  INTEGER NOT NULL,
+            used_at     INTEGER
+        );
+
         CREATE TABLE IF NOT EXISTS notifications (
             id             INTEGER PRIMARY KEY AUTOINCREMENT,
             poll_id        INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
@@ -93,12 +113,15 @@ function db_migrate(PDO $pdo): void {
         CREATE INDEX IF NOT EXISTS idx_notif_token ON notifications(token_hash);
     ");
 
-    // Migration : polls.contact_email ajoutée si absente.
+    // Migrations sur la table polls.
     $cols = $pdo->query("PRAGMA table_info(polls)")->fetchAll();
-    $has_contact = false;
-    foreach ($cols as $col) if ($col['name'] === 'contact_email') { $has_contact = true; break; }
-    if (!$has_contact) {
+    $present = array_column($cols, 'name');
+    if (!in_array('contact_email', $present, true)) {
         $pdo->exec("ALTER TABLE polls ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''");
+    }
+    if (!in_array('manager_id', $present, true)) {
+        // NULL = sondage créé par l'admin global. Sinon, manager qui possède le sondage.
+        $pdo->exec("ALTER TABLE polls ADD COLUMN manager_id INTEGER REFERENCES managers(id) ON DELETE SET NULL");
     }
 
     // Migrations sur la table participants.
