@@ -954,12 +954,17 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
 .participants-table tr.orphan { color: var(--muted); background: #fafbfc; }
 .participants-table tr.orphan strong { color: var(--fg-soft); font-weight: 500; }
 
-/* Tableau Coordonnées : email + tél visibles ici (pas masqués sur desktop) */
+/* Tableau Coordonnées : email + tél visibles ici (pas masqués sur desktop).
+ * /!\ Le display: table-cell est borné au desktop, sinon il piétine la
+ * règle responsive display: block (specificité identique) sur mobile
+ * et fait s'effondrer les cartes participants. */
 .contacts-table th, .contacts-table td { padding: 0.55rem 0.7rem; }
-.contacts-table th.email-col,
-.contacts-table th.phone-col,
-.contacts-table td.email-cell,
-.contacts-table td.phone-cell { display: table-cell; }
+@media (min-width: 701px) {
+  .contacts-table th.email-col,
+  .contacts-table th.phone-col,
+  .contacts-table td.email-cell,
+  .contacts-table td.phone-cell { display: table-cell; }
+}
 .contacts-table .check-col {
   text-align: center;
   font-weight: 700;
