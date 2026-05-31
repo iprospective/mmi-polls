@@ -2,7 +2,11 @@
 // Service Auto-fill : algorithme de remplissage automatique des astreintes.
 // Round-robin équitable basé sur usage_pct = count / capacité (crédits Oui + ½ Peut-être).
 // 4 tiers (50/75/90 %) classés en priorité avec un boost low-credit en tier 0.
+// Si le sondage a des coordonnées de départ (start_lat/lng) ET le participant
+// a une adresse géocodée, la distance Haversine sert de tiebreaker juste
+// après usage_pct (privilégie le plus proche du point de prise en charge).
 require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/../lib/helpers.php';
 
 /**
  * Lance l'algo de remplissage auto pour un sondage. N'écrase pas les
@@ -42,6 +46,23 @@ function run_auto_fill_assignments(int $poll_id): array {
     ");
     $choices_stmt->execute([$poll_id]);
     $choices = $choices_stmt->fetchAll();
+
+    // Distance de chaque participant au point de départ (km), si applicable.
+    $poll_q = $pdo->prepare("SELECT start_lat, start_lng FROM polls WHERE id = ?");
+    $poll_q->execute([$poll_id]);
+    $poll_pt = $poll_q->fetch();
+    $distances = [];
+    if ($poll_pt && $poll_pt['start_lat'] !== null && $poll_pt['start_lng'] !== null) {
+        $part_q = $pdo->prepare("SELECT id, latitude, longitude FROM participants WHERE poll_id = ?");
+        $part_q->execute([$poll_id]);
+        foreach ($part_q as $r) {
+            if ($r['latitude'] === null || $r['longitude'] === null) continue;
+            $distances[(int)$r['id']] = haversine_km(
+                (float)$poll_pt['start_lat'], (float)$poll_pt['start_lng'],
+                (float)$r['latitude'],       (float)$r['longitude']
+            );
+        }
+    }
 
     $yes_by_choice = [];
     $maybe_by_choice = [];
@@ -120,10 +141,15 @@ function run_auto_fill_assignments(int $poll_id): array {
                     if (empty($by_tier[$t])) continue;
                     $list = $by_tier[$t];
                     usort($list, function ($a, $b)
-                          use ($t, $counts, $last_ts, $yes_credits, $maybe_credits, $today_ts, $capacity_of) {
+                          use ($t, $counts, $last_ts, $yes_credits, $maybe_credits, $today_ts, $capacity_of, $distances) {
                         $ua = ($counts[$a] ?? 0) / $capacity_of($a, $yes_credits, $maybe_credits);
                         $ub = ($counts[$b] ?? 0) / $capacity_of($b, $yes_credits, $maybe_credits);
                         if (abs($ua - $ub) > 1e-9) return $ua <=> $ub;
+                        // Tiebreaker GPS : plus proche du point de départ d'abord.
+                        // Les participants sans coords sont en bas (PHP_FLOAT_MAX).
+                        $da = $distances[$a] ?? PHP_FLOAT_MAX;
+                        $db = $distances[$b] ?? PHP_FLOAT_MAX;
+                        if (abs($da - $db) > 0.05) return $da <=> $db;  // 50 m de marge
                         $ya = $yes_credits[$a] ?? 0;
                         $yb = $yes_credits[$b] ?? 0;
                         if ($t === 0 && $ya !== $yb) return $ya - $yb;

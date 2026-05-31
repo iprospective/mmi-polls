@@ -98,6 +98,15 @@ function db_migrate(PDO $pdo): void {
             used_at     INTEGER
         );
 
+        CREATE TABLE IF NOT EXISTS geocode_cache (
+            query_hash   TEXT PRIMARY KEY,
+            query_text   TEXT NOT NULL,
+            latitude     REAL,
+            longitude    REAL,
+            display_name TEXT NOT NULL DEFAULT '',
+            fetched_at   INTEGER NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS activity_log (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
             poll_id      INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
@@ -151,6 +160,18 @@ function db_migrate(PDO $pdo): void {
         // ne peuvent plus modifier leurs votes (read-only).
         $pdo->exec("ALTER TABLE polls ADD COLUMN closed_at TEXT NOT NULL DEFAULT ''");
     }
+    foreach ([
+        'start_address' => "TEXT NOT NULL DEFAULT ''",
+        'start_lat'     => "REAL",
+        'start_lng'     => "REAL",
+        'end_address'   => "TEXT NOT NULL DEFAULT ''",
+        'end_lat'       => "REAL",
+        'end_lng'       => "REAL",
+    ] as $col => $sql_type) {
+        if (!in_array($col, $present, true)) {
+            $pdo->exec("ALTER TABLE polls ADD COLUMN $col $sql_type");
+        }
+    }
 
     // Backfill : tout poll avec un manager_id alimente poll_managers (idempotent).
     $pdo->exec("
@@ -178,6 +199,15 @@ function db_migrate(PDO $pdo): void {
     if (!in_array('ical_token', $present, true)) {
         // Token pour l'abonnement iCal personnel (généré à la 1re demande).
         $pdo->exec("ALTER TABLE participants ADD COLUMN ical_token TEXT NOT NULL DEFAULT ''");
+    }
+    foreach ([
+        'address'   => "TEXT NOT NULL DEFAULT ''",
+        'latitude'  => "REAL",
+        'longitude' => "REAL",
+    ] as $col => $sql_type) {
+        if (!in_array($col, $present, true)) {
+            $pdo->exec("ALTER TABLE participants ADD COLUMN $col $sql_type");
+        }
     }
 }
 

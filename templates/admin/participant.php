@@ -20,6 +20,13 @@
     <input type="tel" name="phone" value="<?= e($participant['phone'] ?? '') ?>" placeholder="ex. 06 12 34 56 78">
   </label>
 
+  <label>Adresse / ville
+    <input type="text" name="address" value="<?= e($participant['address'] ?? '') ?>" placeholder="ex. 12 rue de la Mairie, Romans">
+    <?php if (!empty($participant['latitude'])): ?>
+      <small class="muted">📍 (<?= number_format((float)$participant['latitude'], 4) ?>, <?= number_format((float)$participant['longitude'], 4) ?>)</small>
+    <?php endif; ?>
+  </label>
+
   <fieldset class="check-group-wrap">
     <legend>Moyens de contact préférés</legend>
     <div class="check-group">

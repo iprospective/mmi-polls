@@ -94,6 +94,17 @@ function sanitize_phone(string $raw): string {
  * À chaque modif de CSS/JS, bumper CONFIG.asset_version.
  */
 /**
+ * Distance en km entre deux points (lat, lng) — formule Haversine.
+ */
+function haversine_km(float $lat1, float $lng1, float $lat2, float $lng2): float {
+    $R = 6371.0;
+    $dLat = deg2rad($lat2 - $lat1);
+    $dLng = deg2rad($lng2 - $lng1);
+    $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+    return $R * 2 * asin(sqrt($a));
+}
+
+/**
  * Sondage clos ? true si poll.closed_at est non-vide ET dans le passé.
  */
 function poll_is_closed(array $poll): bool {

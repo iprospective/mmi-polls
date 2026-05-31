@@ -15,6 +15,24 @@ require __DIR__ . '/_admin_nav.php';
     <input type="date" name="closed_at" value="<?= e($poll['closed_at'] ?? '') ?>">
   </label>
   <p class="muted small">Passé cette date, les participants ne peuvent plus modifier leurs disponibilités (vue verrouillée). Vide = sondage indéfiniment ouvert.</p>
+
+  <h3>Trajet (facultatif)</h3>
+  <p class="muted small">Renseigner ces deux points permet à l'algorithme de remplissage auto de privilégier les personnes les plus proches du point de départ.</p>
+
+  <label>Adresse de départ (lieu de prise en charge)
+    <input type="text" name="start_address" value="<?= e($poll['start_address'] ?? '') ?>" placeholder="ex. 12 rue Foo, Romans">
+    <?php if (!empty($poll['start_lat'])): ?>
+      <small class="muted">📍 (<?= number_format((float)$poll['start_lat'], 4) ?>, <?= number_format((float)$poll['start_lng'], 4) ?>)</small>
+    <?php endif; ?>
+  </label>
+
+  <label>Adresse d'arrivée (destination)
+    <input type="text" name="end_address" value="<?= e($poll['end_address'] ?? '') ?>" placeholder="ex. Maternité, Romans">
+    <?php if (!empty($poll['end_lat'])): ?>
+      <small class="muted">📍 (<?= number_format((float)$poll['end_lat'], 4) ?>, <?= number_format((float)$poll['end_lng'], 4) ?>)</small>
+    <?php endif; ?>
+  </label>
+
   <button type="submit">Enregistrer</button>
 </form>
 
