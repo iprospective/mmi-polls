@@ -227,4 +227,57 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
 
 <?php endif; ?>
 
+<h2>Coordonnées</h2>
+<p class="muted small">Référentiel de contact : email, téléphone, plateformes préférées.
+   Cliquer sur une colonne plateforme pour grouper les personnes joignables sur ce canal.</p>
+
+<div class="grid-wrap">
+<table class="participants-table contacts-table sortable">
+  <thead>
+    <tr>
+      <th>Nom ↕</th>
+      <th>Email ↕</th>
+      <th>Téléphone ↕</th>
+      <?php foreach (contact_methods() as $key => $label): ?>
+        <th data-sort-type="num"><?= e($label) ?> ↕</th>
+      <?php endforeach; ?>
+      <th class="no-sort">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <?php foreach ($rows as $r):
+      $name = $r['name'] !== '' ? $r['name'] : explode('@', $r['email'])[0];
+      $cms  = parse_contact_methods($r['contact_method'] ?? '');
+      $is_orphan_row = ((int)$r['yes_count'] + (int)$r['maybe_count'] + (int)$r['no_count']) === 0;
+      $tel_href = $r['phone'] ? preg_replace('/[^0-9+]/', '', $r['phone']) : '';
+    ?>
+      <tr class="<?= $is_orphan_row ? 'orphan' : '' ?>">
+        <td data-l="Nom" data-sort-value="<?= e(mb_strtolower($name)) ?>"><strong><?= e($name) ?></strong></td>
+        <td data-l="Email"><a href="mailto:<?= e($r['email']) ?>"><?= e($r['email']) ?></a></td>
+        <td data-l="Téléphone">
+          <?php if ($r['phone']): ?>
+            <a href="tel:<?= e($tel_href) ?>"><?= e($r['phone']) ?></a>
+          <?php else: ?>
+            <span class="muted">—</span>
+          <?php endif; ?>
+        </td>
+        <?php foreach (contact_methods() as $key => $label):
+          $has = in_array($key, $cms, true); ?>
+          <td data-l="<?= e($label) ?>" class="check-col <?= $has ? 'cm-' . e($key) : '' ?>"
+              data-sort-value="<?= $has ? 1 : 0 ?>">
+            <?= $has ? '✓' : '<span class="muted">—</span>' ?>
+          </td>
+        <?php endforeach; ?>
+        <td class="actions-cell">
+          <a href="/admin/polls/<?= e($poll['uuid']) ?>/participants/<?= (int)$r['id'] ?>"
+             class="icon-btn" title="Éditer">
+            <?= _icon('edit') ?>
+          </a>
+        </td>
+      </tr>
+    <?php endforeach; ?>
+  </tbody>
+</table>
+</div>
+
 <p><a href="/admin/polls/<?= e($poll['uuid']) ?>" class="link">← Retour au sondage</a></p>

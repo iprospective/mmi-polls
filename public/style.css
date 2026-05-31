@@ -954,6 +954,25 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
 .participants-table tr.orphan { color: var(--muted); background: #fafbfc; }
 .participants-table tr.orphan strong { color: var(--fg-soft); font-weight: 500; }
 
+/* Tableau Coordonnées : email + tél visibles ici (pas masqués sur desktop) */
+.contacts-table th, .contacts-table td { padding: 0.55rem 0.7rem; }
+.contacts-table th.email-col,
+.contacts-table th.phone-col,
+.contacts-table td.email-cell,
+.contacts-table td.phone-cell { display: table-cell; }
+.contacts-table .check-col {
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  width: 80px;
+  min-width: 80px;
+}
+.contacts-table .check-col.cm-telegram { color: #075985; background: #f0f9ff; }
+.contacts-table .check-col.cm-signal   { color: #5b21b6; background: #f5f3ff; }
+.contacts-table .check-col.cm-whatsapp { color: #166534; background: #f0fdf4; }
+.contacts-table .check-col.cm-sms      { color: #78350f; background: #fffbeb; }
+.contacts-table .check-col .muted { font-weight: 400; font-size: 0.9rem; }
+
 /* Tri : indicateurs et hover sur en-tête */
 table.sortable thead th.sortable-col {
   cursor: pointer;
