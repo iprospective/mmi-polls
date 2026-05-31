@@ -30,6 +30,11 @@ return [
         'from_name'  => 'mmidate',
     ],
 
+    // !! TODO incrémenter cette valeur À CHAQUE modification de fichier
+    // dans public/ (CSS, JS, logo, photos de fond, favicon…). Sert de
+    // cache-buster pour forcer le navigateur à recharger l'asset.
+    'asset_version'  => 1,
+
     // Magic link lifetime, seconds (default 1h).
     'magic_link_ttl' => 3600,
 

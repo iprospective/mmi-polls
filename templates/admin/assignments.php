@@ -249,6 +249,7 @@ $toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
 
 <?php if ($notifs): ?>
   <h3>État des envois</h3>
+  <div class="grid-wrap">
   <table class="dates-table notif-status">
     <thead>
       <tr>
@@ -281,4 +282,5 @@ $toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
 <?php endif; ?>

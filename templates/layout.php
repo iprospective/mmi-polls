@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title><?= e($title ?? 'mmidate') ?></title>
-<link rel="icon" type="image/png" href="/public/logo.png">
+<link rel="icon" type="image/png" href="<?= e(asset_url('/public/logo.png')) ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap">
-<link rel="stylesheet" href="/public/style.css">
+<link rel="stylesheet" href="<?= e(asset_url('/public/style.css')) ?>">
 <?php if (!empty($include_editor)): ?>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css">
   <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js" defer></script>
-  <script src="/public/editor.js" defer></script>
+  <script src="<?= e(asset_url('/public/editor.js')) ?>" defer></script>
 <?php endif; ?>
 <?php if (!empty($include_assignments)): ?>
-  <script src="/public/assignments.js" defer></script>
+  <script src="<?= e(asset_url('/public/assignments.js')) ?>" defer></script>
 <?php endif; ?>
 <?php if (!empty($include_sortable)): ?>
-  <script src="/public/sortable-table.js" defer></script>
+  <script src="<?= e(asset_url('/public/sortable-table.js')) ?>" defer></script>
 <?php endif; ?>
 </head>
 <body>

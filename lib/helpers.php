@@ -88,6 +88,17 @@ function sanitize_phone(string $raw): string {
     return mb_substr(trim($clean), 0, 32);
 }
 
+/**
+ * Append the asset_version param to a /public/* URL for cache-busting.
+ * Usage : <link href="<?= asset_url('/public/style.css') ?>">
+ * À chaque modif de CSS/JS, bumper CONFIG.asset_version.
+ */
+function asset_url(string $path): string {
+    $v = (int)($GLOBALS['CONFIG']['asset_version'] ?? 1);
+    $sep = strpos($path, '?') === false ? '?' : '&';
+    return $path . $sep . 'v=' . $v;
+}
+
 function fmt_day(string $iso): string {
     static $jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
     static $mois  = ['', 'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];

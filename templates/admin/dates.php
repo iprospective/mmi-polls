@@ -18,6 +18,7 @@ require __DIR__ . '/_admin_nav.php';
 <?php if (!$dates): ?>
   <p><em>Aucune date pour l'instant.</em></p>
 <?php else: ?>
+  <div class="grid-wrap">
   <table class="dates-table">
     <thead>
       <tr><th>Jour</th><th>Créneaux</th><th></th></tr>
@@ -56,4 +57,5 @@ require __DIR__ . '/_admin_nav.php';
     <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
 <?php endif; ?>

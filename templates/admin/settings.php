@@ -34,6 +34,7 @@ require __DIR__ . '/_admin_nav.php';
   <?php if (!$managers): ?>
     <p><em>Aucun manager — ce sondage est administré uniquement par l'admin global.</em></p>
   <?php else: ?>
+    <div class="grid-wrap">
     <table class="dates-table">
       <thead>
         <tr><th>Manager</th><th>Ajouté</th><th></th></tr>
@@ -64,6 +65,7 @@ require __DIR__ . '/_admin_nav.php';
         <?php endforeach; ?>
       </tbody>
     </table>
+    </div>
   <?php endif; ?>
 
   <h3>Ajouter un manager</h3>

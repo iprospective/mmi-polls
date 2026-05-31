@@ -49,32 +49,38 @@ function _render_manager_row(array $m, string $section): string {
 <?php if (!$pending): ?>
   <p><em>Aucune demande en attente.</em></p>
 <?php else: ?>
+  <div class="grid-wrap">
   <table class="dates-table">
     <thead><tr><th>Manager</th><th>Inscription</th><th>Actions</th></tr></thead>
     <tbody>
       <?php foreach ($pending as $m) echo _render_manager_row($m, 'pending'); ?>
     </tbody>
   </table>
+  </div>
 <?php endif; ?>
 
 <h2>Actifs (<?= count($active) ?>)</h2>
 <?php if (!$active): ?>
   <p><em>Aucun compte actif.</em></p>
 <?php else: ?>
+  <div class="grid-wrap">
   <table class="dates-table">
     <thead><tr><th>Manager</th><th>Inscription</th><th>Validation</th><th>Actions</th></tr></thead>
     <tbody>
       <?php foreach ($active as $m) echo _render_manager_row($m, 'active'); ?>
     </tbody>
   </table>
+  </div>
 <?php endif; ?>
 
 <?php if ($rejected): ?>
   <h2>Refusés (<?= count($rejected) ?>)</h2>
+  <div class="grid-wrap">
   <table class="dates-table">
     <thead><tr><th>Manager</th><th>Inscription</th><th>Motif</th><th>Actions</th></tr></thead>
     <tbody>
       <?php foreach ($rejected as $m) echo _render_manager_row($m, 'rejected'); ?>
     </tbody>
   </table>
+  </div>
 <?php endif; ?>
