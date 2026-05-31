@@ -56,6 +56,7 @@ $routes = [
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/auto-fill$#', 'route_admin_auto_fill_assignments'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/clear$#',     'route_admin_clear_assignments'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/participants$#',          'route_admin_participants_list'],
+    ['GET',  '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)/calendar$#', 'route_admin_participant_calendar'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/contact-email$#',         'route_admin_set_contact_email'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/notify$#',    'route_admin_send_notifications'],
 
@@ -833,7 +834,7 @@ function route_admin_participants_list(string $uuid): void {
 
     $stmt = $pdo->prepare("
         SELECT
-            p.id, p.name, p.email, p.created_at,
+            p.id, p.name, p.email, p.created_at, p.votes_updated_at,
             COALESCE(SUM(CASE WHEN v.value='yes'   THEN 1 ELSE 0 END), 0) AS yes_count,
             COALESCE(SUM(CASE WHEN v.value='maybe' THEN 1 ELSE 0 END), 0) AS maybe_count,
             COALESCE(SUM(CASE WHEN v.value='no'    THEN 1 ELSE 0 END), 0) AS no_count,
@@ -859,6 +860,36 @@ function route_admin_participants_list(string $uuid): void {
         'poll' => $poll,
         'rows' => $rows,
         'total_choices' => $total_choices,
+        'include_sortable' => true,
+    ]);
+}
+
+function route_admin_participant_calendar(string $uuid, string $pid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $pdo  = db();
+    $stmt = $pdo->prepare("SELECT * FROM participants WHERE id = ? AND poll_id = ?");
+    $stmt->execute([(int)$pid, $poll['id']]);
+    $participant = $stmt->fetch();
+    if (!$participant) not_found();
+
+    $assigns = assignments_for_participant((int)$poll['id'], (int)$participant['id']);
+    $cnt = $pdo->prepare("
+        SELECT
+            SUM(CASE WHEN value='yes'   THEN 1 ELSE 0 END) AS yes_count,
+            SUM(CASE WHEN value='maybe' THEN 1 ELSE 0 END) AS maybe_count,
+            SUM(CASE WHEN value='no'    THEN 1 ELSE 0 END) AS no_count
+        FROM votes WHERE participant_id = ?
+    ");
+    $cnt->execute([$participant['id']]);
+    $vote_counts = $cnt->fetch() ?: ['yes_count' => 0, 'maybe_count' => 0, 'no_count' => 0];
+
+    render('admin/participant_calendar', [
+        'page_title' => 'Calendrier — ' . ($participant['name'] !== '' ? $participant['name'] : $participant['email']),
+        'poll' => $poll,
+        'participant' => $participant,
+        'assigns' => $assigns,
+        'vote_counts' => $vote_counts,
     ]);
 }
 
@@ -941,8 +972,8 @@ function route_admin_update_participant(string $uuid, string $pid): void {
     $valid_ids = array_flip(array_map('intval', array_column($valid->fetchAll(), 'id')));
 
     $pdo->beginTransaction();
-    $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ? WHERE id = ?");
-    $upd->execute([$name, $email, $participant['id']]);
+    $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, votes_updated_at = ? WHERE id = ?");
+    $upd->execute([$name, $email, time(), $participant['id']]);
     $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
     $del->execute([$participant['id']]);
     $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");
@@ -1080,8 +1111,8 @@ function route_poll_save_votes(string $uuid): void {
     $valid_ids = array_flip(array_map('intval', array_column($valid->fetchAll(), 'id')));
 
     $pdo->beginTransaction();
-    $upd = $pdo->prepare("UPDATE participants SET name = ? WHERE id = ?");
-    $upd->execute([$name, $participant['id']]);
+    $upd = $pdo->prepare("UPDATE participants SET name = ?, votes_updated_at = ? WHERE id = ?");
+    $upd->execute([$name, time(), $participant['id']]);
     $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
     $del->execute([$participant['id']]);
     $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");

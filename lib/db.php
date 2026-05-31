@@ -93,12 +93,20 @@ function db_migrate(PDO $pdo): void {
         CREATE INDEX IF NOT EXISTS idx_notif_token ON notifications(token_hash);
     ");
 
-    // Migration en place : polls.contact_email ajoutée si absente.
+    // Migration : polls.contact_email ajoutée si absente.
     $cols = $pdo->query("PRAGMA table_info(polls)")->fetchAll();
     $has_contact = false;
     foreach ($cols as $col) if ($col['name'] === 'contact_email') { $has_contact = true; break; }
     if (!$has_contact) {
         $pdo->exec("ALTER TABLE polls ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''");
+    }
+
+    // Migration : participants.votes_updated_at ajoutée si absente.
+    $cols = $pdo->query("PRAGMA table_info(participants)")->fetchAll();
+    $has_vupd = false;
+    foreach ($cols as $col) if ($col['name'] === 'votes_updated_at') { $has_vupd = true; break; }
+    if (!$has_vupd) {
+        $pdo->exec("ALTER TABLE participants ADD COLUMN votes_updated_at INTEGER NOT NULL DEFAULT 0");
     }
 }
 

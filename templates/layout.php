@@ -17,6 +17,9 @@
 <?php if (!empty($include_assignments)): ?>
   <script src="/public/assignments.js" defer></script>
 <?php endif; ?>
+<?php if (!empty($include_sortable)): ?>
+  <script src="/public/sortable-table.js" defer></script>
+<?php endif; ?>
 </head>
 <body>
 <header class="topbar">

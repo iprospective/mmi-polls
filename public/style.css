@@ -707,6 +707,44 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
 .usage-pct.tier-2 { color: #b45309; }
 .usage-pct.tier-3 { color: #b91c1c; }
 
+/* Cellule actions : pile les boutons sur petit espace, sépare-les par un · */
+.participants-table .actions-cell { white-space: nowrap; }
+.participants-table .actions-cell > * + * { margin-left: 0.5rem; padding-left: 0.5rem; border-left: 1px solid var(--border); }
+.participants-table .actions-cell .inline { display: inline-block; }
+
+/* Personnes orphelines : tout gris atténué */
+.participants-table tr.orphan { color: var(--muted); background: #fafbfc; }
+.participants-table tr.orphan strong { color: var(--fg-soft); font-weight: 500; }
+
+/* Tri : indicateurs et hover sur en-tête */
+table.sortable thead th.sortable-col {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+}
+table.sortable thead th.sortable-col:hover { background: #e2e8f0; }
+table.sortable thead th.sorted-asc,
+table.sortable thead th.sorted-desc {
+  background: #e0f2fe;
+  color: var(--fg);
+}
+table.sortable thead th.sorted-asc::after  { content: ' ↑'; }
+table.sortable thead th.sorted-desc::after { content: ' ↓'; }
+
+/* Strip de stats sur la page calendrier */
+.stats-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: baseline;
+}
+.stats-strip > div { display: inline-flex; gap: 0.35rem; align-items: baseline; }
+.stats-strip > div > strong { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+
+/* Séparateur entre jours sur les listes d'astreintes (admin calendar) */
+.assign-list li.day-first { margin-top: 0.4rem; padding-top: 0.6rem; border-top: 2px solid var(--border-strong); }
+.assign-list li:first-child.day-first { border-top: none; padding-top: 0; margin-top: 0; }
+
 @media (max-width: 700px) {
   /* Le tableau participants devient un empilement de cartes */
   .participants-table,
