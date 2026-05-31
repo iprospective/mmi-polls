@@ -503,6 +503,50 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .vote-grid tr.day-first > * { border-top: 2px solid var(--border-strong); }
 .vote-grid tbody tr:first-child > * { border-top: none; }
 
+/* ---------- Astreintes ---------- */
+/* On reprend .vote-grid pour bénéficier du sticky Date/Créneau, mais on
+ * désactive le sticky de la cellule Récap puisque l'ordre des colonnes
+ * change (Récap n'est plus en bout de ligne). */
+.assignments-grid .summary-cell {
+  position: static;
+  right: auto;
+  width: auto;
+  min-width: 90px;
+  background: #f8fafc;
+  border-left: 1px solid var(--border);
+}
+.assignments-grid td:nth-child(n+4) { text-align: left; }
+.assignments-grid select {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  min-width: 200px;
+  max-width: 280px;
+}
+.assignments-grid select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.assignments-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--border);
+  padding: 0.85rem 1rem;
+  margin-top: 1rem;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.assignments-bar #assignments-totals { margin-left: auto; }
+
 .vote-grid.editable td { padding: 0.2rem; }
 .vote-grid.editable td label {
   display: block;

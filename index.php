@@ -51,6 +51,8 @@ $routes = [
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants$#',          'route_admin_create_participant'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)$#',    'route_admin_edit_participant'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)$#',    'route_admin_update_participant'],
+    ['GET',  '#^/admin/polls/([0-9a-f-]+)/assignments$#',           'route_admin_assignments'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments$#',           'route_admin_save_assignments'],
 
     ['GET',  '#^/p/([0-9a-f-]+)$#',                            'route_poll_show'],
     ['GET',  '#^/p/([0-9a-f-]+)/login$#',                      'route_poll_login_form'],
@@ -292,6 +294,90 @@ function route_admin_delete_participant(string $uuid, string $pid): void {
     $stmt->execute([(int)$pid, $poll['id']]);
     flash_set('ok', 'Participant supprimé.');
     redirect('/admin/polls/' . $uuid);
+}
+
+function poll_assignments_map(int $poll_id): array {
+    $stmt = db()->prepare("
+        SELECT a.choice_id, a.role, a.participant_id
+        FROM assignments a
+        JOIN poll_choices c ON c.id = a.choice_id
+        JOIN poll_dates   d ON d.id = c.date_id
+        WHERE d.poll_id = ?
+    ");
+    $stmt->execute([$poll_id]);
+    $out = [];
+    foreach ($stmt as $r) {
+        $out[(int)$r['choice_id']][$r['role']] = (int)$r['participant_id'];
+    }
+    return $out;
+}
+
+function route_admin_assignments(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $dates        = poll_structure((int)$poll['id']);
+    $participants = poll_participants((int)$poll['id']);
+    $votes        = poll_votes_map((int)$poll['id']);
+    $assigns      = poll_assignments_map((int)$poll['id']);
+    render('admin/assignments', [
+        'page_title' => 'Astreintes — ' . $poll['title'],
+        'poll' => $poll,
+        'dates' => $dates,
+        'participants' => $participants,
+        'votes' => $votes,
+        'assigns' => $assigns,
+        'include_assignments' => true,
+    ]);
+}
+
+function route_admin_save_assignments(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $input = $_POST['assignments'] ?? [];
+    if (!is_array($input)) $input = [];
+
+    $pdo = db();
+
+    // Whitelist des choix valides pour ce sondage.
+    $vc = $pdo->prepare("
+        SELECT c.id FROM poll_choices c
+        JOIN poll_dates d ON d.id = c.date_id
+        WHERE d.poll_id = ?
+    ");
+    $vc->execute([$poll['id']]);
+    $valid_choice_ids = array_flip(array_map('intval', array_column($vc->fetchAll(), 'id')));
+
+    // Whitelist des participants du sondage.
+    $vp = $pdo->prepare("SELECT id FROM participants WHERE poll_id = ?");
+    $vp->execute([$poll['id']]);
+    $valid_part_ids = array_flip(array_map('intval', array_column($vp->fetchAll(), 'id')));
+
+    $pdo->beginTransaction();
+    $del = $pdo->prepare("
+        DELETE FROM assignments
+        WHERE choice_id IN (
+            SELECT c.id FROM poll_choices c
+            JOIN poll_dates d ON d.id = c.date_id
+            WHERE d.poll_id = ?
+        )
+    ");
+    $del->execute([$poll['id']]);
+
+    $ins = $pdo->prepare("INSERT INTO assignments (choice_id, role, participant_id) VALUES (?, ?, ?)");
+    foreach ($input as $cid => $role_map) {
+        $cid = (int)$cid;
+        if (!isset($valid_choice_ids[$cid])) continue;
+        if (!is_array($role_map)) continue;
+        foreach (['primary', 'backup'] as $role) {
+            $pid = (int)($role_map[$role] ?? 0);
+            if ($pid <= 0) continue;
+            if (!isset($valid_part_ids[$pid])) continue;
+            $ins->execute([$cid, $role, $pid]);
+        }
+    }
+    $pdo->commit();
+    flash_set('ok', 'Astreintes enregistrées.');
+    redirect('/admin/polls/' . $uuid . '/assignments');
 }
 
 function route_admin_create_participant(string $uuid): void {

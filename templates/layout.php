@@ -14,6 +14,9 @@
   <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js" defer></script>
   <script src="/public/editor.js" defer></script>
 <?php endif; ?>
+<?php if (!empty($include_assignments)): ?>
+  <script src="/public/assignments.js" defer></script>
+<?php endif; ?>
 </head>
 <body>
 <header class="topbar">

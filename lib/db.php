@@ -69,6 +69,14 @@ function db_migrate(PDO $pdo): void {
             expires_at  INTEGER NOT NULL,
             used_at     INTEGER
         );
+
+        CREATE TABLE IF NOT EXISTS assignments (
+            choice_id      INTEGER NOT NULL REFERENCES poll_choices(id) ON DELETE CASCADE,
+            role           TEXT NOT NULL CHECK (role IN ('primary', 'backup')),
+            participant_id INTEGER NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
+            PRIMARY KEY (choice_id, role)
+        );
+        CREATE INDEX IF NOT EXISTS idx_assignments_pid ON assignments(participant_id);
     ");
 }
 
