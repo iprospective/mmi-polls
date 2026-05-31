@@ -232,4 +232,15 @@ Pré-requis serveur :
 
 ## Licence
 
-Usage interne iProspective. Pas de licence publique pour l'instant.
+**GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+Copyright © 2026 iProspective.
+
+Vous êtes libre d'utiliser, modifier et redistribuer ce logiciel sous les termes
+de l'AGPL-3.0. Voir [LICENSE](LICENSE) pour le texte complet.
+
+Particularité de l'AGPL : si vous modifiez mmidate et le **déployez comme service en
+ligne** (même sans en distribuer le code source), vous devez rendre vos modifications
+accessibles aux utilisateur·rice·s du service. C'est la version « SaaS-safe » de la GPL.
+
+Ce logiciel est fourni « tel quel », sans garantie d'aucune sorte.

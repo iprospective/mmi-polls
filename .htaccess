@@ -1,6 +1,17 @@
 Options -Indexes
 DirectoryIndex index.php
 
+# LICENSE et CHANGELOG : servis en text/plain pour conformité AGPL.
+<Files "LICENSE">
+    ForceType text/plain
+</Files>
+<Files "CHANGELOG.md">
+    ForceType text/plain
+</Files>
+<Files "README.md">
+    ForceType text/plain
+</Files>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 

@@ -55,7 +55,7 @@
   <?= $content ?>
 </main>
 <footer class="footer">
-  <span>mmidate</span>
+  <span>mmidate · logiciel libre sous <a href="/LICENSE" rel="license">AGPL-3.0</a></span>
 </footer>
 </body>
 </html>
