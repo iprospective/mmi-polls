@@ -15,7 +15,10 @@ function route_poll_show(string $uuid): void {
     // Vue publique : on n'inclut PAS les participants masqués côté front.
     $participants = poll_participants((int)$poll['id'], false);
     $votes = poll_votes_map((int)$poll['id']);
-    $assigns = poll_assignments_map((int)$poll['id']);
+    // Astreintes masquées si le sondage est en mode brouillon
+    // (assignments_public = 0). Reste accessible aux admin/manager côté
+    // /admin/polls/{uuid} qui ont leur propre query.
+    $assigns = empty($poll['assignments_public']) ? [] : poll_assignments_map((int)$poll['id']);
     render('poll/show', [
         'page_title' => $poll['title'],
         'poll' => $poll,

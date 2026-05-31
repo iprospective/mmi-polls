@@ -756,6 +756,15 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .danger-zone { border-color: #fca5a5; background: #fef2f2; }
 .danger-zone h2 { color: var(--no); }
 
+/* Bandeau mode brouillon des astreintes (page admin assignments) */
+.draft-banner {
+  background: #fffbeb;
+  border-color: #fde68a;
+  border-left: 4px solid #d97706;
+  color: #78350f;
+}
+.draft-banner a { color: #78350f; text-decoration: underline; }
+
 /* ---------- Auto-fill : badges de tiers ---------- */
 .auto-fill-wrap { display: grid; gap: 1rem; grid-template-columns: 1fr; }
 @media (min-width: 720px) {

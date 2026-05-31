@@ -167,6 +167,8 @@ function db_migrate(PDO $pdo): void {
         'end_address'   => "TEXT NOT NULL DEFAULT ''",
         'end_lat'       => "REAL",
         'end_lng'       => "REAL",
+        // 1 = astreintes visibles côté participant. 0 = brouillon admin only.
+        'assignments_public' => "INTEGER NOT NULL DEFAULT 1",
     ] as $col => $sql_type) {
         if (!in_array($col, $present, true)) {
             $pdo->exec("ALTER TABLE polls ADD COLUMN $col $sql_type");

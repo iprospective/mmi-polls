@@ -11,13 +11,19 @@ function route_ical_feed(string $token): void {
         echo "Token iCal introuvable ou révoqué.\n";
         exit;
     }
-    // Reconstituer un array $poll au format attendu par build_ical_for_participant
-    $poll = [
-        'id'    => (int)$row['poll_id'],
-        'uuid'  => $row['poll_uuid'],
-        'title' => $row['poll_title'],
-    ];
-    $ics = build_ical_for_participant($row, $poll);
+    // Pour récupérer la flag assignments_public, on relit la ligne polls.
+    require_once __DIR__ . '/../services/polls.php';
+    $poll = find_poll($row['poll_uuid']);
+    if (empty($poll['assignments_public'])) {
+        // Sondage en mode brouillon : on rend un calendrier vide
+        // pour que les éventuels abonnements restent fonctionnels
+        // mais cessent d'afficher les astreintes.
+        $ics  = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//mmidate//draft//FR\r\n";
+        $ics .= "X-WR-CALNAME:Astreintes (en attente de publication)\r\n";
+        $ics .= "END:VCALENDAR\r\n";
+    } else {
+        $ics = build_ical_for_participant($row, $poll);
+    }
 
     header('Content-Type: text/calendar; charset=UTF-8');
     header('Content-Disposition: inline; filename="mmidate-' . $poll['uuid'] . '.ics"');

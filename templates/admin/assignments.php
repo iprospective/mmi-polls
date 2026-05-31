@@ -41,6 +41,14 @@ $toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
 
 <?php $active = 'assignments'; require __DIR__ . '/_admin_nav.php'; ?>
 
+<?php if (empty($poll['assignments_public'])): ?>
+  <div class="card draft-banner">
+    <strong>🔒 Astreintes en mode brouillon</strong> — non visibles côté participant.
+    Les pictos P/S sur la grille publique, la section « Mes astreintes » et le flux iCal restent masqués.
+    Activez la publication depuis l'onglet <a href="/admin/polls/<?= e($poll['uuid']) ?>/settings">Paramètres</a> quand vous êtes prêt.
+  </div>
+<?php endif; ?>
+
 <p class="muted">
   <?= $total_choices ?> créneaux, <?= count($participants) ?> participants
 </p>

@@ -26,7 +26,11 @@ function route_poll_me(string $uuid): void {
     $v = $pdo->prepare("SELECT choice_id, value FROM votes WHERE participant_id = ?");
     $v->execute([$participant['id']]);
     foreach ($v as $row) $myvotes[(int)$row['choice_id']] = $row['value'];
-    $my_assigns = assignments_for_participant((int)$poll['id'], (int)$participant['id']);
+    // Mode brouillon : on ne révèle pas les astreintes côté participant
+    // tant que le sondage n'est pas publié.
+    $my_assigns = empty($poll['assignments_public'])
+        ? []
+        : assignments_for_participant((int)$poll['id'], (int)$participant['id']);
     $ical_token = $my_assigns ? get_or_create_ical_token((int)$participant['id']) : '';
     render('poll/me', [
         'page_title' => 'Mes choix — ' . $poll['title'],

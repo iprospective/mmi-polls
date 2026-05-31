@@ -16,6 +16,15 @@ require __DIR__ . '/_admin_nav.php';
   </label>
   <p class="muted small">Passé cette date, les participants ne peuvent plus modifier leurs disponibilités (vue verrouillée). Vide = sondage indéfiniment ouvert.</p>
 
+  <fieldset class="check-group-wrap" style="margin-bottom: 0.85rem;">
+    <legend>Visibilité des astreintes</legend>
+    <label class="check-inline" style="font-size: 0.9rem;">
+      <input type="checkbox" name="assignments_public" value="1" <?= !empty($poll['assignments_public']) ? 'checked' : '' ?>>
+      Publier les astreintes (visibles côté participant)
+    </label>
+    <p class="muted small" style="margin: 0.4rem 0 0;">Décochez pour travailler en mode brouillon : les pictos P/S sur la grille publique, la section « Mes astreintes » sur la page personnelle et le flux iCal sont masqués jusqu'à ce que vous publiiez.</p>
+  </fieldset>
+
   <h3>Trajet (facultatif)</h3>
   <p class="muted small">Renseigner ces deux points permet à l'algorithme de remplissage auto de privilégier les personnes les plus proches du point de départ.</p>
 

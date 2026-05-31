@@ -81,17 +81,22 @@ function route_admin_update_poll(string $uuid): void {
     [$start_lat, $start_lng] = geo_resolve($start_addr, $poll, 'start');
     [$end_lat,   $end_lng]   = geo_resolve($end_addr,   $poll, 'end');
 
+    // Checkbox non cochée = absente du POST. Booléen en INTEGER 0/1.
+    $assigns_public = isset($_POST['assignments_public']) ? 1 : 0;
+
     $stmt = db()->prepare("
         UPDATE polls
         SET title = ?, description = ?, closed_at = ?,
             start_address = ?, start_lat = ?, start_lng = ?,
-            end_address   = ?, end_lat   = ?, end_lng   = ?
+            end_address   = ?, end_lat   = ?, end_lng   = ?,
+            assignments_public = ?
         WHERE id = ?
     ");
     $stmt->execute([
         $title, $desc, $closed_at,
         $start_addr, $start_lat, $start_lng,
         $end_addr,   $end_lat,   $end_lng,
+        $assigns_public,
         $poll['id'],
     ]);
     flash_set('ok', 'Sondage mis à jour.');
