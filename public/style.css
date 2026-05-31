@@ -450,20 +450,35 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .vote-grid thead th.slot-col,
 .vote-grid thead th.summary-col { z-index: 4; }
 
-/* Prénoms : colonne étroite, tooltip natif via title */
+/* Prénoms : colonne étroite, tooltip natif via title.
+ * Sous le nom : compteurs Oui/Peut-être (votes) et P/S (astreintes). */
 .vote-grid .participant {
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0;
   color: var(--fg);
   font-size: 0.85rem;
-  min-width: 42px;
-  width: 42px;
-  max-width: 42px;
+  min-width: 56px;
+  width: 56px;
+  max-width: 56px;
   cursor: help;
-  padding-left: 0.2rem;
-  padding-right: 0.2rem;
+  padding: 0.3rem 0.2rem;
+  vertical-align: top;
 }
+.vote-grid .participant .p-name { margin-bottom: 0.15rem; }
+.vote-grid .participant .p-stats {
+  font-size: 0.68rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.vote-grid .participant .p-stats span { margin: 0 0.12rem; display: inline-block; }
+.vote-grid .participant .p-votes .v-yes   { color: var(--yes); }
+.vote-grid .participant .p-votes .v-maybe { color: var(--maybe); }
+.vote-grid .participant .p-assigns .m-p { color: #1e40af; font-weight: 700; }
+.vote-grid .participant .p-assigns .m-s { color: #4338ca; font-weight: 700; }
 
 /* Cellules de vote */
 .vote-grid .v-yes   { background: var(--yes-bg);   color: var(--yes);   font-weight: 700; min-width: 36px; }

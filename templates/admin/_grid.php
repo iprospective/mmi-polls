@@ -14,6 +14,28 @@ foreach ($participants as $p) {
 $has_any_assign = false;
 foreach ($assigns_map as $by_role) if (!empty($by_role)) { $has_any_assign = true; break; }
 
+// Stats par participant : nb Oui, nb Peut-être, nb assignations Principal·e
+// et Suppléant·e. Affichées sous le nom dans l'entête de colonne.
+$stats_of = [];
+foreach ($participants as $p) {
+    $pid = (int)$p['id'];
+    $stats_of[$pid] = ['yes' => 0, 'maybe' => 0, 'primary' => 0, 'backup' => 0];
+}
+foreach ($votes as $pid => $by_choice) {
+    if (!isset($stats_of[$pid])) continue;
+    foreach ($by_choice as $val) {
+        if ($val === 'yes')   $stats_of[$pid]['yes']++;
+        elseif ($val === 'maybe') $stats_of[$pid]['maybe']++;
+    }
+}
+foreach ($assigns_map as $by_role) {
+    foreach ($by_role as $role => $pid) {
+        if (!isset($stats_of[$pid])) continue;
+        if ($role === 'primary') $stats_of[$pid]['primary']++;
+        elseif ($role === 'backup') $stats_of[$pid]['backup']++;
+    }
+}
+
 // Calcule en amont les comptes / statut par créneau et l'agrégat par jour.
 // Le statut "jour" est le pire des statuts de ses créneaux
 // (ok < warn < bad) → la date ne passe au vert que si TOUS ses créneaux le sont.
@@ -61,8 +83,21 @@ foreach ($dates as $d) {
       <?php foreach ($participants as $p):
         $full  = $p['name'] !== '' ? $p['name'] : explode('@', $p['email'])[0];
         $short = mb_substr($full, 0, 3);
+        $st    = $stats_of[(int)$p['id']];
       ?>
-        <th class="participant" title="<?= e($full) ?>"><?= e($short) ?>…</th>
+        <th class="participant" title="<?= e($full) ?>">
+          <div class="p-name"><?= e($short) ?>…</div>
+          <div class="p-stats p-votes">
+            <span class="v-yes">✓<?= $st['yes'] ?></span>
+            <span class="v-maybe">?<?= $st['maybe'] ?></span>
+          </div>
+          <?php if ($has_any_assign): ?>
+          <div class="p-stats p-assigns">
+            <span class="m-p" title="Principal·e">P<?= $st['primary'] ?></span>
+            <span class="m-s" title="Suppléant·e">S<?= $st['backup'] ?></span>
+          </div>
+          <?php endif; ?>
+        </th>
       <?php endforeach; ?>
       <th class="summary-col">Récap</th>
     </tr>
