@@ -1034,12 +1034,14 @@ table.sortable thead th.sorted-desc::after { content: ' ↓'; }
     padding: 0.4rem 0.55rem;
     white-space: nowrap;
   }
-  /* Email et téléphone réaffichés en colonne normale sur mobile :
-   * le hover/title n'a pas d'utilité sur écran tactile. */
-  .participants-table th.email-col,
-  .participants-table th.phone-col,
-  .participants-table td.email-cell,
-  .participants-table td.phone-cell { display: table-cell; }
+  /* Email et téléphone sur mobile : visibles UNIQUEMENT dans le
+   * tableau Coordonnées (qui leur est dédié). Dans le tableau stats
+   * principal, on les laisse masqués pour éviter la redondance —
+   * l'info est juste en dessous dans Coordonnées. */
+  .contacts-table th.email-col,
+  .contacts-table th.phone-col,
+  .contacts-table td.email-cell,
+  .contacts-table td.phone-cell { display: table-cell; }
   /* La cellule actions peut wrap, sinon ça pousse le scroll inutilement. */
   .participants-table .actions-cell { white-space: nowrap; gap: 2px; }
   .participants-table .icon-btn { width: 26px; height: 26px; }
