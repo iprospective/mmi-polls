@@ -2,6 +2,16 @@
 <p class="muted">Sondage : <a href="/p/<?= e($poll['uuid']) ?>"><?= e($poll['title']) ?></a>
    — connecté·e en tant que <strong><?= e($participant['email']) ?></strong></p>
 
+<?php $closed = poll_is_closed($poll); ?>
+<?php if ($closed): ?>
+  <div class="card status-confirmed" style="border-left-color: var(--maybe);">
+    <strong>🔒 Sondage clos</strong> depuis le <?= e(date('d/m/Y', strtotime($poll['closed_at']))) ?>.
+    Vous pouvez consulter vos réponses mais plus les modifier.
+  </div>
+<?php elseif ($poll['closed_at']): ?>
+  <p class="muted small">⏰ Sondage ouvert jusqu'au <?= e(date('d/m/Y', strtotime($poll['closed_at']))) ?> inclus.</p>
+<?php endif; ?>
+
 <?php if (!empty($my_assigns)): ?>
 <div class="card">
   <h2 style="margin-top:0;">Mes astreintes (<?= count($my_assigns) ?>)</h2>
@@ -25,6 +35,9 @@
 <?php else: ?>
 <form method="post" action="/p/<?= e($poll['uuid']) ?>/me" class="card">
   <?= csrf_field() ?>
+  <?php if ($closed): ?>
+    <fieldset disabled style="border: none; padding: 0; margin: 0;">
+  <?php endif; ?>
   <label>Nom (affiché à côté de vos réponses)
     <input type="text" name="name" value="<?= e($participant['name']) ?>" placeholder="Votre prénom" required>
   </label>
@@ -82,9 +95,10 @@
   </div>
 
   <div class="row">
-    <button type="submit">Enregistrer</button>
+    <button type="submit"<?= $closed ? ' disabled' : '' ?>>Enregistrer</button>
     <a href="/p/<?= e($poll['uuid']) ?>" class="link">Retour au sondage</a>
   </div>
+  <?php if ($closed): ?></fieldset><?php endif; ?>
 </form>
 
 <form method="post" action="/p/<?= e($poll['uuid']) ?>/me/delete" class="card"

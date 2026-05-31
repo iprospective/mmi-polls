@@ -11,6 +11,10 @@ require __DIR__ . '/_admin_nav.php';
     <textarea name="description" data-wysiwyg style="display:none"><?= e($poll['description']) ?></textarea>
     <div class="wysiwyg-editor"></div>
   </label>
+  <label>Date de clôture (facultatif)
+    <input type="date" name="closed_at" value="<?= e($poll['closed_at'] ?? '') ?>">
+  </label>
+  <p class="muted small">Passé cette date, les participants ne peuvent plus modifier leurs disponibilités (vue verrouillée). Vide = sondage indéfiniment ouvert.</p>
   <button type="submit">Enregistrer</button>
 </form>
 

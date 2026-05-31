@@ -93,6 +93,15 @@ function sanitize_phone(string $raw): string {
  * Usage : <link href="<?= asset_url('/public/style.css') ?>">
  * À chaque modif de CSS/JS, bumper CONFIG.asset_version.
  */
+/**
+ * Sondage clos ? true si poll.closed_at est non-vide ET dans le passé.
+ */
+function poll_is_closed(array $poll): bool {
+    $closed = (string)($poll['closed_at'] ?? '');
+    if ($closed === '') return false;
+    return $closed < date('Y-m-d');
+}
+
 function asset_url(string $path): string {
     $v = (int)($GLOBALS['CONFIG']['asset_version'] ?? 1);
     $sep = strpos($path, '?') === false ? '?' : '&';

@@ -1,4 +1,9 @@
-<h1><?= e($poll['title']) ?></h1>
+<h1>
+  <?= e($poll['title']) ?>
+  <?php if (poll_is_closed($poll)): ?>
+    <span class="closed-badge">🔒 clos</span>
+  <?php endif; ?>
+</h1>
 
 <?php if ($poll['description'] !== ''): ?>
   <div class="card description"><?= render_description($poll['description']) ?></div>

@@ -36,6 +36,10 @@ function route_poll_me(string $uuid): void {
 
 function route_poll_save_votes(string $uuid): void {
     $poll = find_poll($uuid);
+    if (poll_is_closed($poll)) {
+        flash_set('err', 'Ce sondage est clos, vos disponibilités ne sont plus modifiables.');
+        redirect('/p/' . $uuid . '/me');
+    }
     $auth = participant_session($uuid);
     if (!$auth) redirect('/p/' . $uuid . '/login');
     $pdo = db();

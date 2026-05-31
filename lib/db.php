@@ -133,6 +133,11 @@ function db_migrate(PDO $pdo): void {
         // NULL = sondage créé par l'admin global. Sinon, manager créateur·rice.
         $pdo->exec("ALTER TABLE polls ADD COLUMN manager_id INTEGER REFERENCES managers(id) ON DELETE SET NULL");
     }
+    if (!in_array('closed_at', $present, true)) {
+        // Date YYYY-MM-DD ou '' : si non vide et passée, les participants
+        // ne peuvent plus modifier leurs votes (read-only).
+        $pdo->exec("ALTER TABLE polls ADD COLUMN closed_at TEXT NOT NULL DEFAULT ''");
+    }
 
     // Backfill : tout poll avec un manager_id alimente poll_managers (idempotent).
     $pdo->exec("

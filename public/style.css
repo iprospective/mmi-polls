@@ -995,6 +995,19 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
   color: #78350f;
 }
 
+/* Badge "Sondage clos" à côté du titre */
+.closed-badge {
+  display: inline-block;
+  font-size: 0.6em;
+  font-weight: 600;
+  background: #fee2e2;
+  color: #7f1d1d;
+  padding: 0.2em 0.6em;
+  border-radius: 999px;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
+
 /* Tableau Coordonnées : email + tél visibles ici (pas masqués sur desktop).
  * /!\ Le display: table-cell est borné au desktop, sinon il piétine la
  * règle responsive display: block (specificité identique) sur mobile

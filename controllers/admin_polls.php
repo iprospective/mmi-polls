@@ -64,12 +64,17 @@ function route_admin_update_poll(string $uuid): void {
     require_poll_access($poll);
     $title = trim((string)($_POST['title'] ?? ''));
     $desc  = sanitize_html((string)($_POST['description'] ?? ''));
+    $closed_at = trim((string)($_POST['closed_at'] ?? ''));
+    if ($closed_at !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $closed_at)) {
+        flash_set('err', 'Date de clôture invalide.');
+        redirect('/admin/polls/' . $uuid . '/settings');
+    }
     if ($title === '') {
         flash_set('err', 'Titre obligatoire.');
         redirect('/admin/polls/' . $uuid . '/settings');
     }
-    $stmt = db()->prepare("UPDATE polls SET title = ?, description = ? WHERE id = ?");
-    $stmt->execute([$title, $desc, $poll['id']]);
+    $stmt = db()->prepare("UPDATE polls SET title = ?, description = ?, closed_at = ? WHERE id = ?");
+    $stmt->execute([$title, $desc, $closed_at, $poll['id']]);
     flash_set('ok', 'Sondage mis à jour.');
     redirect('/admin/polls/' . $uuid . '/settings');
 }
