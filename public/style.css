@@ -613,6 +613,185 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .notif-badge.status-contested-row     { background: var(--maybe-bg); color: var(--maybe); }
 .notif-status tr.status-confirmed-row { background: #f0fdf4; }
 .notif-status tr.status-contested-row { background: #fffbeb; }
+
+/* ====================================================================
+ * Mobile : vue alternative "cartes par créneau" pour la grille récap
+ * et stack en blocs pour la grille d'astreintes admin.
+ * ==================================================================== */
+.mobile-grid { display: none; }
+
+@media (max-width: 700px) {
+  /* Respiration générale */
+  .container { padding: 0 0.75rem; margin: 0.85rem auto; }
+  .topbar    { padding: 0.55rem 0.85rem; }
+  .topbar nav { gap: 0.85rem; }
+  h1 { font-size: 1.35rem; }
+  h2 { font-size: 1.05rem; margin-top: 1.25rem; }
+  h3 { font-size: 0.95rem; }
+  .card { padding: 0.85rem 0.95rem; }
+
+  /* Bascule grille récap → cartes */
+  .grid-wrap   { display: none; }
+  .mobile-grid {
+    display: block;
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+  }
+  .mobile-grid .m-day-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    padding: 0.45rem 0.7rem;
+    margin: 1rem 0 0.3rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    background: #f1f5f9;
+    color: var(--fg);
+  }
+  .mobile-grid .m-day-header.status-ok   { background: #d1fae5; color: #065f46; }
+  .mobile-grid .m-day-header.status-warn { background: #fef3c7; color: #78350f; }
+  .mobile-grid .m-day-header.status-bad  { background: #fee2e2; color: #7f1d1d; }
+  .mobile-grid .m-day-header .small { color: inherit; opacity: 0.75; font-weight: 400; }
+
+  .mobile-grid .m-slot {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.75rem;
+    margin: 0.35rem 0;
+  }
+  .mobile-grid .m-slot.row-ok   { border-left-color: var(--yes); }
+  .mobile-grid .m-slot.row-warn { border-left-color: var(--maybe); }
+  .mobile-grid .m-slot.row-bad  { border-left-color: var(--no); }
+  .mobile-grid .m-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .mobile-grid .m-label { font-weight: 600; }
+  .mobile-grid .m-recap {
+    display: inline-flex;
+    gap: 0.25rem;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .mobile-grid .m-recap > span {
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .mobile-grid details summary {
+    cursor: pointer;
+    margin-top: 0.45rem;
+    color: var(--accent);
+    font-size: 0.85rem;
+    list-style: none;
+  }
+  .mobile-grid details summary::-webkit-details-marker { display: none; }
+  .mobile-grid details summary::before { content: "› "; transition: transform 0.15s; display: inline-block; }
+  .mobile-grid details[open] summary::before { transform: rotate(90deg); }
+  .mobile-grid .m-grp {
+    display: block;
+    padding: 0.2rem 0;
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+  .mobile-grid .m-grp.v-yes   { color: var(--yes); }
+  .mobile-grid .m-grp.v-maybe { color: var(--maybe); }
+  .mobile-grid .m-grp.v-no    { color: var(--muted); }
+
+  /* Grille d'édition des votes : tighter (6 colonnes seulement) */
+  .vote-grid.editable { font-size: 0.78rem; }
+  .vote-grid.editable th, .vote-grid.editable td { padding: 0.2rem 0.3rem; }
+  .vote-grid.editable .date-cell { width: 80px; min-width: 80px; }
+  .vote-grid.editable .slot-cell { left: 80px; width: 65px; min-width: 65px; }
+
+  /* Grille d'astreintes (admin) : stack en cartes via display:block */
+  .assignments-grid,
+  .assignments-grid thead,
+  .assignments-grid tbody,
+  .assignments-grid tr,
+  .assignments-grid th,
+  .assignments-grid td {
+    display: block;
+    width: auto;
+  }
+  .assignments-grid thead { display: none; }
+  .assignments-grid tr {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.8rem;
+    margin-bottom: 0.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .assignments-grid tr.day-first {
+    margin-top: 0.85rem;
+    border-top: 2px solid var(--border-strong);
+  }
+  .assignments-grid .date-cell {
+    position: static;
+    background: transparent;
+    padding: 0;
+    margin: -0.3rem -0.3rem 0.4rem;
+    font-size: 0.95rem;
+    border: none;
+    color: var(--fg-soft);
+  }
+  .assignments-grid .slot-cell {
+    position: static;
+    background: transparent;
+    padding: 0;
+    border: none;
+    font-weight: 600;
+    color: var(--fg);
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+  }
+  .assignments-grid .summary-cell {
+    position: static;
+    background: transparent;
+    padding: 0;
+    margin: 0 0 0.5rem;
+    border: none;
+    text-align: left;
+    font-size: 0.85rem;
+  }
+  .assignments-grid td:nth-child(n+4)::before {
+    content: attr(data-role);
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+  .assignments-grid td:nth-child(n+4) {
+    padding: 0.25rem 0;
+    border: none;
+  }
+  .assignments-grid select {
+    min-width: 100%;
+    max-width: 100%;
+    width: 100%;
+  }
+  .assignments-bar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.7rem 0.85rem;
+  }
+  .assignments-bar #assignments-totals { margin-left: 0; flex-basis: 100%; }
+
+  /* WYSIWYG : laisser le toolbar respirer */
+  .ql-toolbar.ql-snow { padding: 6px 4px; }
+  .ql-toolbar.ql-snow .ql-formats { margin-right: 8px; }
+
+  /* Trame de fond plus discrète sur petit écran */
+  body::before { opacity: 0.10; }
+}
 .assignments-bar {
   position: sticky;
   bottom: 0;

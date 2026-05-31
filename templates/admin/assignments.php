@@ -78,8 +78,10 @@ foreach ($dates as $d) $total_choices += count($d['choices']);
           <span class="v-maybe"><?= $n['maybe'] ?>?</span>
           <span class="v-no"><?= $n['no'] ?>✗</span>
         </td>
-        <?php foreach (['primary' => $sel_primary, 'backup' => $sel_backup] as $role => $sel): ?>
-          <td>
+        <?php foreach (['primary' => $sel_primary, 'backup' => $sel_backup] as $role => $sel):
+          $role_label = $role === 'primary' ? 'Principal·e' : 'Suppléant·e';
+        ?>
+          <td data-role="<?= e($role_label) ?>">
             <select class="assign-select" data-role="<?= $role ?>"
                     data-prev="<?= (int)$sel ?>"
                     name="assignments[<?= $cid ?>][<?= $role ?>]">
@@ -131,6 +133,20 @@ foreach ($dates as $d) $total_choices += count($d['choices']);
     <a href="/admin/polls/<?= e($poll['uuid']) ?>" class="link">Retour au sondage</a>
     <div class="muted small" id="assignments-totals"></div>
   </div>
+</form>
+
+<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/auto-fill"
+      class="card"
+      onsubmit="return confirm('Remplir automatiquement tous les créneaux encore vides ? Les assignations existantes ne seront pas touchées.');">
+  <?= csrf_field() ?>
+  <h3 style="margin-top:0;">Remplissage automatique</h3>
+  <p class="muted small">
+    Remplit les créneaux <strong>encore vides</strong> en priorité Nuit &gt; Soirée &gt; Journée,
+    en répartissant équitablement (round-robin) parmi les candidat·e·s ayant voté Oui (en priorité)
+    ou Peut-être, et en espaçant au maximum dans le temps les astreintes d'une même personne.
+    N'écrase rien de ce qui est déjà posé.
+  </p>
+  <button type="submit">Remplir auto les créneaux vides</button>
 </form>
 
 <h2>Notifications &amp; confirmations</h2>

@@ -86,3 +86,53 @@ foreach ($dates as $d) {
   </tbody>
 </table>
 </div>
+
+<?php
+// Vue alternative pour mobile : un bloc par créneau, avec récap pliable.
+// CSS toggles : .grid-wrap visible >700px, .mobile-grid visible <=700px.
+?>
+<ul class="mobile-grid">
+<?php foreach ($dates as $d):
+  $day_st = $day_status[$d['id']];
+?>
+  <li class="m-day-header status-<?= e($day_st) ?>">
+    <strong><?= e(fmt_day($d['day'])) ?></strong>
+    <span class="muted small"><?= e($d['day']) ?></span>
+  </li>
+  <?php foreach ($d['choices'] as $c):
+    $cid = (int)$c['id'];
+    $status = $row_status[$cid];
+    $counts = $row_counts[$cid];
+    // Regroupe les voteurs par valeur, pour la zone repliable.
+    $by_value = ['yes' => [], 'maybe' => [], 'no' => []];
+    foreach ($participants as $p) {
+      $v = $votes[$p['id']][$cid] ?? null;
+      if ($v && isset($by_value[$v])) {
+        $by_value[$v][] = $p['name'] !== '' ? $p['name'] : explode('@', $p['email'])[0];
+      }
+    }
+    $total_votes = $counts['yes'] + $counts['no'] + $counts['maybe'];
+  ?>
+  <li class="m-slot row-<?= $status ?>">
+    <div class="m-head">
+      <span class="m-label"><?= e($c['label']) ?></span>
+      <span class="m-recap">
+        <span class="v-yes"><?= $counts['yes'] ?>✓</span>
+        <span class="v-maybe"><?= $counts['maybe'] ?>?</span>
+        <span class="v-no"><?= $counts['no'] ?>✗</span>
+      </span>
+    </div>
+    <?php if ($total_votes > 0): ?>
+    <details class="m-detail">
+      <summary>Qui ?</summary>
+      <?php foreach (['yes' => '✓', 'maybe' => '?', 'no' => '✗'] as $val => $sym): ?>
+        <?php if (!empty($by_value[$val])): ?>
+          <div class="m-grp v-<?= $val ?>"><?= $sym ?> <?= e(implode(', ', $by_value[$val])) ?></div>
+        <?php endif; ?>
+      <?php endforeach; ?>
+    </details>
+    <?php endif; ?>
+  </li>
+  <?php endforeach; ?>
+<?php endforeach; ?>
+</ul>

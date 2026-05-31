@@ -53,6 +53,7 @@ $routes = [
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)$#',    'route_admin_update_participant'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/assignments$#',           'route_admin_assignments'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments$#',           'route_admin_save_assignments'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/auto-fill$#', 'route_admin_auto_fill_assignments'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/contact-email$#',         'route_admin_set_contact_email'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/notify$#',    'route_admin_send_notifications'],
 
@@ -473,6 +474,142 @@ function route_admin_save_assignments(string $uuid): void {
     }
     $pdo->commit();
     flash_set('ok', 'Astreintes enregistrées.');
+    redirect('/admin/polls/' . $uuid . '/assignments');
+}
+
+function route_admin_auto_fill_assignments(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $pdo = db();
+
+    // 1. Charge l'état existant : assignations posées, votes par créneau,
+    //    listes de candidats yes / maybe.
+    $assigns_stmt = $pdo->prepare("
+        SELECT a.choice_id, a.role, a.participant_id, c.label, d.day
+        FROM assignments a
+        JOIN poll_choices c ON c.id = a.choice_id
+        JOIN poll_dates   d ON d.id = c.date_id
+        WHERE d.poll_id = ?
+    ");
+    $assigns_stmt->execute([$poll['id']]);
+    $existing  = [];   // [choice_id][role] => pid
+    $counts    = [];   // [pid] => int (assignations posées toutes époques confondues)
+    $last_ts   = [];   // [pid] => epoch du jour de la dernière assignation
+    foreach ($assigns_stmt as $r) {
+        $cid = (int)$r['choice_id'];
+        $pid = (int)$r['participant_id'];
+        $existing[$cid][$r['role']] = $pid;
+        $counts[$pid] = ($counts[$pid] ?? 0) + 1;
+        $ts = strtotime($r['day']) ?: 0;
+        if (!isset($last_ts[$pid]) || $ts > $last_ts[$pid]) $last_ts[$pid] = $ts;
+    }
+
+    $choices_stmt = $pdo->prepare("
+        SELECT c.id AS choice_id, c.label, d.day, d.sort_order AS d_order, c.sort_order AS c_order
+        FROM poll_choices c
+        JOIN poll_dates d ON d.id = c.date_id
+        WHERE d.poll_id = ?
+    ");
+    $choices_stmt->execute([$poll['id']]);
+    $choices = $choices_stmt->fetchAll();
+
+    $votes_stmt = $pdo->prepare("
+        SELECT v.choice_id, v.participant_id, v.value
+        FROM votes v
+        JOIN poll_choices c ON c.id = v.choice_id
+        JOIN poll_dates   d ON d.id = c.date_id
+        WHERE d.poll_id = ?
+    ");
+    $votes_stmt->execute([$poll['id']]);
+    $yes_by_choice = [];
+    $maybe_by_choice = [];
+    foreach ($votes_stmt as $r) {
+        $cid = (int)$r['choice_id'];
+        $pid = (int)$r['participant_id'];
+        if      ($r['value'] === 'yes')   $yes_by_choice[$cid][]   = $pid;
+        elseif  ($r['value'] === 'maybe') $maybe_by_choice[$cid][] = $pid;
+    }
+
+    // 2. Définit l'ordre de priorité des libellés (nuit > soirée > journée > reste).
+    $priority = $GLOBALS['CONFIG']['auto_fill']['priority']
+        ?? ['Nuit', 'Soirée', 'Journée'];
+    $rank_of = [];
+    foreach ($priority as $i => $label) $rank_of[mb_strtolower($label)] = $i;
+    $label_rank = function (string $label) use ($rank_of) {
+        return $rank_of[mb_strtolower($label)] ?? 999;
+    };
+
+    usort($choices, function ($a, $b) use ($label_rank) {
+        $ra = $label_rank($a['label']);
+        $rb = $label_rank($b['label']);
+        if ($ra !== $rb) return $ra - $rb;
+        if ($a['day'] !== $b['day']) return strcmp($a['day'], $b['day']);
+        return (int)$a['c_order'] - (int)$b['c_order'];
+    });
+
+    // 3. Round-robin équitable : pour chaque rôle (primary puis backup),
+    //    chaque créneau encore vide, on choisit le candidat qui a le moins
+    //    d'assignations, puis (à égalité) celui qui a la dernière astreinte
+    //    la plus ancienne, pour bien étaler dans le temps.
+    $new_assigns = [];   // [choice_id][role] => pid
+    foreach (['primary', 'backup'] as $role) {
+        $other = $role === 'primary' ? 'backup' : 'primary';
+        foreach ($choices as $c) {
+            $cid = (int)$c['choice_id'];
+            if (isset($existing[$cid][$role])) continue;
+
+            $blocked = $existing[$cid][$other] ?? ($new_assigns[$cid][$other] ?? 0);
+            $cands = array_values(array_filter($yes_by_choice[$cid] ?? [], fn($p) => $p !== $blocked));
+            if (empty($cands)) {
+                $cands = array_values(array_filter($maybe_by_choice[$cid] ?? [], fn($p) => $p !== $blocked));
+            }
+            if (empty($cands)) continue;
+
+            $today_ts = strtotime($c['day']) ?: 0;
+            usort($cands, function ($a, $b) use ($counts, $last_ts, $today_ts) {
+                $ca = $counts[$a] ?? 0;
+                $cb = $counts[$b] ?? 0;
+                if ($ca !== $cb) return $ca - $cb;
+                // Préfère candidat dont la dernière astreinte est la plus
+                // ancienne (gap au jour courant le plus grand). Ceux qui
+                // n'ont aucune assignation comptent comme gap "infini".
+                $la = isset($last_ts[$a]) ? $today_ts - $last_ts[$a] : PHP_INT_MAX;
+                $lb = isset($last_ts[$b]) ? $today_ts - $last_ts[$b] : PHP_INT_MAX;
+                if ($la !== $lb) return $lb <=> $la;
+                return $a - $b; // tie-break déterministe par id
+            });
+
+            $pick = $cands[0];
+            $new_assigns[$cid][$role] = $pick;
+            $counts[$pick] = ($counts[$pick] ?? 0) + 1;
+            $last_ts[$pick] = max($last_ts[$pick] ?? 0, $today_ts);
+        }
+    }
+
+    // 4. Persiste les nouvelles assignations (INSERT only, ne touche pas
+    //    aux assignations existantes).
+    $inserted = 0;
+    if ($new_assigns) {
+        $pdo->beginTransaction();
+        $ins = $pdo->prepare("INSERT INTO assignments (choice_id, role, participant_id) VALUES (?, ?, ?)");
+        foreach ($new_assigns as $cid => $by_role) {
+            foreach ($by_role as $role => $pid) {
+                try {
+                    $ins->execute([$cid, $role, $pid]);
+                    $inserted++;
+                } catch (Throwable $e) {
+                    // PK clash improbable (on a contrôlé existing) : on ignore.
+                }
+            }
+        }
+        $pdo->commit();
+    }
+
+    if ($inserted > 0) {
+        flash_set('ok', "Remplissage automatique : $inserted créneaux remplis.");
+    } else {
+        flash_set('ok', "Aucun créneau à remplir (tout est déjà assigné ou pas de candidat dispo).");
+    }
     redirect('/admin/polls/' . $uuid . '/assignments');
 }
 

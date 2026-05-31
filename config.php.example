@@ -38,4 +38,10 @@ return [
         'yes_min'      => 2,
         'yesmaybe_min' => 2,
     ],
+
+    // Ordre de priorité des libellés remplis en premier par le
+    // remplissage automatique d'astreintes admin (case insensitive).
+    'auto_fill' => [
+        'priority' => ['Nuit', 'Soirée', 'Journée'],
+    ],
 ];
