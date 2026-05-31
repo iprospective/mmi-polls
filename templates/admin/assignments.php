@@ -182,7 +182,8 @@ foreach ($dates as $d) $total_choices += count($d['choices']);
   <button type="submit">Enregistrer</button>
 </form>
 
-<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/notify" class="card">
+<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/notify" class="card"
+      onsubmit="return confirm('Envoyer la notification d\'astreintes aux destinataires sélectionnés ?');">
   <?= csrf_field() ?>
   <h3 style="margin-top:0;">Envoyer une notification</h3>
 

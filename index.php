@@ -542,22 +542,6 @@ function route_admin_auto_fill_assignments(string $uuid): void {
         }
     }
 
-    // Capacité effective = crédits Oui + 0.5 × Peut-être.
-    // Le ratio d'usage = assignations / capacité est la base du tier.
-    $capacity = function (int $pid) use ($yes_credits, $maybe_credits): float {
-        $y = $yes_credits[$pid]   ?? 0;
-        $m = $maybe_credits[$pid] ?? 0;
-        $cap = $y + 0.5 * $m;
-        return $cap > 0 ? $cap : 1.0;
-    };
-    $tier_of = function (int $pid) use ($counts, $capacity): int {
-        $usage = ($counts[$pid] ?? 0) / $capacity($pid);
-        if ($usage < 0.50) return 0;       // prioritaire
-        if ($usage < 0.75) return 1;       // moins susceptible
-        if ($usage < 0.90) return 2;       // encore moins
-        return 3;                          // last resort
-    };
-
     // 2. Ordre des créneaux : priorité de libellé puis chronologique.
     $priority = $GLOBALS['CONFIG']['auto_fill']['priority']
         ?? ['Nuit', 'Soirée', 'Journée'];
@@ -574,59 +558,41 @@ function route_admin_auto_fill_assignments(string $uuid): void {
         return (int)$a['c_order'] - (int)$b['c_order'];
     });
 
-    // 3. Algorithme : tous les PRINCIPAUX d'abord, puis tous les
-    //    SUPPLÉANTS (l'utilisateur a insisté : on a besoin d'avoir au
-    //    moins un principal partout avant de poser le moindre suppléant).
-    //
-    //    Pour chaque créneau, on regroupe les candidats par tier d'usage :
-    //      tier 0 : < 50 %  → prioritaire ; on trie alors par (count ASC,
-    //               crédits Oui ASC, gap DESC, id) pour donner sa chance
-    //               aux personnes qui ont peu coché Oui (sinon elles
-    //               passent inaperçues).
-    //      tier 1 : 50–75 % → trié par (count ASC, gap DESC, crédits ASC).
-    //      tier 2 : 75–90 % → idem mais consulté après tier 1.
-    //      tier 3 : ≥ 90 %  → uniquement s'il n'y a aucun candidat
-    //               disponible dans les tiers précédents.
-    //
-    //    Candidats : Oui d'abord, sinon Peut-être ; on exclut la personne
-    //    déjà posée sur l'autre rôle du même créneau.
-    $new_assigns = [];
-    $pick_for = function (int $cid, int $today_ts, int $blocked, array $yes_pool, array $maybe_pool)
-                use ($counts, $last_ts, $yes_credits, $tier_of): ?int {
-        foreach ([$yes_pool, $maybe_pool] as $pool) {
-            $cands = array_values(array_filter($pool, fn($p) => $p !== $blocked));
-            if (empty($cands)) continue;
-            $by_tier = [0 => [], 1 => [], 2 => [], 3 => []];
-            foreach ($cands as $pid) $by_tier[$tier_of((int)$pid)][] = $pid;
-            foreach ([0, 1, 2, 3] as $t) {
-                if (empty($by_tier[$t])) continue;
-                $list = $by_tier[$t];
-                usort($list, function ($a, $b) use ($t, $counts, $last_ts, $yes_credits, $today_ts) {
-                    $ca = $counts[$a] ?? 0;
-                    $cb = $counts[$b] ?? 0;
-                    if ($ca !== $cb) return $ca - $cb;
-                    $ya = $yes_credits[$a] ?? 0;
-                    $yb = $yes_credits[$b] ?? 0;
-                    $la = isset($last_ts[$a]) ? $today_ts - $last_ts[$a] : PHP_INT_MAX;
-                    $lb = isset($last_ts[$b]) ? $today_ts - $last_ts[$b] : PHP_INT_MAX;
-                    if ($t === 0) {
-                        // Tier 0 : low yes_credits avant gap (donner sa
-                        // chance aux gens à peu de Oui).
-                        if ($ya !== $yb) return $ya - $yb;
-                        if ($la !== $lb) return $lb <=> $la;
-                    } else {
-                        // Tiers 1+ : on étale d'abord temporellement.
-                        if ($la !== $lb) return $lb <=> $la;
-                        if ($ya !== $yb) return $ya - $yb;
-                    }
-                    return $a - $b;
-                });
-                return (int)$list[0];
-            }
-        }
-        return null;
+    // Capacité effective = crédits Oui + 0.5 × Peut-être (mini 1 pour
+    // éviter une division par zéro chez les voteurs "maybe-only").
+    $capacity_of = static function (int $pid, array $yes_credits, array $maybe_credits): float {
+        $cap = ($yes_credits[$pid] ?? 0) + 0.5 * ($maybe_credits[$pid] ?? 0);
+        return $cap > 0 ? $cap : 1.0;
     };
 
+    // 3. Algorithme :
+    //
+    //    Pass 1 : on remplit TOUS les principaux d'abord (priorité de
+    //    libellé puis chronologique). Pass 2 : tous les suppléants.
+    //    Cf. demande explicite : on veut au moins un principal partout
+    //    avant de poser le moindre suppléant.
+    //
+    //    Pour chaque créneau, on classe les candidats (Oui d'abord,
+    //    sinon Peut-être) en 4 tiers selon usage = count / capacité :
+    //      tier 0 : < 50 %   → prioritaire
+    //      tier 1 : 50–75 %  → moins susceptible
+    //      tier 2 : 75–90 %  → encore moins
+    //      tier 3 : ≥ 90 %   → dernier recours
+    //
+    //    Au sein d'un tier, tri PRIMARY = usage_pct ASC.  Ça résout le
+    //    déséquilibre Marie/Aude : qq'un avec beaucoup de crédits "Oui"
+    //    (Aude, 46) doit être pické plus souvent que qq'un avec peu
+    //    de crédits déjà fortement chargé (Marie, 28) pour rester
+    //    équilibré en proportion.  À usage égal, dans tier 0, low
+    //    yes_credits passe en premier (Cécile boost au 1er tour),
+    //    puis spread temporel.
+    //
+    //    /!\ Les closures sont créées dans la boucle (pas avant) pour
+    //    capturer un snapshot frais de $counts et $last_ts à chaque
+    //    pick. Bug PHP précédemment : la closure top-level capturait
+    //    les valeurs initiales (tout à zéro) une seule fois, rendant
+    //    le tri statique sur l'état initial.
+    $new_assigns = [];
     foreach (['primary', 'backup'] as $role) {
         $other = $role === 'primary' ? 'backup' : 'primary';
         foreach ($choices as $c) {
@@ -634,11 +600,45 @@ function route_admin_auto_fill_assignments(string $uuid): void {
             if (isset($existing[$cid][$role])) continue;
             $blocked = $existing[$cid][$other] ?? ($new_assigns[$cid][$other] ?? 0);
             $today_ts = strtotime($c['day']) ?: 0;
-            $pick = $pick_for(
-                $cid, $today_ts, (int)$blocked,
-                $yes_by_choice[$cid]   ?? [],
-                $maybe_by_choice[$cid] ?? []
-            );
+
+            $pick = null;
+            foreach ([$yes_by_choice[$cid] ?? [], $maybe_by_choice[$cid] ?? []] as $pool) {
+                $cands = array_values(array_filter($pool, fn($p) => (int)$p !== (int)$blocked));
+                if (empty($cands)) continue;
+
+                // Bucketing par tier d'usage (snapshot à cet instant).
+                $by_tier = [0 => [], 1 => [], 2 => [], 3 => []];
+                foreach ($cands as $pid) {
+                    $cap = $capacity_of((int)$pid, $yes_credits, $maybe_credits);
+                    $usage = ($counts[$pid] ?? 0) / $cap;
+                    $tier = $usage < 0.50 ? 0 : ($usage < 0.75 ? 1 : ($usage < 0.90 ? 2 : 3));
+                    $by_tier[$tier][] = (int)$pid;
+                }
+
+                foreach ([0, 1, 2, 3] as $t) {
+                    if (empty($by_tier[$t])) continue;
+                    $list = $by_tier[$t];
+                    usort($list, function ($a, $b)
+                          use ($t, $counts, $last_ts, $yes_credits, $maybe_credits, $today_ts, $capacity_of) {
+                        $ua = ($counts[$a] ?? 0) / $capacity_of($a, $yes_credits, $maybe_credits);
+                        $ub = ($counts[$b] ?? 0) / $capacity_of($b, $yes_credits, $maybe_credits);
+                        if (abs($ua - $ub) > 1e-9) return $ua <=> $ub;
+                        // Égalité d'usage : tier 0 → low yes_credits boost
+                        $ya = $yes_credits[$a] ?? 0;
+                        $yb = $yes_credits[$b] ?? 0;
+                        if ($t === 0 && $ya !== $yb) return $ya - $yb;
+                        // Spread temporel
+                        $la = isset($last_ts[$a]) ? $today_ts - $last_ts[$a] : PHP_INT_MAX;
+                        $lb = isset($last_ts[$b]) ? $today_ts - $last_ts[$b] : PHP_INT_MAX;
+                        if ($la !== $lb) return $lb <=> $la;
+                        if ($ya !== $yb) return $ya - $yb;
+                        return $a - $b;
+                    });
+                    $pick = (int)$list[0];
+                    break 2;
+                }
+            }
+
             if ($pick === null) continue;
             $new_assigns[$cid][$role] = $pick;
             $counts[$pick] = ($counts[$pick] ?? 0) + 1;
