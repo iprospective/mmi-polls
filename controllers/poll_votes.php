@@ -73,26 +73,50 @@ function route_poll_save_votes(string $uuid): void {
     $valid->execute([$poll['id']]);
     $valid_ids = array_flip(array_map('intval', array_column($valid->fetchAll(), 'id')));
 
-    $pdo->beginTransaction();
-    $upd = $pdo->prepare("UPDATE participants SET name = ?, phone = ?, contact_method = ?, votes_updated_at = ? WHERE id = ?");
-    $upd->execute([$name, $phone, $contact_method, time(), $participant['id']]);
-    $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
-    $del->execute([$participant['id']]);
-    $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");
+    // Normalise le nouveau jeu de votes (filtré, trié) puis charge le courant
+    // pour détecter si les votes ont effectivement changé. votes_updated_at ne
+    // doit pas être bumpé si la personne a seulement modifié son nom / tél /
+    // moyen de contact.
+    $new_votes = [];
     foreach ($votes as $cid => $val) {
         $cid = (int)$cid;
         if (!isset($valid_ids[$cid])) continue;
         if (!in_array($val, ['yes', 'no', 'maybe'], true)) continue;
-        $ins->execute([$participant['id'], $cid, $val]);
+        $new_votes[$cid] = $val;
+    }
+    ksort($new_votes);
+    $cur_v = $pdo->prepare("SELECT choice_id, value FROM votes WHERE participant_id = ?");
+    $cur_v->execute([$participant['id']]);
+    $current_votes = [];
+    foreach ($cur_v as $row) $current_votes[(int)$row['choice_id']] = $row['value'];
+    ksort($current_votes);
+    $votes_changed = ($current_votes !== $new_votes);
+
+    $pdo->beginTransaction();
+    if ($votes_changed) {
+        $upd = $pdo->prepare("UPDATE participants SET name = ?, phone = ?, contact_method = ?, votes_updated_at = ? WHERE id = ?");
+        $upd->execute([$name, $phone, $contact_method, time(), $participant['id']]);
+        $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
+        $del->execute([$participant['id']]);
+        $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");
+        foreach ($new_votes as $cid => $val) {
+            $ins->execute([$participant['id'], $cid, $val]);
+        }
+    } else {
+        $upd = $pdo->prepare("UPDATE participants SET name = ?, phone = ?, contact_method = ? WHERE id = ?");
+        $upd->execute([$name, $phone, $contact_method, $participant['id']]);
     }
     $pdo->commit();
-    log_activity((int)$poll['id'], 'vote_save', [
-        'actor_type'  => 'participant',
-        'actor_id'    => (int)$participant['id'],
-        'actor_label' => $name !== '' ? $name : $participant['email'],
-        'target'      => count($votes) . ' votes',
-    ]);
-    flash_set('ok', 'Choix enregistrés.');
+
+    if ($votes_changed) {
+        log_activity((int)$poll['id'], 'vote_save', [
+            'actor_type'  => 'participant',
+            'actor_id'    => (int)$participant['id'],
+            'actor_label' => $name !== '' ? $name : $participant['email'],
+            'target'      => count($new_votes) . ' votes',
+        ]);
+    }
+    flash_set('ok', $votes_changed ? 'Choix enregistrés.' : 'Profil enregistré (votes inchangés).');
     redirect('/p/' . $uuid . '/me');
 }
 

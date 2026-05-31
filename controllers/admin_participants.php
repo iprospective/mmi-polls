@@ -157,20 +157,39 @@ function route_admin_update_participant(string $uuid, string $pid): void {
     $valid->execute([$poll['id']]);
     $valid_ids = array_flip(array_map('intval', array_column($valid->fetchAll(), 'id')));
 
-    $pdo->beginTransaction();
-    $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, phone = ?, contact_method = ?, votes_updated_at = ? WHERE id = ?");
-    $upd->execute([$name, $email, $phone, $contact_method, time(), $participant['id']]);
-    $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
-    $del->execute([$participant['id']]);
-    $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");
+    // Compare votes avant/après pour ne bumper votes_updated_at que si
+    // les votes ont effectivement changé (cohérent avec /me participant).
+    $new_votes = [];
     foreach ($votes as $cid => $val) {
         $cid = (int)$cid;
         if (!isset($valid_ids[$cid])) continue;
         if (!in_array($val, ['yes', 'no', 'maybe'], true)) continue;
-        $ins->execute([$participant['id'], $cid, $val]);
+        $new_votes[$cid] = $val;
+    }
+    ksort($new_votes);
+    $cur_v = $pdo->prepare("SELECT choice_id, value FROM votes WHERE participant_id = ?");
+    $cur_v->execute([$participant['id']]);
+    $current_votes = [];
+    foreach ($cur_v as $row) $current_votes[(int)$row['choice_id']] = $row['value'];
+    ksort($current_votes);
+    $votes_changed = ($current_votes !== $new_votes);
+
+    $pdo->beginTransaction();
+    if ($votes_changed) {
+        $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, phone = ?, contact_method = ?, votes_updated_at = ? WHERE id = ?");
+        $upd->execute([$name, $email, $phone, $contact_method, time(), $participant['id']]);
+        $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
+        $del->execute([$participant['id']]);
+        $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");
+        foreach ($new_votes as $cid => $val) {
+            $ins->execute([$participant['id'], $cid, $val]);
+        }
+    } else {
+        $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, phone = ?, contact_method = ? WHERE id = ?");
+        $upd->execute([$name, $email, $phone, $contact_method, $participant['id']]);
     }
     $pdo->commit();
-    flash_set('ok', 'Participant mis à jour.');
+    flash_set('ok', $votes_changed ? 'Participant mis à jour (votes inclus).' : 'Profil mis à jour (votes inchangés).');
     redirect('/admin/polls/' . $uuid . '/participants/' . (int)$pid);
 }
 
