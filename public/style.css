@@ -550,6 +550,23 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .role-marker.rm-primary { background: #1e40af; color: #fff; }
 .role-marker.rm-backup  { background: #4338ca; color: #fff; }
 
+/* Bandeau "X dates passées masquées" + lien de toggle */
+.past-toggle {
+  margin: 0.75rem 0 0.5rem;
+  padding: 0.45rem 0.8rem;
+  background: #f8fafc;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--fg-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.past-toggle a { font-weight: 500; white-space: nowrap; }
+
 /* Légende au-dessus de la grille : les markers en inline avec leur couleur */
 .grid-legend {
   margin: 0.5rem 0 0;

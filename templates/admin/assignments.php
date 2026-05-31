@@ -24,6 +24,19 @@ foreach ($participants as $p) {
 
 $total_choices = 0;
 foreach ($dates as $d) $total_choices += count($d['choices']);
+
+// Filtre dates passées (toggle ?show_past=1)
+$today = date('Y-m-d');
+$past_count = 0;
+foreach ($dates as $d) if ($d['day'] < $today) $past_count++;
+$show_past = !empty($_GET['show_past']);
+if (!$show_past && $past_count > 0) {
+    $dates = array_values(array_filter($dates, fn($d) => $d['day'] >= $today));
+}
+$_base = strtok($_SERVER['REQUEST_URI'], '?');
+$_qs   = $_GET;
+if ($show_past) { unset($_qs['show_past']); } else { $_qs['show_past'] = 1; }
+$toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
 ?>
 
 <?php $active = 'assignments'; require __DIR__ . '/_admin_nav.php'; ?>
@@ -31,6 +44,19 @@ foreach ($dates as $d) $total_choices += count($d['choices']);
 <p class="muted">
   <?= $total_choices ?> créneaux, <?= count($participants) ?> participants
 </p>
+
+<?php if ($past_count > 0): ?>
+<p class="past-toggle">
+  <span>
+    <?php if ($show_past): ?>
+      Toutes les dates affichées, y compris <?= $past_count ?> passée<?= $past_count > 1 ? 's' : '' ?>.
+    <?php else: ?>
+      <?= $past_count ?> date<?= $past_count > 1 ? 's' : '' ?> passée<?= $past_count > 1 ? 's' : '' ?> masquée<?= $past_count > 1 ? 's' : '' ?>.
+    <?php endif; ?>
+  </span>
+  <a href="<?= e($toggle_url) ?>"><?= $show_past ? 'Masquer les dates passées' : 'Tout afficher' ?></a>
+</p>
+<?php endif; ?>
 
 <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments" id="assignments-form">
   <?= csrf_field() ?>

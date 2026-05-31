@@ -14,6 +14,19 @@ foreach ($participants as $p) {
 $has_any_assign = false;
 foreach ($assigns_map as $by_role) if (!empty($by_role)) { $has_any_assign = true; break; }
 
+// Filtre dates passées (masquées par défaut, toggle via ?show_past=1).
+$today = date('Y-m-d');
+$past_count = 0;
+foreach ($dates as $d) if ($d['day'] < $today) $past_count++;
+$show_past = !empty($_GET['show_past']);
+if (!$show_past && $past_count > 0) {
+    $dates = array_values(array_filter($dates, fn($d) => $d['day'] >= $today));
+}
+$_base = strtok($_SERVER['REQUEST_URI'], '?');
+$_qs   = $_GET;
+if ($show_past) { unset($_qs['show_past']); } else { $_qs['show_past'] = 1; }
+$toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
+
 // Stats par participant : nb Oui, nb Peut-être, nb assignations Principal·e
 // et Suppléant·e. Affichées sous le nom dans l'entête de colonne.
 $stats_of = [];
@@ -67,6 +80,19 @@ foreach ($dates as $d) {
     $day_status[$d['id']] = $worst ?? 'bad';
 }
 ?>
+<?php if ($past_count > 0): ?>
+<p class="past-toggle">
+  <span>
+    <?php if ($show_past): ?>
+      Toutes les dates affichées, y compris <?= $past_count ?> passée<?= $past_count > 1 ? 's' : '' ?>.
+    <?php else: ?>
+      <?= $past_count ?> date<?= $past_count > 1 ? 's' : '' ?> passée<?= $past_count > 1 ? 's' : '' ?> masquée<?= $past_count > 1 ? 's' : '' ?>.
+    <?php endif; ?>
+  </span>
+  <a href="<?= e($toggle_url) ?>"><?= $show_past ? 'Masquer les dates passées' : 'Tout afficher' ?></a>
+</p>
+<?php endif; ?>
+
 <?php if ($has_any_assign): ?>
 <p class="grid-legend muted small">
   <span class="role-marker rm-primary" aria-hidden="true">P</span> = personne d'astreinte principale ·
