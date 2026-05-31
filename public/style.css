@@ -1076,17 +1076,19 @@ table.sortable thead th.sorted-desc::after { content: ' ↓'; }
   }
 
   /* Bascule grille récap → cartes.
-   * IMPORTANT : on masque uniquement la .vote-grid SANS .assignments-grid
-   * (donc la récap publique/admin uniquement). La table d'astreintes
-   * admin et toutes les autres tables dans des .grid-wrap restent
-   * visibles. La vue cartes .mobile-grid prend le relai pour la récap. */
+   * IMPORTANT : on masque uniquement la .vote-grid qui est immédiatement
+   * suivie d'une .mobile-grid sibling (= la récap publique/admin).
+   * La table d'astreintes admin, les grilles ÉDITABLES de saisie de
+   * votes (poll/me.php et admin/participant.php), et toutes les autres
+   * .vote-grid restent visibles. .mobile-grid prend le relai pour la
+   * récap. */
   .grid-wrap:has(+ .mobile-grid) {
     background: transparent;
     border: none;
     box-shadow: none;
     border-radius: 0;
   }
-  .vote-grid:not(.assignments-grid) { display: none; }
+  .grid-wrap:has(+ .mobile-grid) .vote-grid { display: none; }
   .mobile-grid {
     display: block;
     list-style: none;
