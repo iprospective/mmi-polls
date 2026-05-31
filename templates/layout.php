@@ -55,7 +55,9 @@
   <?= $content ?>
 </main>
 <footer class="footer">
-  <span>mmidate · logiciel libre sous <a href="/LICENSE" rel="license">AGPL-3.0</a></span>
+  mmidate © <?= date('Y') ?> iProspective ·
+  logiciel libre sous <a href="/LICENSE" rel="license">AGPL-3.0</a> ·
+  <a href="/CHANGELOG.md">changelog</a>
 </footer>
 </body>
 </html>
