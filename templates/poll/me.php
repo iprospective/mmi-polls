@@ -27,6 +27,18 @@
       </li>
     <?php endforeach; ?>
   </ul>
+  <?php if (!empty($ical_token)):
+    $ical_url = rtrim($GLOBALS['CONFIG']['app_url'], '/') . '/ical/' . $ical_token . '.ics';
+  ?>
+    <details style="margin-top: 1rem;">
+      <summary class="link">📅 S'abonner depuis son agenda (Google Calendar, Apple, Thunderbird…)</summary>
+      <p class="muted small" style="margin-top: 0.5rem;">Copiez ce lien et collez-le dans votre agenda en mode <em>« Abonnement / S'abonner à un calendrier »</em>. Les nouvelles astreintes apparaîtront automatiquement.</p>
+      <code style="display:block; padding:0.5rem; background:#f8fafc; border-radius:6px; word-break:break-all; font-size:0.85rem;"><?= e($ical_url) ?></code>
+      <p class="muted small" style="margin-top: 0.35rem;">
+        <a href="<?= e($ical_url) ?>" download>Télécharger le .ics en une fois</a>
+      </p>
+    </details>
+  <?php endif; ?>
 </div>
 <?php endif; ?>
 

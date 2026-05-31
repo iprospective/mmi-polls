@@ -5,6 +5,7 @@ require_once __DIR__ . '/../lib/db.php';
 require_once __DIR__ . '/../lib/helpers.php';
 require_once __DIR__ . '/../services/polls.php';
 require_once __DIR__ . '/../services/assignments.php';
+require_once __DIR__ . '/../services/ical.php';
 
 function route_poll_me(string $uuid): void {
     $poll = find_poll($uuid);
@@ -24,6 +25,7 @@ function route_poll_me(string $uuid): void {
     $v->execute([$participant['id']]);
     foreach ($v as $row) $myvotes[(int)$row['choice_id']] = $row['value'];
     $my_assigns = assignments_for_participant((int)$poll['id'], (int)$participant['id']);
+    $ical_token = $my_assigns ? get_or_create_ical_token((int)$participant['id']) : '';
     render('poll/me', [
         'page_title' => 'Mes choix — ' . $poll['title'],
         'poll' => $poll,
@@ -31,6 +33,7 @@ function route_poll_me(string $uuid): void {
         'participant' => $participant,
         'myvotes' => $myvotes,
         'my_assigns' => $my_assigns,
+        'ical_token' => $ical_token,
     ]);
 }
 

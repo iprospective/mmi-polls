@@ -183,6 +183,64 @@ function route_admin_delete_participant(string $uuid, string $pid): void {
     redirect('/admin/polls/' . $uuid . '/participants');
 }
 
+function route_admin_remind_participant(string $uuid, string $pid): void {
+    $poll = find_poll($uuid);
+    require_poll_access($poll);
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT id, name, email FROM participants WHERE id = ? AND poll_id = ?");
+    $stmt->execute([(int)$pid, $poll['id']]);
+    $p = $stmt->fetch();
+    if (!$p) not_found();
+    require_once __DIR__ . '/../lib/mailer.php';
+    send_reminder_email($poll, $p);
+    flash_set('ok', 'Rappel envoyé à ' . $p['email'] . '.');
+    redirect('/admin/polls/' . $uuid . '/participants');
+}
+
+function route_admin_remind_non_responders(string $uuid): void {
+    $poll = find_poll($uuid);
+    require_poll_access($poll);
+    $pdo = db();
+    // Non-répondants = participants sans aucun vote.
+    $stmt = $pdo->prepare("
+        SELECT p.id, p.name, p.email
+        FROM participants p
+        LEFT JOIN votes v ON v.participant_id = p.id
+        WHERE p.poll_id = ?
+        GROUP BY p.id
+        HAVING COUNT(v.choice_id) = 0
+    ");
+    $stmt->execute([$poll['id']]);
+    $orphans = $stmt->fetchAll();
+    if (!$orphans) {
+        flash_set('ok', 'Aucun non-répondant à relancer.');
+        redirect('/admin/polls/' . $uuid . '/participants');
+    }
+    require_once __DIR__ . '/../lib/mailer.php';
+    $sent = 0;
+    foreach ($orphans as $p) {
+        try { send_reminder_email($poll, $p); $sent++; }
+        catch (Throwable $e) { mail_log($p['email'], '[reminder failed] ' . $e->getMessage(), ''); }
+    }
+    flash_set('ok', "Rappel envoyé à $sent non-répondant(s).");
+    redirect('/admin/polls/' . $uuid . '/participants');
+}
+
+function send_reminder_email(array $poll, array $participant): void {
+    require_once __DIR__ . '/../lib/auth.php';
+    $token = issue_magic_link((int)$poll['id'], strtolower($participant['email']));
+    $app_url = rtrim($GLOBALS['CONFIG']['app_url'], '/');
+    $link    = $app_url . '/p/' . $poll['uuid'] . '/auth?token=' . urlencode($token);
+    $name = $participant['name'] !== '' ? $participant['name'] : explode('@', $participant['email'])[0];
+    $subject = '[mmidate] Rappel : indiquez vos disponibilités pour « ' . $poll['title'] . ' »';
+    $body  = "Bonjour $name,\n\n";
+    $body .= "Petit rappel pour le sondage « {$poll['title']} » : pensez à indiquer vos disponibilités.\n\n";
+    $body .= "Lien de connexion direct :\n$link\n\n";
+    $body .= "Ce lien est valable " . (int)($GLOBALS['CONFIG']['magic_link_ttl'] / 60) . " minutes.\n\n";
+    $body .= "Merci !\n";
+    send_mail($participant['email'], $subject, $body);
+}
+
 function route_admin_toggle_participant_visibility(string $uuid, string $pid): void {
     $poll = find_poll($uuid);
     require_poll_access($poll);

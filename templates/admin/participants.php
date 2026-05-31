@@ -147,7 +147,15 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
             <?= $is_hidden ? _icon('eye-off') : _icon('eye') ?>
           </button>
         </form>
-        <?php if ($total > 0): ?>
+        <?php if ($is_orphan): ?>
+          <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/participants/<?= (int)$r['id'] ?>/remind" class="inline"
+                onsubmit="return confirm('Envoyer un rappel à <?= e(addslashes($name)) ?> ?');">
+            <?= csrf_field() ?>
+            <button type="submit" class="icon-btn" title="Envoyer un rappel" aria-label="Rappel">
+              <?= _icon('mail') ?>
+            </button>
+          </form>
+        <?php elseif ($total > 0): ?>
           <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/notify" class="inline"
                 onsubmit="return confirm('Renvoyer la notification d\'astreintes à <?= e(addslashes($name)) ?> ?');">
             <?= csrf_field() ?>
@@ -211,7 +219,13 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
 <?php if ($orphans): ?>
   <h3>Personnes orphelines (n'ont pas répondu) — <?= count($orphans) ?></h3>
   <p class="muted small">Ces participants existent en base mais n'ont saisi aucune réponse.
-     Tu peux leur renvoyer un magic-link (via l'admin du sondage) ou les supprimer.</p>
+     Tu peux leur envoyer un rappel par email avec un lien magique de connexion, ou les supprimer.</p>
+  <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/participants/remind-all"
+        style="margin-bottom: 0.75rem;"
+        onsubmit="return confirm('Envoyer un rappel par email à <?= count($orphans) ?> non-répondant·e·s ?');">
+    <?= csrf_field() ?>
+    <button type="submit">📨 Relancer tous les non-répondants (<?= count($orphans) ?>)</button>
+  </form>
   <div class="grid-wrap">
   <table class="participants-table sortable">
     <thead>

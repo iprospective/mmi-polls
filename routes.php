@@ -44,6 +44,8 @@ return [
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)$#',          'admin_participants',  'route_admin_update_participant'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)/delete$#',   'admin_participants',  'route_admin_delete_participant'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)/toggle-visibility$#', 'admin_participants', 'route_admin_toggle_participant_visibility'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)/remind$#',    'admin_participants',  'route_admin_remind_participant'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/remind-all$#',      'admin_participants',  'route_admin_remind_non_responders'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)/calendar$#', 'admin_participants',  'route_admin_participant_calendar'],
 
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/assignments$#',                 'admin_assignments',   'route_admin_assignments'],
@@ -71,4 +73,7 @@ return [
 
     ['GET',  '#^/p/([0-9a-f-]+)/confirm$#',                               'poll_confirm',        'route_poll_confirm_get'],
     ['POST', '#^/p/([0-9a-f-]+)/confirm$#',                               'poll_confirm',        'route_poll_confirm_post'],
+
+    // Flux iCal — accessible par token (pas de session)
+    ['GET',  '#^/ical/([a-f0-9]+)\.ics$#',                                'ical',                'route_ical_feed'],
 ];

@@ -162,6 +162,10 @@ function db_migrate(PDO $pdo): void {
         // 0 = visible, 1 = masqué dans la vue publique (admin/manager voit toujours)
         $pdo->exec("ALTER TABLE participants ADD COLUMN hidden_in_public INTEGER NOT NULL DEFAULT 0");
     }
+    if (!in_array('ical_token', $present, true)) {
+        // Token pour l'abonnement iCal personnel (généré à la 1re demande).
+        $pdo->exec("ALTER TABLE participants ADD COLUMN ical_token TEXT NOT NULL DEFAULT ''");
+    }
 }
 
 function uuid_v4(): string {
