@@ -885,7 +885,7 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
 .participants-table td.email-cell,
 .participants-table td.phone-cell { display: none; }
 
-/* Pastille moyen de contact à droite du nom */
+/* Pastilles moyens de contact (à droite du nom, ou dans le calendrier) */
 .contact-pill {
   display: inline-block;
   font-size: 0.65rem;
@@ -894,13 +894,61 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
   letter-spacing: 0.04em;
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
-  margin-left: 0.4rem;
+  margin-left: 0.25rem;
   vertical-align: middle;
+  white-space: nowrap;
 }
 .contact-pill.cm-telegram { background: #e0f2fe; color: #075985; }
 .contact-pill.cm-signal   { background: #ede9fe; color: #5b21b6; }
 .contact-pill.cm-whatsapp { background: #dcfce7; color: #166534; }
 .contact-pill.cm-sms      { background: #fef3c7; color: #78350f; }
+
+/* Groupe de cases à cocher inline (multi-sélection contact_method) */
+.check-group-wrap {
+  border: none;
+  padding: 0;
+  margin: 0 0 0.85rem;
+}
+.check-group-wrap legend {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--fg-soft);
+  padding: 0;
+  margin-bottom: 0.3rem;
+}
+.check-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.check-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: #fff;
+  font-weight: 400;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--fg);
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+.check-inline input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+.check-inline:hover { background: var(--accent-soft); }
+.check-inline:has(input:checked) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 500;
+}
+.check-inline.cm-telegram:has(input:checked) { background: #e0f2fe; border-color: #0284c7; color: #075985; }
+.check-inline.cm-signal:has(input:checked)   { background: #ede9fe; border-color: #7c3aed; color: #5b21b6; }
+.check-inline.cm-whatsapp:has(input:checked) { background: #dcfce7; border-color: #16a34a; color: #166534; }
+.check-inline.cm-sms:has(input:checked)      { background: #fef3c7; border-color: #d97706; color: #78350f; }
 
 /* Personnes orphelines : tout gris atténué */
 .participants-table tr.orphan { color: var(--muted); background: #fafbfc; }

@@ -23,19 +23,17 @@ foreach ($assigns as $a) if ($a['role'] === 'primary') $pri++; else $bak++;
   <?php endif; ?>
 </div>
 
-<?php if ($participant['phone'] || $participant['contact_method']): ?>
+<?php $cms = parse_contact_methods($participant['contact_method'] ?? ''); ?>
+<?php if ($participant['phone'] || $cms): ?>
 <div class="card">
   <h3 style="margin-top:0;">Comment la·le joindre</h3>
   <p>
     <?php if ($participant['phone']): ?>
       📞 <a href="tel:<?= e(preg_replace('/[^0-9+]/', '', $participant['phone'])) ?>"><?= e($participant['phone']) ?></a>
     <?php endif; ?>
-    <?php if ($participant['contact_method']): ?>
+    <?php if ($cms): ?>
       <?php if ($participant['phone']): ?>·<?php endif; ?>
-      Préfère
-      <span class="contact-pill cm-<?= e($participant['contact_method']) ?>">
-        <?= e(contact_method_label($participant['contact_method'])) ?>
-      </span>
+      Préfère <?= contact_methods_pills($participant['contact_method'] ?? '') ?>
     <?php endif; ?>
   </p>
 </div>

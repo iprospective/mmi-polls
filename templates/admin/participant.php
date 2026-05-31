@@ -16,20 +16,22 @@
     </label>
   </div>
 
-  <div class="row" style="align-items: flex-start;">
-    <label style="flex:2; margin-bottom: 0;">Téléphone
-      <input type="tel" name="phone" value="<?= e($participant['phone'] ?? '') ?>" placeholder="ex. 06 12 34 56 78">
-    </label>
-    <label style="flex:1; margin-bottom: 0;">Contact
-      <select name="contact_method">
-        <option value="">— (non précisé)</option>
-        <?php foreach (contact_methods() as $key => $label):
-          $cur = $participant['contact_method'] ?? ''; ?>
-          <option value="<?= e($key) ?>" <?= $cur === $key ? 'selected' : '' ?>><?= e($label) ?></option>
-        <?php endforeach; ?>
-      </select>
-    </label>
-  </div>
+  <label>Téléphone
+    <input type="tel" name="phone" value="<?= e($participant['phone'] ?? '') ?>" placeholder="ex. 06 12 34 56 78">
+  </label>
+
+  <fieldset class="check-group-wrap">
+    <legend>Moyens de contact préférés</legend>
+    <div class="check-group">
+      <?php $cur = parse_contact_methods($participant['contact_method'] ?? '');
+            foreach (contact_methods() as $key => $label): ?>
+        <label class="check-inline cm-<?= e($key) ?>">
+          <input type="checkbox" name="contact_method[]" value="<?= e($key) ?>" <?= in_array($key, $cur, true) ? 'checked' : '' ?>>
+          <?= e($label) ?>
+        </label>
+      <?php endforeach; ?>
+    </div>
+  </fieldset>
 
   <?php if (!$dates): ?>
     <p><em>Aucune date dans ce sondage.</em></p>

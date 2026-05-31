@@ -66,6 +66,22 @@ function contact_methods(): array {
 function contact_method_label(string $method): string {
     return contact_methods()[$method] ?? '';
 }
+function parse_contact_methods(?string $stored): array {
+    if ($stored === null || $stored === '') return [];
+    $arr = array_map('trim', explode(',', $stored));
+    $valid = array_keys(contact_methods());
+    return array_values(array_intersect($arr, $valid));
+}
+function contact_methods_pills(?string $stored): string {
+    $methods = parse_contact_methods($stored);
+    if (!$methods) return '';
+    $out = '';
+    foreach ($methods as $m) {
+        $out .= '<span class="contact-pill cm-' . e($m) . '" title="' . e(contact_method_label($m)) . '">'
+              . e(contact_method_label($m)) . '</span>';
+    }
+    return $out;
+}
 function sanitize_phone(string $raw): string {
     // Garde chiffres, +, espaces, tirets, points, parenthèses ; limite à 32 chars.
     $clean = preg_replace('/[^0-9+\-.\s()]/u', '', $raw) ?? '';

@@ -73,18 +73,18 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
     $sum['none']  += $none;  $sum['p']     += $pri;   $sum['b']  += $bak;
 ?>
     <?php
+      $cms = parse_contact_methods($r['contact_method'] ?? '');
       $tooltip_lines = [$r['email']];
       if ($r['phone']) $tooltip_lines[] = $r['phone'];
-      if ($r['contact_method']) $tooltip_lines[] = 'Préfère ' . contact_method_label($r['contact_method']);
+      if ($cms) {
+          $labels = array_map('contact_method_label', $cms);
+          $tooltip_lines[] = 'Préfère ' . implode(' / ', $labels);
+      }
     ?>
     <tr class="<?= $is_orphan ? 'orphan' : '' ?>">
       <td data-l="Nom" data-sort-value="<?= e(mb_strtolower($name)) ?>" title="<?= e(implode("\n", $tooltip_lines)) ?>">
         <strong><?= e($name) ?></strong>
-        <?php if ($r['contact_method']): ?>
-          <span class="contact-pill cm-<?= e($r['contact_method']) ?>" title="Préfère <?= e(contact_method_label($r['contact_method'])) ?>">
-            <?= e(contact_method_label($r['contact_method'])) ?>
-          </span>
-        <?php endif; ?>
+        <?= contact_methods_pills($r['contact_method'] ?? '') ?>
       </td>
       <td data-l="Email" class="email-cell muted small"><?= e($r['email']) ?></td>
       <td data-l="Téléphone" class="phone-cell muted small">

@@ -975,8 +975,11 @@ function route_admin_update_participant(string $uuid, string $pid): void {
     $name  = trim((string)($_POST['name'] ?? ''));
     $email = strtolower(trim((string)($_POST['email'] ?? '')));
     $phone = sanitize_phone((string)($_POST['phone'] ?? ''));
-    $contact_method = (string)($_POST['contact_method'] ?? '');
-    if (!array_key_exists($contact_method, contact_methods())) $contact_method = '';
+    $cm_input = $_POST['contact_method'] ?? [];
+    if (!is_array($cm_input)) $cm_input = [$cm_input];
+    $cm_valid = array_values(array_unique(array_intersect($cm_input, array_keys(contact_methods()))));
+    sort($cm_valid);
+    $contact_method = implode(',', $cm_valid);
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         flash_set('err', 'Email invalide.');
         redirect('/admin/polls/' . $uuid . '/participants/' . (int)$pid);
@@ -1129,8 +1132,11 @@ function route_poll_save_votes(string $uuid): void {
     }
     $name = trim((string)($_POST['name'] ?? ''));
     $phone = sanitize_phone((string)($_POST['phone'] ?? ''));
-    $contact_method = (string)($_POST['contact_method'] ?? '');
-    if (!array_key_exists($contact_method, contact_methods())) $contact_method = '';
+    $cm_input = $_POST['contact_method'] ?? [];
+    if (!is_array($cm_input)) $cm_input = [$cm_input];
+    $cm_valid = array_values(array_unique(array_intersect($cm_input, array_keys(contact_methods()))));
+    sort($cm_valid);
+    $contact_method = implode(',', $cm_valid);
     $votes = $_POST['votes'] ?? [];
     if (!is_array($votes)) $votes = [];
 
