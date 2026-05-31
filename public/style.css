@@ -531,6 +531,10 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
+.assignments-grid select option:disabled {
+  color: #94a3b8;
+  font-style: italic;
+}
 .assignments-bar {
   position: sticky;
   bottom: 0;

@@ -368,12 +368,17 @@ function route_admin_save_assignments(string $uuid): void {
         $cid = (int)$cid;
         if (!isset($valid_choice_ids[$cid])) continue;
         if (!is_array($role_map)) continue;
-        foreach (['primary', 'backup'] as $role) {
-            $pid = (int)($role_map[$role] ?? 0);
-            if ($pid <= 0) continue;
-            if (!isset($valid_part_ids[$pid])) continue;
-            $ins->execute([$cid, $role, $pid]);
-        }
+
+        $prim = (int)($role_map['primary'] ?? 0);
+        $back = (int)($role_map['backup']  ?? 0);
+        if ($prim > 0 && !isset($valid_part_ids[$prim])) $prim = 0;
+        if ($back > 0 && !isset($valid_part_ids[$back])) $back = 0;
+        // Anti-doublon : interdit la même personne aux deux rôles.
+        // Si conflit, on garde le principal et on retire le suppléant.
+        if ($prim > 0 && $prim === $back) $back = 0;
+
+        if ($prim > 0) $ins->execute([$cid, 'primary', $prim]);
+        if ($back > 0) $ins->execute([$cid, 'backup',  $back]);
     }
     $pdo->commit();
     flash_set('ok', 'Astreintes enregistrées.');
