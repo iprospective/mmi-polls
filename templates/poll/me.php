@@ -2,6 +2,24 @@
 <p class="muted">Sondage : <a href="/p/<?= e($poll['uuid']) ?>"><?= e($poll['title']) ?></a>
    — connecté·e en tant que <strong><?= e($participant['email']) ?></strong></p>
 
+<?php if (!empty($my_assigns)): ?>
+<div class="card">
+  <h2 style="margin-top:0;">Mes astreintes (<?= count($my_assigns) ?>)</h2>
+  <ul class="assign-list">
+    <?php foreach ($my_assigns as $a):
+      $is_primary = $a['role'] === 'primary';
+    ?>
+      <li>
+        <span class="role-badge role-<?= e($a['role']) ?>"><?= $is_primary ? 'Principal·e' : 'Suppléant·e' ?></span>
+        <strong><?= e(fmt_day($a['day'])) ?></strong>
+        <span class="muted small"><?= e($a['day']) ?></span>
+        — <?= e($a['label']) ?>
+      </li>
+    <?php endforeach; ?>
+  </ul>
+</div>
+<?php endif; ?>
+
 <?php if (!$dates): ?>
   <p><em>Le sondage ne contient aucune date pour l'instant.</em></p>
 <?php else: ?>

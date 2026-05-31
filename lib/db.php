@@ -77,7 +77,29 @@ function db_migrate(PDO $pdo): void {
             PRIMARY KEY (choice_id, role)
         );
         CREATE INDEX IF NOT EXISTS idx_assignments_pid ON assignments(participant_id);
+
+        CREATE TABLE IF NOT EXISTS notifications (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            poll_id        INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+            participant_id INTEGER NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
+            token_hash     TEXT NOT NULL UNIQUE,
+            status         TEXT NOT NULL DEFAULT 'sent'
+                            CHECK (status IN ('sent', 'confirmed', 'contested')),
+            reply          TEXT NOT NULL DEFAULT '',
+            sent_at        INTEGER NOT NULL,
+            responded_at   INTEGER,
+            UNIQUE(poll_id, participant_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_notif_token ON notifications(token_hash);
     ");
+
+    // Migration en place : polls.contact_email ajoutée si absente.
+    $cols = $pdo->query("PRAGMA table_info(polls)")->fetchAll();
+    $has_contact = false;
+    foreach ($cols as $col) if ($col['name'] === 'contact_email') { $has_contact = true; break; }
+    if (!$has_contact) {
+        $pdo->exec("ALTER TABLE polls ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''");
+    }
 }
 
 function uuid_v4(): string {

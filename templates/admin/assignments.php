@@ -132,3 +132,86 @@ foreach ($dates as $d) $total_choices += count($d['choices']);
     <div class="muted small" id="assignments-totals"></div>
   </div>
 </form>
+
+<h2>Notifications &amp; confirmations</h2>
+
+<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/contact-email" class="card">
+  <?= csrf_field() ?>
+  <label>Email de contact (pour recevoir les signalements de problèmes)
+    <input type="email" name="contact_email"
+           value="<?= e($poll['contact_email']) ?>"
+           placeholder="ex. moi@exemple.com">
+  </label>
+  <button type="submit">Enregistrer</button>
+</form>
+
+<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/notify" class="card">
+  <?= csrf_field() ?>
+  <h3 style="margin-top:0;">Envoyer une notification</h3>
+
+  <fieldset class="target-radio">
+    <legend class="sr-only">Destinataire</legend>
+    <label>
+      <input type="radio" name="target" value="all" checked>
+      Tous les participants ayant au moins un créneau d'astreinte
+      (<?= count($assigned_participants) ?>)
+    </label>
+    <label>
+      <input type="radio" name="target" value="one">
+      Une personne en particulier :
+      <select name="participant_id">
+        <option value="0">—</option>
+        <?php foreach ($participants as $p):
+          $name = $p['name'] !== '' ? $p['name'] : explode('@', $p['email'])[0];
+        ?>
+          <option value="<?= (int)$p['id'] ?>"><?= e($name) ?> &lt;<?= e($p['email']) ?>&gt;</option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+  </fieldset>
+
+  <label>Message personnalisé (facultatif)
+    <textarea name="message" rows="3" placeholder="Ce qui sera ajouté au début de l'email avant la liste des astreintes…"></textarea>
+  </label>
+
+  <p class="muted small">Chaque destinataire reçoit la liste de ses propres astreintes
+     et un lien unique pour confirmer ou signaler un problème.
+     Renvoyer une notification à une personne invalide le lien précédent.</p>
+  <button type="submit">Envoyer</button>
+</form>
+
+<?php if ($notifs): ?>
+  <h3>État des envois</h3>
+  <table class="dates-table notif-status">
+    <thead>
+      <tr>
+        <th>Participant</th>
+        <th>Envoyé le</th>
+        <th>Statut</th>
+        <th>Réponse</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php foreach ($notifs as $n):
+        $statuses = [
+          'sent'      => ['label' => 'Envoyé',    'cls' => 'status-sent'],
+          'confirmed' => ['label' => 'Confirmé',  'cls' => 'status-confirmed-row'],
+          'contested' => ['label' => 'Contesté',  'cls' => 'status-contested-row'],
+        ];
+        $s = $statuses[$n['status']] ?? $statuses['sent'];
+        $name = $n['name'] !== '' ? $n['name'] : explode('@', $n['email'])[0];
+      ?>
+        <tr class="<?= e($s['cls']) ?>">
+          <td><strong><?= e($name) ?></strong><br><span class="muted small"><?= e($n['email']) ?></span></td>
+          <td class="small"><?= e(date('d/m/Y H:i', (int)$n['sent_at'])) ?></td>
+          <td><span class="notif-badge <?= e($s['cls']) ?>"><?= e($s['label']) ?></span>
+            <?php if ($n['responded_at']): ?>
+              <br><span class="muted small"><?= e(date('d/m/Y H:i', (int)$n['responded_at'])) ?></span>
+            <?php endif; ?>
+          </td>
+          <td><?php if ($n['reply']): ?><blockquote class="contest-reply"><?= nl2br(e($n['reply'])) ?></blockquote><?php endif; ?></td>
+        </tr>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
+<?php endif; ?>

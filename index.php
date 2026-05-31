@@ -53,6 +53,8 @@ $routes = [
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)$#',    'route_admin_update_participant'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/assignments$#',           'route_admin_assignments'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments$#',           'route_admin_save_assignments'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/contact-email$#',         'route_admin_set_contact_email'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/notify$#',    'route_admin_send_notifications'],
 
     ['GET',  '#^/p/([0-9a-f-]+)$#',                            'route_poll_show'],
     ['GET',  '#^/p/([0-9a-f-]+)/login$#',                      'route_poll_login_form'],
@@ -62,6 +64,8 @@ $routes = [
     ['GET',  '#^/p/([0-9a-f-]+)/me$#',                         'route_poll_me'],
     ['POST', '#^/p/([0-9a-f-]+)/me$#',                         'route_poll_save_votes'],
     ['POST', '#^/p/([0-9a-f-]+)/me/delete$#',                  'route_poll_delete_votes'],
+    ['GET',  '#^/p/([0-9a-f-]+)/confirm$#',                    'route_poll_confirm_get'],
+    ['POST', '#^/p/([0-9a-f-]+)/confirm$#',                    'route_poll_confirm_post'],
 ];
 
 foreach ($routes as [$m, $pattern, $fn]) {
@@ -296,6 +300,81 @@ function route_admin_delete_participant(string $uuid, string $pid): void {
     redirect('/admin/polls/' . $uuid);
 }
 
+function assignments_for_participant(int $poll_id, int $participant_id): array {
+    $stmt = db()->prepare("
+        SELECT d.day, c.label, a.role
+        FROM assignments a
+        JOIN poll_choices c ON c.id = a.choice_id
+        JOIN poll_dates   d ON d.id = c.date_id
+        WHERE d.poll_id = ? AND a.participant_id = ?
+        ORDER BY d.day, c.sort_order, c.id
+    ");
+    $stmt->execute([$poll_id, $participant_id]);
+    return $stmt->fetchAll();
+}
+
+function poll_notifications_status(int $poll_id): array {
+    $stmt = db()->prepare("
+        SELECT n.*, p.name, p.email
+        FROM notifications n
+        JOIN participants p ON p.id = n.participant_id
+        WHERE n.poll_id = ?
+        ORDER BY n.sent_at DESC, n.id DESC
+    ");
+    $stmt->execute([$poll_id]);
+    return $stmt->fetchAll();
+}
+
+function find_notification_by_token(string $token): ?array {
+    if ($token === '') return null;
+    $hash = hash('sha256', $token);
+    $stmt = db()->prepare("
+        SELECT n.*,
+               p.name  AS participant_name,
+               p.email AS participant_email,
+               po.uuid AS poll_uuid,
+               po.title AS poll_title,
+               po.contact_email AS contact_email
+        FROM notifications n
+        JOIN participants p ON p.id = n.participant_id
+        JOIN polls       po ON po.id = n.poll_id
+        WHERE n.token_hash = ?
+    ");
+    $stmt->execute([$hash]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function fmt_assignment_line(array $a): string {
+    $role = $a['role'] === 'primary' ? 'Principal·e' : 'Suppléant·e';
+    return fmt_day($a['day']) . ' — ' . $a['label'] . ' — ' . $role;
+}
+
+function send_notification_email(array $poll, array $participant, array $assigns, string $token, string $custom_message): void {
+    $app_url = rtrim($GLOBALS['CONFIG']['app_url'], '/');
+    $confirm_url = $app_url . '/p/' . $poll['uuid'] . '/confirm?token=' . urlencode($token);
+    $poll_url    = $app_url . '/p/' . $poll['uuid'];
+    $name = $participant['name'] !== '' ? $participant['name'] : explode('@', $participant['email'])[0];
+
+    $subject = '[mmidate] Vos astreintes pour « ' . $poll['title'] . ' »';
+    $body  = "Bonjour $name,\n\n";
+    $body .= "Les astreintes du sondage « {$poll['title']} » viennent d'être posées par l'organisateur.\n\n";
+    if (!empty($assigns)) {
+        $body .= "Vos créneaux :\n";
+        foreach ($assigns as $a) $body .= "  • " . fmt_assignment_line($a) . "\n";
+        $body .= "\n";
+    } else {
+        $body .= "Aucun créneau ne vous a été assigné.\n\n";
+    }
+    if ($custom_message !== '') {
+        $body .= "Message de l'organisateur :\n$custom_message\n\n";
+    }
+    $body .= "Pour confirmer (ou signaler un problème) :\n$confirm_url\n\n";
+    $body .= "Voir l'ensemble du sondage :\n$poll_url\n\n";
+    $body .= "Merci !\n";
+    send_mail($participant['email'], $subject, $body);
+}
+
 function poll_assignments_map(int $poll_id): array {
     $stmt = db()->prepare("
         SELECT a.choice_id, a.role, a.participant_id
@@ -319,13 +398,25 @@ function route_admin_assignments(string $uuid): void {
     $participants = poll_participants((int)$poll['id']);
     $votes        = poll_votes_map((int)$poll['id']);
     $assigns      = poll_assignments_map((int)$poll['id']);
+    $notifs       = poll_notifications_status((int)$poll['id']);
+
+    // Participants ayant au moins une assignation (pour le formulaire de notification).
+    $assigned_ids = [];
+    foreach ($assigns as $by_role) {
+        foreach ($by_role as $pid) $assigned_ids[(int)$pid] = true;
+    }
+    $assigned_participants = array_values(array_filter($participants,
+        fn($p) => isset($assigned_ids[(int)$p['id']])));
+
     render('admin/assignments', [
         'page_title' => 'Astreintes — ' . $poll['title'],
         'poll' => $poll,
         'dates' => $dates,
         'participants' => $participants,
+        'assigned_participants' => $assigned_participants,
         'votes' => $votes,
         'assigns' => $assigns,
+        'notifs' => $notifs,
         'include_assignments' => true,
     ]);
 }
@@ -383,6 +474,143 @@ function route_admin_save_assignments(string $uuid): void {
     $pdo->commit();
     flash_set('ok', 'Astreintes enregistrées.');
     redirect('/admin/polls/' . $uuid . '/assignments');
+}
+
+function route_admin_set_contact_email(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $email = trim((string)($_POST['contact_email'] ?? ''));
+    if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        flash_set('err', 'Email de contact invalide.');
+        redirect('/admin/polls/' . $uuid . '/assignments');
+    }
+    $upd = db()->prepare("UPDATE polls SET contact_email = ? WHERE id = ?");
+    $upd->execute([strtolower($email), $poll['id']]);
+    flash_set('ok', 'Email de contact mis à jour.');
+    redirect('/admin/polls/' . $uuid . '/assignments');
+}
+
+function route_admin_send_notifications(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $target  = (string)($_POST['target'] ?? 'all');
+    $custom  = trim((string)($_POST['message'] ?? ''));
+    $only_pid = (int)($_POST['participant_id'] ?? 0);
+
+    $pdo = db();
+    if ($target === 'one' && $only_pid > 0) {
+        $stmt = $pdo->prepare("SELECT * FROM participants WHERE poll_id = ? AND id = ?");
+        $stmt->execute([$poll['id'], $only_pid]);
+        $row = $stmt->fetch();
+        $targets = $row ? [$row] : [];
+    } else {
+        $stmt = $pdo->prepare("
+            SELECT DISTINCT p.*
+            FROM participants p
+            JOIN assignments a   ON a.participant_id = p.id
+            JOIN poll_choices c  ON c.id = a.choice_id
+            JOIN poll_dates   d  ON d.id = c.date_id
+            WHERE d.poll_id = ? AND p.poll_id = ?
+            ORDER BY p.name, p.email
+        ");
+        $stmt->execute([$poll['id'], $poll['id']]);
+        $targets = $stmt->fetchAll();
+    }
+
+    if (!$targets) {
+        flash_set('err', 'Aucun destinataire trouvé.');
+        redirect('/admin/polls/' . $uuid . '/assignments');
+    }
+
+    $sent = 0;
+    $errors = [];
+    foreach ($targets as $p) {
+        $assigns = assignments_for_participant((int)$poll['id'], (int)$p['id']);
+        $token = bin2hex(random_bytes(24));
+        $hash  = hash('sha256', $token);
+
+        $pdo->beginTransaction();
+        $del = $pdo->prepare("DELETE FROM notifications WHERE poll_id = ? AND participant_id = ?");
+        $del->execute([$poll['id'], $p['id']]);
+        $ins = $pdo->prepare("INSERT INTO notifications (poll_id, participant_id, token_hash, status, sent_at) VALUES (?, ?, ?, 'sent', ?)");
+        $ins->execute([$poll['id'], $p['id'], $hash, time()]);
+        $pdo->commit();
+
+        try {
+            send_notification_email($poll, $p, $assigns, $token, $custom);
+            $sent++;
+        } catch (Throwable $e) {
+            $errors[] = $p['email'] . ' : ' . $e->getMessage();
+            mail_log($p['email'], '[notification failed] ' . $e->getMessage(), '');
+        }
+    }
+
+    flash_set('ok', "Notifications envoyées à $sent destinataire(s).");
+    if ($errors) flash_set('err', 'Échecs : ' . implode(', ', $errors));
+    redirect('/admin/polls/' . $uuid . '/assignments');
+}
+
+function route_poll_confirm_get(string $uuid): void {
+    $poll = find_poll($uuid);
+    $token = (string)($_GET['token'] ?? '');
+    $notif = find_notification_by_token($token);
+    if (!$notif || (int)$notif['poll_id'] !== (int)$poll['id']) not_found();
+    $assigns = assignments_for_participant((int)$poll['id'], (int)$notif['participant_id']);
+    render('poll/confirm', [
+        'page_title' => 'Vos astreintes — ' . $poll['title'],
+        'poll' => $poll,
+        'notif' => $notif,
+        'assigns' => $assigns,
+        'token' => $token,
+    ]);
+}
+
+function route_poll_confirm_post(string $uuid): void {
+    $poll = find_poll($uuid);
+    $token = (string)($_POST['token'] ?? '');
+    $notif = find_notification_by_token($token);
+    if (!$notif || (int)$notif['poll_id'] !== (int)$poll['id']) not_found();
+
+    $action = (string)($_POST['action'] ?? '');
+    $reply  = trim((string)($_POST['reply'] ?? ''));
+    $redir  = '/p/' . $uuid . '/confirm?token=' . urlencode($token);
+
+    if ($action === 'confirm') {
+        $upd = db()->prepare("UPDATE notifications SET status='confirmed', reply='', responded_at=? WHERE id=?");
+        $upd->execute([time(), $notif['id']]);
+        flash_set('ok', 'Merci, votre confirmation a bien été enregistrée.');
+        redirect($redir);
+    }
+
+    if ($action === 'contest') {
+        if ($reply === '') {
+            flash_set('err', 'Merci d\'indiquer le problème dans le message.');
+            redirect($redir);
+        }
+        $upd = db()->prepare("UPDATE notifications SET status='contested', reply=?, responded_at=? WHERE id=?");
+        $upd->execute([$reply, time(), $notif['id']]);
+
+        // Email à l'organisateur (si configuré).
+        $contact = trim((string)$poll['contact_email']);
+        if ($contact !== '' && filter_var($contact, FILTER_VALIDATE_EMAIL)) {
+            $assigns = assignments_for_participant((int)$poll['id'], (int)$notif['participant_id']);
+            $name = $notif['participant_name'] !== '' ? $notif['participant_name'] : $notif['participant_email'];
+            $subject = '[mmidate] ' . $name . ' signale un problème — ' . $poll['title'];
+            $body  = "$name <{$notif['participant_email']}> a contesté ses astreintes pour le sondage « {$poll['title']} ».\n\n";
+            $body .= "Ses astreintes actuelles :\n";
+            foreach ($assigns as $a) $body .= "  • " . fmt_assignment_line($a) . "\n";
+            $body .= "\nSon message :\n---\n$reply\n---\n\n";
+            $body .= "Voir : " . rtrim($GLOBALS['CONFIG']['app_url'], '/') . "/admin/polls/{$poll['uuid']}/assignments\n";
+            try {
+                send_mail($contact, $subject, $body);
+            } catch (Throwable $e) {
+                mail_log($contact, '[contest notify failed] ' . $e->getMessage(), $body);
+            }
+        }
+        flash_set('ok', 'Votre signalement a été transmis. Merci !');
+        redirect($redir);
+    }
+    redirect($redir);
 }
 
 function route_admin_create_participant(string $uuid): void {
@@ -566,12 +794,14 @@ function route_poll_me(string $uuid): void {
     $v = $pdo->prepare("SELECT choice_id, value FROM votes WHERE participant_id = ?");
     $v->execute([$participant['id']]);
     foreach ($v as $row) $myvotes[(int)$row['choice_id']] = $row['value'];
+    $my_assigns = assignments_for_participant((int)$poll['id'], (int)$participant['id']);
     render('poll/me', [
         'page_title' => 'Mes choix — ' . $poll['title'],
         'poll' => $poll,
         'dates' => $dates,
         'participant' => $participant,
         'myvotes' => $myvotes,
+        'my_assigns' => $my_assigns,
     ]);
 }
 
