@@ -7,6 +7,8 @@ $tabs = [
     'dates'        => ['Dates & créneaux', '/admin/polls/' . $poll['uuid'] . '/dates'],
     'participants' => ['Participants',     '/admin/polls/' . $poll['uuid'] . '/participants'],
     'assignments'  => ['Astreintes',       '/admin/polls/' . $poll['uuid'] . '/assignments'],
+    'calendar'     => ['Calendrier',       '/admin/polls/' . $poll['uuid'] . '/calendar'],
+    'activity'     => ['Activité',         '/admin/polls/' . $poll['uuid'] . '/activity'],
     'settings'     => ['Paramètres',       '/admin/polls/' . $poll['uuid'] . '/settings'],
 ];
 $active_tab = $active ?? 'home';

@@ -7,6 +7,7 @@ require_once __DIR__ . '/../lib/mailer.php';
 require_once __DIR__ . '/../services/polls.php';
 require_once __DIR__ . '/../services/assignments.php';
 require_once __DIR__ . '/../services/notifications.php';
+require_once __DIR__ . '/../services/activity_log.php';
 
 function route_admin_set_contact_email(string $uuid): void {
     $poll = find_poll($uuid);
@@ -18,6 +19,7 @@ function route_admin_set_contact_email(string $uuid): void {
     }
     $upd = db()->prepare("UPDATE polls SET contact_email = ? WHERE id = ?");
     $upd->execute([strtolower($email), $poll['id']]);
+    log_activity((int)$poll['id'], 'contact_email_update', ['target' => $email]);
     flash_set('ok', 'Email de contact mis à jour.');
     redirect('/admin/polls/' . $uuid . '/settings');
 }
@@ -68,6 +70,10 @@ function route_admin_send_notifications(string $uuid): void {
         }
     }
 
+    log_activity((int)$poll['id'], 'notification_send', [
+        'target' => "$sent destinataire" . ($sent > 1 ? 's' : ''),
+        'payload' => ['target_mode' => $target, 'errors' => $errors],
+    ]);
     flash_set('ok', "Notifications envoyées à $sent destinataire(s).");
     if ($errors) flash_set('err', 'Échecs : ' . implode(', ', $errors));
     redirect('/admin/polls/' . $uuid . '/assignments');

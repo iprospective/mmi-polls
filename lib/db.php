@@ -98,6 +98,19 @@ function db_migrate(PDO $pdo): void {
             used_at     INTEGER
         );
 
+        CREATE TABLE IF NOT EXISTS activity_log (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            poll_id      INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+            actor_type   TEXT NOT NULL,    -- 'admin' | 'manager' | 'participant' | 'system'
+            actor_id     INTEGER,
+            actor_label  TEXT NOT NULL DEFAULT '',
+            action       TEXT NOT NULL,
+            target       TEXT NOT NULL DEFAULT '',
+            payload      TEXT NOT NULL DEFAULT '',
+            created_at   INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_activity_poll ON activity_log(poll_id, created_at DESC);
+
         CREATE TABLE IF NOT EXISTS poll_managers (
             poll_id        INTEGER NOT NULL REFERENCES polls(id)    ON DELETE CASCADE,
             manager_id     INTEGER NOT NULL REFERENCES managers(id) ON DELETE CASCADE,

@@ -52,6 +52,8 @@ return [
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments$#',                 'admin_assignments',   'route_admin_save_assignments'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/auto-fill$#',       'admin_assignments',   'route_admin_auto_fill_assignments'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/clear$#',           'admin_assignments',   'route_admin_clear_assignments'],
+    ['GET',  '#^/admin/polls/([0-9a-f-]+)/calendar$#',                    'admin_calendar',      'route_admin_calendar'],
+    ['GET',  '#^/admin/polls/([0-9a-f-]+)/activity$#',                    'admin_activity',      'route_admin_activity'],
 
     ['POST', '#^/admin/polls/([0-9a-f-]+)/contact-email$#',               'admin_notifications', 'route_admin_set_contact_email'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/notify$#',          'admin_notifications', 'route_admin_send_notifications'],

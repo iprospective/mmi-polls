@@ -9,6 +9,7 @@ require_once __DIR__ . '/../services/votes.php';
 require_once __DIR__ . '/../services/assignments.php';
 require_once __DIR__ . '/../services/notifications.php';
 require_once __DIR__ . '/../services/auto_fill.php';
+require_once __DIR__ . '/../services/activity_log.php';
 
 function route_admin_assignments(string $uuid): void {
     $poll = find_poll($uuid);
@@ -91,6 +92,7 @@ function route_admin_save_assignments(string $uuid): void {
         if ($back > 0) $ins->execute([$cid, 'backup',  $back]);
     }
     $pdo->commit();
+    log_activity((int)$poll['id'], 'assign_save');
     flash_set('ok', 'Astreintes enregistrées.');
     redirect('/admin/polls/' . $uuid . '/assignments');
 }
@@ -100,6 +102,10 @@ function route_admin_auto_fill_assignments(string $uuid): void {
     require_poll_access($poll);
     $res = run_auto_fill_assignments((int)$poll['id']);
     $total = $res['inserted_p'] + $res['inserted_b'];
+    log_activity((int)$poll['id'], 'assign_autofill', [
+        'target'  => "+{$res['inserted_p']} principaux, +{$res['inserted_b']} suppléants",
+        'payload' => $res,
+    ]);
     if ($total > 0) {
         flash_set('ok', "Remplissage automatique : $total créneaux remplis "
             . "({$res['inserted_p']} principaux, {$res['inserted_b']} suppléants).");
@@ -121,6 +127,7 @@ function route_admin_clear_assignments(string $uuid): void {
         )
     ");
     $stmt->execute([$poll['id']]);
+    log_activity((int)$poll['id'], 'assign_clear');
     flash_set('ok', 'Toutes les astreintes ont été supprimées.');
     redirect('/admin/polls/' . $uuid . '/assignments');
 }

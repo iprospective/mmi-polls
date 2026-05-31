@@ -6,6 +6,7 @@ require_once __DIR__ . '/../lib/helpers.php';
 require_once __DIR__ . '/../services/polls.php';
 require_once __DIR__ . '/../services/assignments.php';
 require_once __DIR__ . '/../services/ical.php';
+require_once __DIR__ . '/../services/activity_log.php';
 
 function route_poll_me(string $uuid): void {
     $poll = find_poll($uuid);
@@ -85,6 +86,12 @@ function route_poll_save_votes(string $uuid): void {
         $ins->execute([$participant['id'], $cid, $val]);
     }
     $pdo->commit();
+    log_activity((int)$poll['id'], 'vote_save', [
+        'actor_type'  => 'participant',
+        'actor_id'    => (int)$participant['id'],
+        'actor_label' => $name !== '' ? $name : $participant['email'],
+        'target'      => count($votes) . ' votes',
+    ]);
     flash_set('ok', 'Choix enregistrés.');
     redirect('/p/' . $uuid . '/me');
 }

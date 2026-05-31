@@ -6,6 +6,7 @@ require_once __DIR__ . '/../lib/mailer.php';
 require_once __DIR__ . '/../services/polls.php';
 require_once __DIR__ . '/../services/managers.php';
 require_once __DIR__ . '/../services/poll_managers.php';
+require_once __DIR__ . '/../services/activity_log.php';
 
 function route_poll_add_manager(string $uuid): void {
     $poll = find_poll($uuid);
@@ -32,6 +33,7 @@ function route_poll_add_manager(string $uuid): void {
     } else {
         flash_set('ok', $m['email'] . ' a maintenant accès à ce sondage.');
         notify_manager_added_to_poll($m, $poll);
+        log_activity((int)$poll['id'], 'poll_manager_add', ['target' => $m['email']]);
     }
     redirect('/admin/polls/' . $uuid . '/settings');
 }
@@ -50,6 +52,7 @@ function route_poll_remove_manager(string $uuid, string $mid): void {
     }
     $m = find_manager_by_id((int)$mid);
     remove_poll_manager((int)$poll['id'], (int)$mid);
+    log_activity((int)$poll['id'], 'poll_manager_remove', ['target' => $m['email'] ?? '#' . $mid]);
     flash_set('ok', ($m['email'] ?? 'Manager') . ' retiré du sondage.');
     redirect('/admin/polls/' . $uuid . '/settings');
 }
