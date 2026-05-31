@@ -138,17 +138,20 @@ function route_admin_update_participant(string $uuid, string $pid): void {
     sort($cm_valid);
     $contact_method = implode(',', $cm_valid);
 
-    $address = trim((string)($_POST['address'] ?? ''));
-    $lat = $participant['latitude']         ?? null;
-    $lng = $participant['longitude']        ?? null;
+    $address  = $participant['address']           ?? '';
+    $lat      = $participant['latitude']          ?? null;
+    $lng      = $participant['longitude']         ?? null;
     $geocoded = (string)($participant['geocoded_address'] ?? '');
-    if ($address !== (string)($participant['address'] ?? '')) {
-        $lat = null; $lng = null; $geocoded = '';
-        if ($address !== '') {
-            $geo = geocode($address);
-            if ($geo) {
-                $lat = $geo['lat']; $lng = $geo['lng'];
-                $geocoded = $geo['display_name'];
+    if (poll_addresses_enabled($poll)) {
+        $address = trim((string)($_POST['address'] ?? ''));
+        if ($address !== (string)($participant['address'] ?? '')) {
+            $lat = null; $lng = null; $geocoded = '';
+            if ($address !== '') {
+                $geo = geocode($address);
+                if ($geo) {
+                    $lat = $geo['lat']; $lng = $geo['lng'];
+                    $geocoded = $geo['display_name'];
+                }
             }
         }
     }

@@ -20,6 +20,7 @@
     <input type="tel" name="phone" value="<?= e($participant['phone'] ?? '') ?>" placeholder="ex. 06 12 34 56 78">
   </label>
 
+  <?php if (poll_addresses_enabled($poll)): ?>
   <label>Adresse / ville
     <input type="text" name="address" value="<?= e($participant['address'] ?? '') ?>" placeholder="ex. 12 rue de la Mairie, Romans">
   </label>
@@ -33,6 +34,7 @@
     <div class="geo-failed">
       <strong>⚠️ Non géolocalisée</strong> — adresse enregistrée mais Nominatim n'a rien trouvé.
     </div>
+  <?php endif; ?>
   <?php endif; ?>
 
   <fieldset class="check-group-wrap">

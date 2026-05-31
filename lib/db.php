@@ -171,6 +171,10 @@ function db_migrate(PDO $pdo): void {
         'end_geocoded'   => "TEXT NOT NULL DEFAULT ''",
         // 1 = astreintes visibles côté participant. 0 = brouillon admin only.
         'assignments_public' => "INTEGER NOT NULL DEFAULT 1",
+        // 1 = gestion d'adresses activée pour ce sondage (géocodage +
+        // distance dans l'algo). Master switch global aussi nécessaire
+        // (CONFIG.addresses.enabled). Voir poll_addresses_enabled().
+        'addresses_enabled'  => "INTEGER NOT NULL DEFAULT 1",
     ] as $col => $sql_type) {
         if (!in_array($col, $present, true)) {
             $pdo->exec("ALTER TABLE polls ADD COLUMN $col $sql_type");

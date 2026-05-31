@@ -67,24 +67,27 @@ function route_poll_save_votes(string $uuid): void {
     sort($cm_valid);
     $contact_method = implode(',', $cm_valid);
 
-    // Géocode l'adresse SEULEMENT si elle a changé (économise les appels
-    // Nominatim et respecte la politique d'usage). Reset complet si elle
-    // change (lat/lng/geocoded_address tous remis à zéro avant tentative).
-    $address = trim((string)($_POST['address'] ?? ''));
-    $lat = $participant['latitude']         ?? null;
-    $lng = $participant['longitude']        ?? null;
+    // Adresse + géocodage : uniquement si la feature est active. Sinon
+    // on ne touche pas aux valeurs existantes (préserve les données
+    // d'un éventuel basculement off→on plus tard).
+    $address  = $participant['address']          ?? '';
+    $lat      = $participant['latitude']         ?? null;
+    $lng      = $participant['longitude']        ?? null;
     $geocoded = (string)($participant['geocoded_address'] ?? '');
     $geo_msg  = '';
-    if ($address !== (string)($participant['address'] ?? '')) {
-        $lat = null; $lng = null; $geocoded = '';
-        if ($address !== '') {
-            $geo = geocode($address);
-            if ($geo) {
-                $lat = $geo['lat']; $lng = $geo['lng'];
-                $geocoded = $geo['display_name'];
-                $geo_msg  = ' 📍 ' . $geo['display_name'];
-            } else {
-                $geo_msg = ' (adresse enregistrée mais pas géolocalisée)';
+    if (poll_addresses_enabled($poll)) {
+        $address = trim((string)($_POST['address'] ?? ''));
+        if ($address !== (string)($participant['address'] ?? '')) {
+            $lat = null; $lng = null; $geocoded = '';
+            if ($address !== '') {
+                $geo = geocode($address);
+                if ($geo) {
+                    $lat = $geo['lat']; $lng = $geo['lng'];
+                    $geocoded = $geo['display_name'];
+                    $geo_msg  = ' 📍 ' . $geo['display_name'];
+                } else {
+                    $geo_msg = ' (adresse enregistrée mais pas géolocalisée)';
+                }
             }
         }
     }

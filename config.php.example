@@ -52,4 +52,12 @@ return [
     'auto_fill' => [
         'priority' => ['Nuit', 'Soirée', 'Journée'],
     ],
+
+    // Master switch global pour la gestion d'adresses (géocodage +
+    // distance dans l'algo auto-fill). Activée par défaut. Chaque
+    // sondage a aussi son propre toggle (Paramètres). La feature est
+    // active si CE drapeau ET celui du sondage sont à true.
+    'addresses' => [
+        'enabled' => true,
+    ],
 ];

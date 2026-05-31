@@ -83,20 +83,21 @@ function route_admin_update_poll(string $uuid): void {
 
     // Checkbox non cochée = absente du POST. Booléen en INTEGER 0/1.
     $assigns_public = isset($_POST['assignments_public']) ? 1 : 0;
+    $addr_enabled   = isset($_POST['addresses_enabled'])  ? 1 : 0;
 
     $stmt = db()->prepare("
         UPDATE polls
         SET title = ?, description = ?, closed_at = ?,
             start_address = ?, start_lat = ?, start_lng = ?, start_geocoded = ?,
             end_address   = ?, end_lat   = ?, end_lng   = ?, end_geocoded   = ?,
-            assignments_public = ?
+            assignments_public = ?, addresses_enabled = ?
         WHERE id = ?
     ");
     $stmt->execute([
         $title, $desc, $closed_at,
         $start_addr, $start_lat, $start_lng, $start_geocoded,
         $end_addr,   $end_lat,   $end_lng,   $end_geocoded,
-        $assigns_public,
+        $assigns_public, $addr_enabled,
         $poll['id'],
     ]);
     flash_set('ok', 'Sondage mis à jour.');

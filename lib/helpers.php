@@ -94,6 +94,21 @@ function sanitize_phone(string $raw): string {
  * À chaque modif de CSS/JS, bumper CONFIG.asset_version.
  */
 /**
+ * Gestion d'adresses active pour un sondage ?
+ * Combinaison AND du master switch global (CONFIG.addresses.enabled)
+ * et du flag par-sondage (polls.addresses_enabled).
+ */
+function poll_addresses_enabled(array $poll): bool {
+    $global = (bool)($GLOBALS['CONFIG']['addresses']['enabled'] ?? true);
+    $local  = !empty($poll['addresses_enabled']);
+    return $global && $local;
+}
+
+function addresses_globally_enabled(): bool {
+    return (bool)($GLOBALS['CONFIG']['addresses']['enabled'] ?? true);
+}
+
+/**
  * Distance en km entre deux points (lat, lng) — formule Haversine.
  */
 function haversine_km(float $lat1, float $lng1, float $lat2, float $lng2): float {

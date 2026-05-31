@@ -47,12 +47,14 @@ function run_auto_fill_assignments(int $poll_id): array {
     $choices_stmt->execute([$poll_id]);
     $choices = $choices_stmt->fetchAll();
 
-    // Distance de chaque participant au point de départ (km), si applicable.
-    $poll_q = $pdo->prepare("SELECT start_lat, start_lng FROM polls WHERE id = ?");
+    // Distance de chaque participant au point de départ (km), si la
+    // gestion d'adresses est activée pour ce sondage ET globalement.
+    $poll_q = $pdo->prepare("SELECT * FROM polls WHERE id = ?");
     $poll_q->execute([$poll_id]);
     $poll_pt = $poll_q->fetch();
     $distances = [];
-    if ($poll_pt && $poll_pt['start_lat'] !== null && $poll_pt['start_lng'] !== null) {
+    if ($poll_pt && poll_addresses_enabled($poll_pt)
+        && $poll_pt['start_lat'] !== null && $poll_pt['start_lng'] !== null) {
         $part_q = $pdo->prepare("SELECT id, latitude, longitude FROM participants WHERE poll_id = ?");
         $part_q->execute([$poll_id]);
         foreach ($part_q as $r) {

@@ -25,6 +25,22 @@ require __DIR__ . '/_admin_nav.php';
     <p class="muted small" style="margin: 0.4rem 0 0;">Décochez pour travailler en mode brouillon : les pictos P/S sur la grille publique, la section « Mes astreintes » sur la page personnelle et le flux iCal sont masqués jusqu'à ce que vous publiiez.</p>
   </fieldset>
 
+  <?php $addr_global = addresses_globally_enabled(); ?>
+  <fieldset class="check-group-wrap" style="margin-bottom: 0.85rem;">
+    <legend>Gestion d'adresses</legend>
+    <?php if (!$addr_global): ?>
+      <p class="muted small">⚠️ Désactivée globalement dans la config (CONFIG.addresses.enabled = false). Aucun effet de ce toggle tant que ce n'est pas réactivé côté serveur.</p>
+    <?php endif; ?>
+    <label class="check-inline" style="font-size: 0.9rem; <?= $addr_global ? '' : 'opacity:0.5;' ?>">
+      <input type="checkbox" name="addresses_enabled" value="1"
+             <?= !empty($poll['addresses_enabled']) ? 'checked' : '' ?>
+             <?= $addr_global ? '' : 'disabled' ?>>
+      Activer la gestion d'adresses pour ce sondage
+    </label>
+    <p class="muted small" style="margin: 0.4rem 0 0;">Décochez si vous n'utilisez pas la géolocalisation. Les champs adresse côté participant et la prise en compte de la distance dans l'auto-fill seront masqués.</p>
+  </fieldset>
+
+  <?php if (poll_addresses_enabled($poll)): ?>
   <h3>Trajet (facultatif)</h3>
   <p class="muted small">Renseigner ces deux points permet à l'algorithme de remplissage auto de privilégier les personnes les plus proches du point de départ.</p>
 
@@ -53,6 +69,7 @@ require __DIR__ . '/_admin_nav.php';
   <?php elseif (!empty($poll['end_address'])): ?>
     <div class="geo-failed"><strong>⚠️ Non géolocalisée</strong> — précisez ville/pays pour aider.</div>
   <?php endif; ?>
+  <?php endif; /* poll_addresses_enabled */ ?>
 
   <button type="submit">Enregistrer</button>
 </form>

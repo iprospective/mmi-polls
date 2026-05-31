@@ -58,6 +58,7 @@
     <input type="tel" name="phone" value="<?= e($participant['phone'] ?? '') ?>" placeholder="ex. 06 12 34 56 78">
   </label>
 
+  <?php if (poll_addresses_enabled($poll)): ?>
   <label>Adresse / ville (facultatif)
     <input type="text" name="address" value="<?= e($participant['address'] ?? '') ?>" placeholder="ex. 12 rue de la Mairie, Romans">
   </label>
@@ -73,6 +74,7 @@
     </div>
   <?php else: ?>
     <p class="muted small">Permet de privilégier les personnes les plus proches du lieu de départ pour les astreintes de transport.</p>
+  <?php endif; ?>
   <?php endif; ?>
 
   <fieldset class="check-group-wrap">
