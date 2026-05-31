@@ -190,12 +190,14 @@ function route_admin_poll(string $uuid): void {
     $dates = poll_structure((int)$poll['id']);
     $participants = poll_participants((int)$poll['id']);
     $votes = poll_votes_map((int)$poll['id']);
+    $assigns = poll_assignments_map((int)$poll['id']);
     render('admin/poll', [
         'page_title' => $poll['title'],
         'poll' => $poll,
         'dates' => $dates,
         'participants' => $participants,
         'votes' => $votes,
+        'assigns' => $assigns,
         'include_editor' => true,
     ]);
 }
@@ -995,12 +997,14 @@ function route_poll_show(string $uuid): void {
     $dates = poll_structure((int)$poll['id']);
     $participants = poll_participants((int)$poll['id']);
     $votes = poll_votes_map((int)$poll['id']);
+    $assigns = poll_assignments_map((int)$poll['id']);
     render('poll/show', [
         'page_title' => $poll['title'],
         'poll' => $poll,
         'dates' => $dates,
         'participants' => $participants,
         'votes' => $votes,
+        'assigns' => $assigns,
         'me' => participant_session($uuid),
     ]);
 }

@@ -1,10 +1,18 @@
 <?php
 // Shared grid renderer.
 // Expects: $dates, $participants, $votes (map participant_id => choice_id => value)
+// Optionally: $assigns (map choice_id => ['primary' => pid, 'backup' => pid])
 $symbols = ['yes' => '✓', 'no' => '✗', 'maybe' => '?'];
 $hl = $GLOBALS['CONFIG']['highlight'] ?? ['yes_min' => 2, 'yesmaybe_min' => 2];
 $yes_min      = (int)$hl['yes_min'];
 $yesmaybe_min = (int)$hl['yesmaybe_min'];
+$assigns_map  = $assigns ?? [];
+$name_of = [];
+foreach ($participants as $p) {
+    $name_of[(int)$p['id']] = $p['name'] !== '' ? $p['name'] : explode('@', $p['email'])[0];
+}
+$has_any_assign = false;
+foreach ($assigns_map as $by_role) if (!empty($by_role)) { $has_any_assign = true; break; }
 
 // Calcule en amont les comptes / statut par créneau et l'agrégat par jour.
 // Le statut "jour" est le pire des statuts de ses créneaux
@@ -37,6 +45,13 @@ foreach ($dates as $d) {
     $day_status[$d['id']] = $worst ?? 'bad';
 }
 ?>
+<?php if ($has_any_assign): ?>
+<p class="grid-legend muted small">
+  <span class="role-marker rm-primary" aria-hidden="true">P</span> = personne d'astreinte principale ·
+  <span class="role-marker rm-backup"  aria-hidden="true">S</span> = suppléant·e
+</p>
+<?php endif; ?>
+
 <div class="grid-wrap">
 <table class="vote-grid">
   <thead>
@@ -73,8 +88,18 @@ foreach ($dates as $d) {
           $v = $votes[$p['id']][$c['id']] ?? null;
           $cls = $v ? 'v-' . $v : 'v-none';
           $sym = $v ? $symbols[$v] : '—';
+          $assign_role = null;
+          $cell_assigns = $assigns_map[(int)$c['id']] ?? [];
+          if (($cell_assigns['primary'] ?? 0) === (int)$p['id'])      $assign_role = 'primary';
+          elseif (($cell_assigns['backup'] ?? 0) === (int)$p['id'])   $assign_role = 'backup';
         ?>
-          <td class="vote-cell <?= $cls ?>"><?= $sym ?></td>
+          <td class="vote-cell <?= $cls ?><?= $assign_role ? ' is-' . $assign_role : '' ?>">
+            <?php if ($assign_role): ?>
+              <span class="role-marker rm-<?= $assign_role ?>"
+                    title="<?= $assign_role === 'primary' ? 'Principal·e' : 'Suppléant·e' ?>"><?= $assign_role === 'primary' ? 'P' : 'S' ?></span>
+            <?php endif; ?>
+            <?= $sym ?>
+          </td>
         <?php endforeach; ?>
         <td class="summary-cell status-<?= $status ?>">
           <span class="v-yes"><?= $counts['yes'] ?>✓</span>
@@ -113,6 +138,11 @@ foreach ($dates as $d) {
     }
     $total_votes = $counts['yes'] + $counts['no'] + $counts['maybe'];
   ?>
+  <?php
+    $m_assigns = $assigns_map[(int)$c['id']] ?? [];
+    $m_primary = isset($m_assigns['primary']) ? ($name_of[(int)$m_assigns['primary']] ?? null) : null;
+    $m_backup  = isset($m_assigns['backup'])  ? ($name_of[(int)$m_assigns['backup']]  ?? null) : null;
+  ?>
   <li class="m-slot row-<?= $status ?>">
     <div class="m-head">
       <span class="m-label"><?= e($c['label']) ?></span>
@@ -122,6 +152,16 @@ foreach ($dates as $d) {
         <span class="v-no"><?= $counts['no'] ?>✗</span>
       </span>
     </div>
+    <?php if ($m_primary || $m_backup): ?>
+    <div class="m-assigns">
+      <?php if ($m_primary): ?>
+        <span class="m-assign m-assign-primary"><span class="role-marker rm-primary">P</span> <?= e($m_primary) ?></span>
+      <?php endif; ?>
+      <?php if ($m_backup): ?>
+        <span class="m-assign m-assign-backup"><span class="role-marker rm-backup">S</span> <?= e($m_backup) ?></span>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
     <?php if ($total_votes > 0): ?>
     <details class="m-detail">
       <summary>Qui ?</summary>
