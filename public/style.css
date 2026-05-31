@@ -753,10 +753,46 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
 .usage-pct.tier-2 { color: #b45309; }
 .usage-pct.tier-3 { color: #b91c1c; }
 
-/* Cellule actions : pile les boutons sur petit espace, sépare-les par un · */
-.participants-table .actions-cell { white-space: nowrap; }
-.participants-table .actions-cell > * + * { margin-left: 0.5rem; padding-left: 0.5rem; border-left: 1px solid var(--border); }
-.participants-table .actions-cell .inline { display: inline-block; }
+/* Cellule actions : pictos compacts en ligne */
+.participants-table .actions-cell {
+  white-space: nowrap;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.participants-table .actions-cell .inline { display: inline-flex; }
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--fg-soft);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease;
+}
+.icon-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+.icon-btn:active { transform: translateY(1px); }
+.icon-btn svg { width: 16px; height: 16px; display: block; }
+
+/* Nom avec tooltip email : indique visuellement la possibilité au survol */
+.participants-table tbody td[title]:first-child { cursor: help; }
+
+/* Email visible uniquement sur mobile (où la table devient cartes).
+ * Sur desktop, l'email apparaît au survol du nom via attribut title. */
+.participants-table th.email-col,
+.participants-table td.email-cell { display: none; }
 
 /* Personnes orphelines : tout gris atténué */
 .participants-table tr.orphan { color: var(--muted); background: #fafbfc; }
@@ -822,6 +858,11 @@ table.sortable thead th.sorted-desc::after { content: ' ↓'; }
     font-size: 0.75rem;
     margin-right: 0.5rem;
   }
+
+  /* Sur mobile, on réaffiche l'email puisque les cellules sont empilées
+   * en cartes (et hover n'a pas de sens) */
+  .participants-table th.email-col,
+  .participants-table td.email-cell { display: block; }
 }
 
 /* ====================================================================

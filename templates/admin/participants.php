@@ -5,6 +5,14 @@ function _tier_label(float $usage): array {
     if ($usage < 0.90) return ['Fortement sollicité', 'tier-2'];
     return                    ['Saturé',       'tier-3'];
 }
+function _icon(string $name): string {
+    $svgs = [
+        'calendar' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+        'edit'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+        'mail'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+    ];
+    return $svgs[$name] ?? '';
+}
 function _fmt_rel_date(?int $ts): string {
     if (!$ts) return '—';
     $delta = time() - $ts;
@@ -55,8 +63,10 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
     $sum['none']  += $none;  $sum['p']     += $pri;   $sum['b']  += $bak;
 ?>
     <tr class="<?= $is_orphan ? 'orphan' : '' ?>">
-      <td data-l="Nom" data-sort-value="<?= e(mb_strtolower($name)) ?>"><strong><?= e($name) ?></strong></td>
-      <td data-l="Email" class="muted small"><?= e($r['email']) ?></td>
+      <td data-l="Nom" data-sort-value="<?= e(mb_strtolower($name)) ?>" title="<?= e($r['email']) ?>">
+        <strong><?= e($name) ?></strong>
+      </td>
+      <td data-l="Email" class="email-cell muted small"><?= e($r['email']) ?></td>
       <td data-l="Oui"       class="num v-yes-cell"><?= $yes ?></td>
       <td data-l="Peut-être" class="num v-maybe-cell"><?= $maybe ?></td>
       <td data-l="Non"       class="num v-no-cell"><?= $no ?></td>
@@ -92,15 +102,23 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
         <?php endif; ?>
       </td>
       <td data-l="Actions" class="actions-cell">
-        <a href="/admin/polls/<?= e($poll['uuid']) ?>/participants/<?= (int)$r['id'] ?>/calendar" class="link small">Calendrier</a>
-        <a href="/admin/polls/<?= e($poll['uuid']) ?>/participants/<?= (int)$r['id'] ?>" class="link small">Éditer</a>
+        <a href="/admin/polls/<?= e($poll['uuid']) ?>/participants/<?= (int)$r['id'] ?>/calendar"
+           class="icon-btn" title="Voir le calendrier d'astreintes" aria-label="Calendrier">
+          <?= _icon('calendar') ?>
+        </a>
+        <a href="/admin/polls/<?= e($poll['uuid']) ?>/participants/<?= (int)$r['id'] ?>"
+           class="icon-btn" title="Éditer" aria-label="Éditer">
+          <?= _icon('edit') ?>
+        </a>
         <?php if ($total > 0): ?>
           <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/notify" class="inline"
                 onsubmit="return confirm('Renvoyer la notification d\'astreintes à <?= e(addslashes($name)) ?> ?');">
             <?= csrf_field() ?>
             <input type="hidden" name="target" value="one">
             <input type="hidden" name="participant_id" value="<?= (int)$r['id'] ?>">
-            <button type="submit" class="link small">Renvoyer notif</button>
+            <button type="submit" class="icon-btn" title="Renvoyer la notification" aria-label="Renvoyer la notification">
+              <?= _icon('mail') ?>
+            </button>
           </form>
         <?php endif; ?>
       </td>
@@ -114,7 +132,7 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
   <thead>
     <tr>
       <th>Nom ↕</th>
-      <th>Email ↕</th>
+      <th class="email-col">Email ↕</th>
       <th data-sort-type="num" title="Dates / créneaux où la personne a voté Oui"><span class="v-yes">Oui</span> ↕</th>
       <th data-sort-type="num" title="Peut-être"><span class="v-maybe">Peut-être</span> ↕</th>
       <th data-sort-type="num" title="Non"><span class="v-no">Non</span> ↕</th>
@@ -161,7 +179,7 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
     <thead>
       <tr>
         <th>Nom ↕</th>
-        <th>Email ↕</th>
+        <th class="email-col">Email ↕</th>
         <th data-sort-type="num">Oui</th>
         <th data-sort-type="num">Peut-être</th>
         <th data-sort-type="num">Non</th>
