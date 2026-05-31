@@ -54,6 +54,9 @@ return [
 
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/settings$#',                    'admin_settings',      'route_admin_settings'],
 
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/managers$#',                    'poll_managers',       'route_poll_add_manager'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/managers/(\d+)/delete$#',       'poll_managers',       'route_poll_remove_manager'],
+
     ['GET',  '#^/p/([0-9a-f-]+)$#',                                       'poll_public',         'route_poll_show'],
     ['GET',  '#^/p/([0-9a-f-]+)/login$#',                                 'poll_public',         'route_poll_login_form'],
     ['POST', '#^/p/([0-9a-f-]+)/login$#',                                 'poll_public',         'route_poll_send_link'],

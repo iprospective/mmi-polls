@@ -4,16 +4,16 @@ require_once __DIR__ . '/../lib/auth.php';
 require_once __DIR__ . '/../lib/db.php';
 require_once __DIR__ . '/../lib/helpers.php';
 require_once __DIR__ . '/../services/managers.php';
+require_once __DIR__ . '/../services/poll_managers.php';
 
 function route_manager_dashboard(): void {
     require_manager();
     $mid = current_manager_id();
-    $polls = db()->prepare("SELECT * FROM polls WHERE manager_id = ? ORDER BY created_at DESC");
-    $polls->execute([$mid]);
+    $polls = list_polls_managed_by((int)$mid);
     $manager = find_manager_by_id((int)$mid);
     render('manager/list', [
         'page_title' => 'Mes sondages',
-        'polls' => $polls->fetchAll(),
+        'polls' => $polls,
         'manager' => $manager,
         'include_editor' => true,
     ]);

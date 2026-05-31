@@ -27,6 +27,68 @@ require __DIR__ . '/_admin_nav.php';
   <button type="submit">Enregistrer</button>
 </form>
 
+<div class="card">
+  <h2 style="margin-top:0;">Managers</h2>
+  <p class="muted small">Les managers ont accès complet à ce sondage (édition, astreintes, notifications) — au même titre que l'admin global. <?= is_admin() ? 'Vous pouvez en ajouter / retirer librement.' : 'Vous pouvez inviter d\'autres managers qui ont déjà un compte actif.' ?></p>
+
+  <?php if (!$managers): ?>
+    <p><em>Aucun manager — ce sondage est administré uniquement par l'admin global.</em></p>
+  <?php else: ?>
+    <table class="dates-table">
+      <thead>
+        <tr><th>Manager</th><th>Ajouté</th><th></th></tr>
+      </thead>
+      <tbody>
+        <?php foreach ($managers as $m):
+          $name = $m['name'] !== '' ? $m['name'] : explode('@', $m['email'])[0];
+        ?>
+          <tr>
+            <td>
+              <strong><?= e($name) ?></strong>
+              <span class="muted small">&lt;<?= e($m['email']) ?>&gt;</span>
+              <?php if ($m['added_by_admin']): ?>
+                <span class="owner-badge owner-admin">ajouté par l'admin</span>
+              <?php elseif ($m['inviter_email']): ?>
+                <span class="muted small">— invité·e par <?= e($m['inviter_name'] !== '' ? $m['inviter_name'] : $m['inviter_email']) ?></span>
+              <?php endif; ?>
+            </td>
+            <td class="small"><?= e(date('d/m/Y', (int)$m['added_at'])) ?></td>
+            <td>
+              <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/managers/<?= (int)$m['id'] ?>/delete" class="inline"
+                    onsubmit="return confirm('Retirer <?= e(addslashes($name)) ?> de ce sondage ?');">
+                <?= csrf_field() ?>
+                <button type="submit" class="danger small">Retirer</button>
+              </form>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  <?php endif; ?>
+
+  <h3>Ajouter un manager</h3>
+  <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/managers">
+    <?= csrf_field() ?>
+    <?php if (is_admin() && $available_managers): ?>
+      <p class="muted small">En tant qu'admin tu peux assigner n'importe quel manager actif, ou saisir un email :</p>
+      <div class="row">
+        <select name="email" onchange="if(this.value) this.form.submit();">
+          <option value="">— Choisir dans la liste —</option>
+          <?php foreach ($available_managers as $am): ?>
+            <option value="<?= e($am['email']) ?>"><?= e($am['name'] !== '' ? $am['name'] : $am['email']) ?> &lt;<?= e($am['email']) ?>&gt;</option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <p class="muted small">Ou par email :</p>
+    <?php endif; ?>
+    <div class="row">
+      <input type="email" name="email" placeholder="email@exemple.com" required>
+      <button type="submit">Ajouter</button>
+    </div>
+    <p class="muted small">La personne doit avoir un compte manager actif (validé par l'admin global). Elle reçoit un email l'informant de son ajout.</p>
+  </form>
+</div>
+
 <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/delete" class="card danger-zone"
       onsubmit="return confirm('Supprimer définitivement ce sondage ? Cette action est irréversible : votes, participants, astreintes, notifications seront perdus.');">
   <?= csrf_field() ?>

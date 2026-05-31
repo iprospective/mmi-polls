@@ -93,16 +93,17 @@ function manager_logout(): void {
 /**
  * Autorise l'accès à un sondage si :
  *  - admin global, OU
- *  - manager connecté propriétaire du sondage.
- * Sinon redirige vers /login.
+ *  - manager connecté listé dans poll_managers pour ce sondage.
+ * Sinon redirige vers /login (visiteur·euse) ou renvoie 403 (manager).
  */
 function require_poll_access(array $poll): void {
     if (is_admin()) return;
     $mid = current_manager_id();
-    if ($mid !== null && (int)$poll['manager_id'] === $mid) return;
-    if (is_manager()) {
+    if ($mid !== null) {
+        require_once __DIR__ . '/../services/poll_managers.php';
+        if (poll_has_manager((int)$poll['id'], $mid)) return;
         http_response_code(403);
-        exit('403 — ce sondage ne vous appartient pas.');
+        exit('403 — vous n\'avez pas accès à ce sondage.');
     }
     redirect('/login');
 }

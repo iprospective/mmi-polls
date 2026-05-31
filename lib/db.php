@@ -98,6 +98,16 @@ function db_migrate(PDO $pdo): void {
             used_at     INTEGER
         );
 
+        CREATE TABLE IF NOT EXISTS poll_managers (
+            poll_id        INTEGER NOT NULL REFERENCES polls(id)    ON DELETE CASCADE,
+            manager_id     INTEGER NOT NULL REFERENCES managers(id) ON DELETE CASCADE,
+            added_at       INTEGER NOT NULL,
+            added_by_admin INTEGER NOT NULL DEFAULT 0,
+            invited_by     INTEGER REFERENCES managers(id) ON DELETE SET NULL,
+            PRIMARY KEY (poll_id, manager_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_poll_managers_manager ON poll_managers(manager_id);
+
         CREATE TABLE IF NOT EXISTS notifications (
             id             INTEGER PRIMARY KEY AUTOINCREMENT,
             poll_id        INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
@@ -120,9 +130,16 @@ function db_migrate(PDO $pdo): void {
         $pdo->exec("ALTER TABLE polls ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''");
     }
     if (!in_array('manager_id', $present, true)) {
-        // NULL = sondage créé par l'admin global. Sinon, manager qui possède le sondage.
+        // NULL = sondage créé par l'admin global. Sinon, manager créateur·rice.
         $pdo->exec("ALTER TABLE polls ADD COLUMN manager_id INTEGER REFERENCES managers(id) ON DELETE SET NULL");
     }
+
+    // Backfill : tout poll avec un manager_id alimente poll_managers (idempotent).
+    $pdo->exec("
+        INSERT OR IGNORE INTO poll_managers (poll_id, manager_id, added_at, added_by_admin)
+        SELECT id, manager_id, COALESCE(created_at, strftime('%s', 'now')), 0
+        FROM polls WHERE manager_id IS NOT NULL
+    ");
 
     // Migrations sur la table participants.
     $cols = $pdo->query("PRAGMA table_info(participants)")->fetchAll();

@@ -8,6 +8,7 @@ require_once __DIR__ . '/../services/polls.php';
 require_once __DIR__ . '/../services/participants.php';
 require_once __DIR__ . '/../services/votes.php';
 require_once __DIR__ . '/../services/assignments.php';
+require_once __DIR__ . '/../services/poll_managers.php';
 
 function route_admin_list(): void {
     require_admin();
@@ -31,8 +32,13 @@ function route_admin_create_poll(): void {
     }
     $uuid = uuid_v4();
     $manager_id = is_admin() ? null : current_manager_id();
-    $stmt = db()->prepare("INSERT INTO polls (uuid, title, description, created_at, manager_id) VALUES (?, ?, ?, ?, ?)");
+    $pdo = db();
+    $stmt = $pdo->prepare("INSERT INTO polls (uuid, title, description, created_at, manager_id) VALUES (?, ?, ?, ?, ?)");
     $stmt->execute([$uuid, $title, $desc, time(), $manager_id]);
+    $poll_id = (int)$pdo->lastInsertId();
+    if ($manager_id !== null) {
+        add_poll_manager($poll_id, $manager_id);
+    }
     redirect('/admin/polls/' . $uuid);
 }
 
