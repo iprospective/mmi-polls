@@ -1,5 +1,9 @@
-<h1>Édition participant</h1>
-<p class="muted">Sondage : <a href="/admin/polls/<?= e($poll['uuid']) ?>"><?= e($poll['title']) ?></a></p>
+<?php $active = 'participants'; require __DIR__ . '/_admin_nav.php'; ?>
+
+<h2 style="margin-top:1rem;">Édition participant</h2>
+<p class="muted">
+  <a href="/admin/polls/<?= e($poll['uuid']) ?>/participants" class="link">← Retour à la liste</a>
+</p>
 
 <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/participants/<?= (int)$participant['id'] ?>" class="card">
   <?= csrf_field() ?>

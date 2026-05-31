@@ -25,23 +25,33 @@ function _fmt_rel_date(?int $ts): string {
 
 // Sépare les participants orphelins (zéro vote) du reste pour affichage.
 $orphans = [];
-$active  = [];
+$active_rows = [];
 foreach ($rows as $r) {
     $total_votes = (int)$r['yes_count'] + (int)$r['maybe_count'] + (int)$r['no_count'];
-    if ($total_votes === 0) $orphans[] = $r; else $active[] = $r;
+    if ($total_votes === 0) $orphans[] = $r; else $active_rows[] = $r;
 }
 $sum = ['yes' => 0, 'maybe' => 0, 'no' => 0, 'none' => 0, 'p' => 0, 'b' => 0];
 ?>
 
-<h1>Participants</h1>
-<p class="muted">
-  Sondage : <a href="/admin/polls/<?= e($poll['uuid']) ?>"><?= e($poll['title']) ?></a>
-  — <?= count($rows) ?> personnes (<?= count($active) ?> actives, <?= count($orphans) ?> orphelines),
-  <?= $total_choices ?> créneaux au total
-</p>
-<p class="muted small">Cliquez sur un en-tête de colonne pour trier. Les flèches indiquent l'ordre.</p>
+<?php $active = 'participants'; require __DIR__ . '/_admin_nav.php'; ?>
 
-<?php if (!$active && !$orphans): ?>
+<p class="muted">
+  <?= count($rows) ?> personnes (<?= count($active_rows) ?> actives, <?= count($orphans) ?> orphelines),
+  <?= $total_choices ?> créneaux au total. Cliquez sur un en-tête pour trier.
+</p>
+
+<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/participants" class="card">
+  <?= csrf_field() ?>
+  <strong>Ajouter un participant</strong>
+  <div class="row">
+    <input type="text"  name="name"  placeholder="Nom (facultatif)">
+    <input type="email" name="email" placeholder="email@exemple.com" required>
+    <button type="submit">Ajouter</button>
+  </div>
+  <p class="muted small">Après création, tu pourras saisir ses disponibilités.</p>
+</form>
+
+<?php if (!$active_rows && !$orphans): ?>
   <p><em>Aucun participant pour l'instant.</em></p>
 <?php else: ?>
 
@@ -147,12 +157,12 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
     </tr>
   </thead>
   <tbody>
-    <?php foreach ($active as $r) $render_row($r); ?>
+    <?php foreach ($active_rows as $r) $render_row($r); ?>
   </tbody>
-  <?php if ($active): ?>
+  <?php if ($active_rows): ?>
   <tfoot>
     <tr>
-      <td colspan="2"><em>Totaux (<?= count($active) ?> actives)</em></td>
+      <td colspan="2"><em>Totaux (<?= count($active_rows) ?> actives)</em></td>
       <td class="num"><?= $sum['yes'] ?></td>
       <td class="num"><?= $sum['maybe'] ?></td>
       <td class="num"><?= $sum['no'] ?></td>

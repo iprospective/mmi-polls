@@ -26,10 +26,10 @@ $total_choices = 0;
 foreach ($dates as $d) $total_choices += count($d['choices']);
 ?>
 
-<h1>Astreintes</h1>
+<?php $active = 'assignments'; require __DIR__ . '/_admin_nav.php'; ?>
+
 <p class="muted">
-  Sondage : <a href="/admin/polls/<?= e($poll['uuid']) ?>"><?= e($poll['title']) ?></a>
-  — <?= $total_choices ?> créneaux, <?= count($participants) ?> participants
+  <?= $total_choices ?> créneaux, <?= count($participants) ?> participants
 </p>
 
 <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments" id="assignments-form">

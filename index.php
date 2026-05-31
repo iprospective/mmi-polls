@@ -43,6 +43,8 @@ $routes = [
     ['GET',  '#^/admin/polls/([0-9a-f-]+)$#',                  'route_admin_poll'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)$#',                  'route_admin_update_poll'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/delete$#',           'route_admin_delete_poll'],
+    ['GET',  '#^/admin/polls/([0-9a-f-]+)/dates$#',            'route_admin_dates'],
+    ['GET',  '#^/admin/polls/([0-9a-f-]+)/settings$#',         'route_admin_settings'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/dates$#',            'route_admin_add_date'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/dates/(\d+)/delete$#', 'route_admin_delete_date'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/dates/(\d+)/choices$#', 'route_admin_add_choice'],
@@ -198,7 +200,6 @@ function route_admin_poll(string $uuid): void {
         'participants' => $participants,
         'votes' => $votes,
         'assigns' => $assigns,
-        'include_editor' => true,
     ]);
 }
 
@@ -209,12 +210,33 @@ function route_admin_update_poll(string $uuid): void {
     $desc  = sanitize_html((string)($_POST['description'] ?? ''));
     if ($title === '') {
         flash_set('err', 'Titre obligatoire.');
-        redirect('/admin/polls/' . $uuid);
+        redirect('/admin/polls/' . $uuid . '/settings');
     }
     $stmt = db()->prepare("UPDATE polls SET title = ?, description = ? WHERE id = ?");
     $stmt->execute([$title, $desc, $poll['id']]);
     flash_set('ok', 'Sondage mis à jour.');
-    redirect('/admin/polls/' . $uuid);
+    redirect('/admin/polls/' . $uuid . '/settings');
+}
+
+function route_admin_dates(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $dates = poll_structure((int)$poll['id']);
+    render('admin/dates', [
+        'page_title' => 'Dates & créneaux — ' . $poll['title'],
+        'poll' => $poll,
+        'dates' => $dates,
+    ]);
+}
+
+function route_admin_settings(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    render('admin/settings', [
+        'page_title' => 'Paramètres — ' . $poll['title'],
+        'poll' => $poll,
+        'include_editor' => true,
+    ]);
 }
 
 function route_admin_delete_poll(string $uuid): void {
@@ -233,12 +255,12 @@ function route_admin_add_date(string $uuid): void {
     $choices_raw = trim((string)($_POST['choices'] ?? ''));
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) {
         flash_set('err', 'Date invalide (format AAAA-MM-JJ attendu).');
-        redirect('/admin/polls/' . $uuid);
+        redirect('/admin/polls/' . $uuid . '/dates');
     }
     $labels = array_values(array_filter(array_map('trim', preg_split('/\r?\n/', $choices_raw)), fn($s) => $s !== ''));
     if (!$labels) {
         flash_set('err', 'Au moins un créneau requis (un par ligne).');
-        redirect('/admin/polls/' . $uuid);
+        redirect('/admin/polls/' . $uuid . '/dates');
     }
     $pdo = db();
     $pdo->beginTransaction();
@@ -251,7 +273,7 @@ function route_admin_add_date(string $uuid): void {
     }
     $pdo->commit();
     flash_set('ok', 'Date ajoutée.');
-    redirect('/admin/polls/' . $uuid);
+    redirect('/admin/polls/' . $uuid . '/dates');
 }
 
 function route_admin_delete_date(string $uuid, string $date_id): void {
@@ -260,7 +282,7 @@ function route_admin_delete_date(string $uuid, string $date_id): void {
     $stmt = db()->prepare("DELETE FROM poll_dates WHERE id = ? AND poll_id = ?");
     $stmt->execute([(int)$date_id, $poll['id']]);
     flash_set('ok', 'Date supprimée.');
-    redirect('/admin/polls/' . $uuid);
+    redirect('/admin/polls/' . $uuid . '/dates');
 }
 
 function route_admin_add_choice(string $uuid, string $date_id): void {
@@ -269,7 +291,7 @@ function route_admin_add_choice(string $uuid, string $date_id): void {
     $label = trim((string)($_POST['label'] ?? ''));
     if ($label === '') {
         flash_set('err', 'Libellé requis.');
-        redirect('/admin/polls/' . $uuid);
+        redirect('/admin/polls/' . $uuid . '/dates');
     }
     $pdo = db();
     $check = $pdo->prepare("SELECT id FROM poll_dates WHERE id = ? AND poll_id = ?");
@@ -281,7 +303,7 @@ function route_admin_add_choice(string $uuid, string $date_id): void {
     $ins = $pdo->prepare("INSERT INTO poll_choices (date_id, label, sort_order) VALUES (?, ?, ?)");
     $ins->execute([(int)$date_id, $label, $order]);
     flash_set('ok', 'Créneau ajouté.');
-    redirect('/admin/polls/' . $uuid);
+    redirect('/admin/polls/' . $uuid . '/dates');
 }
 
 function route_admin_delete_choice(string $uuid, string $choice_id): void {
@@ -294,7 +316,7 @@ function route_admin_delete_choice(string $uuid, string $choice_id): void {
     ");
     $stmt->execute([(int)$choice_id, $poll['id']]);
     flash_set('ok', 'Créneau supprimé.');
-    redirect('/admin/polls/' . $uuid);
+    redirect('/admin/polls/' . $uuid . '/dates');
 }
 
 function route_admin_delete_participant(string $uuid, string $pid): void {
@@ -303,7 +325,7 @@ function route_admin_delete_participant(string $uuid, string $pid): void {
     $stmt = db()->prepare("DELETE FROM participants WHERE id = ? AND poll_id = ?");
     $stmt->execute([(int)$pid, $poll['id']]);
     flash_set('ok', 'Participant supprimé.');
-    redirect('/admin/polls/' . $uuid);
+    redirect('/admin/polls/' . $uuid . '/participants');
 }
 
 function assignments_for_participant(int $poll_id, int $participant_id): array {
@@ -902,7 +924,7 @@ function route_admin_create_participant(string $uuid): void {
     $email = strtolower(trim((string)($_POST['email'] ?? '')));
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         flash_set('err', 'Email invalide.');
-        redirect('/admin/polls/' . $uuid);
+        redirect('/admin/polls/' . $uuid . '/participants');
     }
     $pdo = db();
     $check = $pdo->prepare("SELECT id FROM participants WHERE poll_id = ? AND email = ?");

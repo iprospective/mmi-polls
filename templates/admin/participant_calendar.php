@@ -4,10 +4,12 @@ $pri = 0; $bak = 0;
 foreach ($assigns as $a) if ($a['role'] === 'primary') $pri++; else $bak++;
 ?>
 
-<h1>Calendrier d'astreintes</h1>
+<?php $active = 'participants'; require __DIR__ . '/_admin_nav.php'; ?>
+
+<h2 style="margin-top:1rem;">Calendrier de <?= e($name) ?></h2>
 <p class="muted">
-  <strong><?= e($name) ?></strong> &lt;<?= e($participant['email']) ?>&gt;<br>
-  Sondage : <a href="/admin/polls/<?= e($poll['uuid']) ?>"><?= e($poll['title']) ?></a>
+  &lt;<?= e($participant['email']) ?>&gt;
+  · <a href="/admin/polls/<?= e($poll['uuid']) ?>/participants" class="link">← Liste des participants</a>
 </p>
 
 <div class="card stats-strip">
