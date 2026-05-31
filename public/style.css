@@ -1022,61 +1022,29 @@ table.sortable thead th.sorted-desc::after { content: ' ↓'; }
 .assign-list li:first-child.day-first { border-top: none; padding-top: 0; margin-top: 0; }
 
 @media (max-width: 700px) {
-  /* Le tableau participants devient un empilement de cartes */
-  .participants-table,
-  .participants-table thead,
-  .participants-table tbody,
-  .participants-table tr,
+  /* Tableaux participants : scroll horizontal sur le wrapper.
+   * Approche éprouvée, fiable, pas de transformation tables→cartes
+   * (qui était fragile et écrasée par d'autres règles). */
+  .participants-table {
+    font-size: 0.82rem;
+    min-width: 720px;            /* force le scroll si l'écran est plus étroit */
+  }
   .participants-table th,
   .participants-table td {
-    display: block;
-    width: auto;
+    padding: 0.4rem 0.55rem;
+    white-space: nowrap;
   }
-  .participants-table thead { display: none; }
-  .participants-table tr {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.65rem 0.85rem;
-    margin-bottom: 0.5rem;
-  }
-  .participants-table td {
-    padding: 0.2rem 0;
-    border: none;
-    text-align: left !important;
-  }
-  /* Label de colonne (data-l) affiché avant la valeur sur mobile —
-   * applique aux cellules autres que la 1re (qui est le nom, déjà
-   * lisible tel quel) */
-  .participants-table tbody td[data-l]:not(:first-child)::before {
-    content: attr(data-l) ': ';
-    color: var(--muted);
-    font-size: 0.75rem;
-    margin-right: 0.35rem;
-    font-weight: 500;
-  }
-
-  /* Sur mobile, on réaffiche email + téléphone puisque les cellules
-   * sont empilées en cartes (et hover n'a pas de sens) */
+  /* Email et téléphone réaffichés en colonne normale sur mobile :
+   * le hover/title n'a pas d'utilité sur écran tactile. */
   .participants-table th.email-col,
   .participants-table th.phone-col,
   .participants-table td.email-cell,
-  .participants-table td.phone-cell { display: block; }
-
-  /* Tableau Coordonnées : colonnes ✓/— en bloc plein, sans fond
-   * coloré (qui serait moche en plein écran) */
-  .contacts-table .check-col {
-    width: auto;
-    min-width: 0;
-    text-align: left !important;
-    background: transparent !important;
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-  .contacts-table .check-col.cm-telegram,
-  .contacts-table .check-col.cm-signal,
-  .contacts-table .check-col.cm-whatsapp,
-  .contacts-table .check-col.cm-sms { color: var(--fg); }
+  .participants-table td.phone-cell { display: table-cell; }
+  /* La cellule actions peut wrap, sinon ça pousse le scroll inutilement. */
+  .participants-table .actions-cell { white-space: nowrap; gap: 2px; }
+  .participants-table .icon-btn { width: 26px; height: 26px; }
+  /* Coordonnées : colonnes ✓/— compactes. */
+  .contacts-table .check-col { width: 52px; min-width: 52px; }
 }
 
 /* ====================================================================
@@ -1095,20 +1063,28 @@ table.sortable thead th.sorted-desc::after { content: ' ↓'; }
   h3 { font-size: 0.95rem; }
   .card { padding: 0.85rem 0.95rem; }
 
-  /* Les wrappers de tables ne doivent pas créer une mini-fenêtre
-   * scrollable sur mobile : on laisse les tables (qui passent en
-   * cartes via display:block plus bas) s'étendre naturellement. */
+  /* Wrappers de tables sur mobile : par défaut on autorise le scroll
+   * horizontal (utilisé par la table participants). max-height: none
+   * pour ne pas créer de mini-fenêtre verticale. */
   .grid-wrap {
     max-height: none;
-    overflow: visible;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Bascule grille récap → cartes.
+   * IMPORTANT : on masque uniquement la .vote-grid SANS .assignments-grid
+   * (donc la récap publique/admin uniquement). La table d'astreintes
+   * admin et toutes les autres tables dans des .grid-wrap restent
+   * visibles. La vue cartes .mobile-grid prend le relai pour la récap. */
+  .grid-wrap:has(+ .mobile-grid) {
     background: transparent;
     border: none;
     box-shadow: none;
     border-radius: 0;
   }
-
-  /* Bascule grille récap → cartes */
-  .grid-wrap   { display: none; }
+  .vote-grid:not(.assignments-grid) { display: none; }
   .mobile-grid {
     display: block;
     list-style: none;
