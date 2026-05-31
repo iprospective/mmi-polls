@@ -12,7 +12,8 @@ require_once __DIR__ . '/../services/assignments.php';
 function route_poll_show(string $uuid): void {
     $poll = find_poll($uuid);
     $dates = poll_structure((int)$poll['id']);
-    $participants = poll_participants((int)$poll['id']);
+    // Vue publique : on n'inclut PAS les participants masqués côté front.
+    $participants = poll_participants((int)$poll['id'], false);
     $votes = poll_votes_map((int)$poll['id']);
     $assigns = poll_assignments_map((int)$poll['id']);
     render('poll/show', [

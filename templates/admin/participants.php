@@ -10,6 +10,8 @@ function _icon(string $name): string {
         'calendar' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
         'edit'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
         'mail'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+        'eye'      => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+        'eye-off'  => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
     ];
     return $svgs[$name] ?? '';
 }
@@ -81,10 +83,14 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
           $tooltip_lines[] = 'Préfère ' . implode(' / ', $labels);
       }
     ?>
-    <tr class="<?= $is_orphan ? 'orphan' : '' ?>">
+    <?php $is_hidden = !empty($r['hidden_in_public']); ?>
+    <tr class="<?= trim(($is_orphan ? 'orphan ' : '') . ($is_hidden ? 'hidden-public' : '')) ?>">
       <td data-l="Nom" data-sort-value="<?= e(mb_strtolower($name)) ?>" title="<?= e(implode("\n", $tooltip_lines)) ?>">
         <strong><?= e($name) ?></strong>
         <?= contact_methods_pills($r['contact_method'] ?? '') ?>
+        <?php if ($is_hidden): ?>
+          <span class="hidden-pill" title="Masqué·e dans la vue publique">masqué·e</span>
+        <?php endif; ?>
       </td>
       <td data-l="Email" class="email-cell muted small"><?= e($r['email']) ?></td>
       <td data-l="Téléphone" class="phone-cell muted small">
@@ -133,6 +139,14 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
            class="icon-btn" title="Éditer" aria-label="Éditer">
           <?= _icon('edit') ?>
         </a>
+        <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/participants/<?= (int)$r['id'] ?>/toggle-visibility" class="inline">
+          <?= csrf_field() ?>
+          <button type="submit" class="icon-btn<?= $is_hidden ? ' is-hidden' : '' ?>"
+                  title="<?= $is_hidden ? 'Réafficher dans la vue publique' : 'Masquer dans la vue publique' ?>"
+                  aria-label="<?= $is_hidden ? 'Réafficher' : 'Masquer' ?>">
+            <?= $is_hidden ? _icon('eye-off') : _icon('eye') ?>
+          </button>
+        </form>
         <?php if ($total > 0): ?>
           <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/notify" class="inline"
                 onsubmit="return confirm('Renvoyer la notification d\'astreintes à <?= e(addslashes($name)) ?> ?');">

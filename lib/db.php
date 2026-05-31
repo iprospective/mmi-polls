@@ -153,6 +153,10 @@ function db_migrate(PDO $pdo): void {
     if (!in_array('contact_method', $present, true)) {
         $pdo->exec("ALTER TABLE participants ADD COLUMN contact_method TEXT NOT NULL DEFAULT ''");
     }
+    if (!in_array('hidden_in_public', $present, true)) {
+        // 0 = visible, 1 = masqué dans la vue publique (admin/manager voit toujours)
+        $pdo->exec("ALTER TABLE participants ADD COLUMN hidden_in_public INTEGER NOT NULL DEFAULT 0");
+    }
 }
 
 function uuid_v4(): string {

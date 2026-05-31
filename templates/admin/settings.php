@@ -69,23 +69,22 @@ require __DIR__ . '/_admin_nav.php';
   <h3>Ajouter un manager</h3>
   <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/managers">
     <?= csrf_field() ?>
-    <?php if (is_admin() && $available_managers): ?>
-      <p class="muted small">En tant qu'admin tu peux assigner n'importe quel manager actif, ou saisir un email :</p>
-      <div class="row">
-        <select name="email" onchange="if(this.value) this.form.submit();">
-          <option value="">— Choisir dans la liste —</option>
-          <?php foreach ($available_managers as $am): ?>
-            <option value="<?= e($am['email']) ?>"><?= e($am['name'] !== '' ? $am['name'] : $am['email']) ?> &lt;<?= e($am['email']) ?>&gt;</option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-      <p class="muted small">Ou par email :</p>
-    <?php endif; ?>
     <div class="row">
-      <input type="email" name="email" placeholder="email@exemple.com" required>
+      <input type="email" name="email"
+             list="<?= is_admin() && $available_managers ? 'active-managers-list' : '' ?>"
+             required placeholder="email@exemple.com">
       <button type="submit">Ajouter</button>
     </div>
-    <p class="muted small">La personne doit avoir un compte manager actif (validé par l'admin global). Elle reçoit un email l'informant de son ajout.</p>
+    <?php if (is_admin() && $available_managers): ?>
+      <datalist id="active-managers-list">
+        <?php foreach ($available_managers as $am): ?>
+          <option value="<?= e($am['email']) ?>"><?= e($am['name'] !== '' ? $am['name'] : $am['email']) ?></option>
+        <?php endforeach; ?>
+      </datalist>
+      <p class="muted small">En tant qu'admin, les <?= count($available_managers) ?> managers actifs non encore présents sont proposés en autocomplétion ; tu peux aussi taper un autre email.</p>
+    <?php else: ?>
+      <p class="muted small">La personne doit avoir un compte manager actif (validé par l'admin global). Elle reçoit un email l'informant de son ajout.</p>
+    <?php endif; ?>
   </form>
 </div>
 

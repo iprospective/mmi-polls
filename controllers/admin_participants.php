@@ -16,7 +16,7 @@ function route_admin_participants_list(string $uuid): void {
     $stmt = $pdo->prepare("
         SELECT
             p.id, p.name, p.email, p.created_at, p.votes_updated_at,
-            p.phone, p.contact_method,
+            p.phone, p.contact_method, p.hidden_in_public,
             COALESCE(SUM(CASE WHEN v.value='yes'   THEN 1 ELSE 0 END), 0) AS yes_count,
             COALESCE(SUM(CASE WHEN v.value='maybe' THEN 1 ELSE 0 END), 0) AS maybe_count,
             COALESCE(SUM(CASE WHEN v.value='no'    THEN 1 ELSE 0 END), 0) AS no_count,
@@ -180,5 +180,23 @@ function route_admin_delete_participant(string $uuid, string $pid): void {
     $stmt = db()->prepare("DELETE FROM participants WHERE id = ? AND poll_id = ?");
     $stmt->execute([(int)$pid, $poll['id']]);
     flash_set('ok', 'Participant supprimé.');
+    redirect('/admin/polls/' . $uuid . '/participants');
+}
+
+function route_admin_toggle_participant_visibility(string $uuid, string $pid): void {
+    $poll = find_poll($uuid);
+    require_poll_access($poll);
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT hidden_in_public, name, email FROM participants WHERE id = ? AND poll_id = ?");
+    $stmt->execute([(int)$pid, $poll['id']]);
+    $p = $stmt->fetch();
+    if (!$p) not_found();
+    $new = $p['hidden_in_public'] ? 0 : 1;
+    $upd = $pdo->prepare("UPDATE participants SET hidden_in_public = ? WHERE id = ? AND poll_id = ?");
+    $upd->execute([$new, (int)$pid, $poll['id']]);
+    $who = $p['name'] !== '' ? $p['name'] : $p['email'];
+    flash_set('ok', $new
+        ? "$who est désormais masqué·e dans la vue publique."
+        : "$who est de nouveau visible dans la vue publique.");
     redirect('/admin/polls/' . $uuid . '/participants');
 }

@@ -968,6 +968,33 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
 .participants-table tr.orphan { color: var(--muted); background: #fafbfc; }
 .participants-table tr.orphan strong { color: var(--fg-soft); font-weight: 500; }
 
+/* Personnes masquées en vue publique : indication discrète + pastille */
+.participants-table tr.hidden-public td { opacity: 0.65; }
+.participants-table tr.hidden-public td.actions-cell { opacity: 1; }
+.hidden-pill {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  margin-left: 0.4rem;
+  background: #e5e7eb;
+  color: #6b7280;
+  vertical-align: middle;
+}
+.icon-btn.is-hidden {
+  background: #fef3c7;
+  border-color: #fbbf24;
+  color: #92400e;
+}
+.icon-btn.is-hidden:hover {
+  background: #fde68a;
+  border-color: #f59e0b;
+  color: #78350f;
+}
+
 /* Tableau Coordonnées : email + tél visibles ici (pas masqués sur desktop).
  * /!\ Le display: table-cell est borné au desktop, sinon il piétine la
  * règle responsive display: block (specificité identique) sur mobile
