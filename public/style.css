@@ -756,6 +756,31 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .danger-zone { border-color: #fca5a5; background: #fef2f2; }
 .danger-zone h2 { color: var(--no); }
 
+/* Résultat de géocodage sous un champ adresse */
+.geo-found {
+  margin: -0.4rem 0 0.85rem;
+  padding: 0.55rem 0.8rem;
+  background: var(--yes-bg);
+  border: 1px solid #86efac;
+  border-left: 4px solid var(--yes);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--fg-soft);
+}
+.geo-found strong { color: var(--yes); font-weight: 600; }
+.geo-display { color: var(--fg); }
+.geo-failed {
+  margin: -0.4rem 0 0.85rem;
+  padding: 0.5rem 0.8rem;
+  background: var(--maybe-bg);
+  border: 1px solid #fde68a;
+  border-left: 4px solid var(--maybe);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--fg-soft);
+}
+.geo-failed strong { color: var(--maybe); font-weight: 600; }
+
 /* Bandeau mode brouillon des astreintes (page admin assignments) */
 .draft-banner {
   background: #fffbeb;

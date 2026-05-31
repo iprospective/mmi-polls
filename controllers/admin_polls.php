@@ -78,8 +78,8 @@ function route_admin_update_poll(string $uuid): void {
     // Géocode des points GPS (départ / arrivée) si modifiés.
     $start_addr = trim((string)($_POST['start_address'] ?? ''));
     $end_addr   = trim((string)($_POST['end_address']   ?? ''));
-    [$start_lat, $start_lng] = geo_resolve($start_addr, $poll, 'start');
-    [$end_lat,   $end_lng]   = geo_resolve($end_addr,   $poll, 'end');
+    [$start_lat, $start_lng, $start_geocoded] = geo_resolve($start_addr, $poll, 'start');
+    [$end_lat,   $end_lng,   $end_geocoded]   = geo_resolve($end_addr,   $poll, 'end');
 
     // Checkbox non cochée = absente du POST. Booléen en INTEGER 0/1.
     $assigns_public = isset($_POST['assignments_public']) ? 1 : 0;
@@ -87,15 +87,15 @@ function route_admin_update_poll(string $uuid): void {
     $stmt = db()->prepare("
         UPDATE polls
         SET title = ?, description = ?, closed_at = ?,
-            start_address = ?, start_lat = ?, start_lng = ?,
-            end_address   = ?, end_lat   = ?, end_lng   = ?,
+            start_address = ?, start_lat = ?, start_lng = ?, start_geocoded = ?,
+            end_address   = ?, end_lat   = ?, end_lng   = ?, end_geocoded   = ?,
             assignments_public = ?
         WHERE id = ?
     ");
     $stmt->execute([
         $title, $desc, $closed_at,
-        $start_addr, $start_lat, $start_lng,
-        $end_addr,   $end_lat,   $end_lng,
+        $start_addr, $start_lat, $start_lng, $start_geocoded,
+        $end_addr,   $end_lat,   $end_lng,   $end_geocoded,
         $assigns_public,
         $poll['id'],
     ]);
@@ -104,19 +104,26 @@ function route_admin_update_poll(string $uuid): void {
 }
 
 /**
- * Résout (lat, lng) pour une adresse libre, en réutilisant les coords
- * existantes du sondage si l'adresse n'a pas changé. Retourne [lat, lng]
- * (null,null si non géocodable ou vide).
+ * Résout (lat, lng, display_name) pour une adresse libre. Réutilise les
+ * coords existantes du sondage si l'adresse n'a pas changé. Sinon reset
+ * complet + nouvelle requête au géocodeur. Retourne [null,null,''] si
+ * non géocodable ou vide.
  */
 function geo_resolve(string $address, array $poll, string $kind): array {
-    $old_key = $kind . '_address';
-    $old = (string)($poll[$old_key] ?? '');
-    if ($address === '') return [null, null];
+    $old_addr_key = $kind . '_address';
+    $old = (string)($poll[$old_addr_key] ?? '');
+    if ($address === '') return [null, null, ''];
     if ($address === $old) {
-        return [$poll[$kind . '_lat'] ?? null, $poll[$kind . '_lng'] ?? null];
+        return [
+            $poll[$kind . '_lat'] ?? null,
+            $poll[$kind . '_lng'] ?? null,
+            (string)($poll[$kind . '_geocoded'] ?? ''),
+        ];
     }
     $geo = geocode($address);
-    return $geo ? [$geo['lat'], $geo['lng']] : [null, null];
+    return $geo
+        ? [$geo['lat'], $geo['lng'], $geo['display_name']]
+        : [null, null, ''];
 }
 
 function route_admin_delete_poll(string $uuid): void {

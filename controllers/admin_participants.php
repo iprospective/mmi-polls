@@ -139,14 +139,17 @@ function route_admin_update_participant(string $uuid, string $pid): void {
     $contact_method = implode(',', $cm_valid);
 
     $address = trim((string)($_POST['address'] ?? ''));
-    $lat = $participant['latitude']  ?? null;
-    $lng = $participant['longitude'] ?? null;
+    $lat = $participant['latitude']         ?? null;
+    $lng = $participant['longitude']        ?? null;
+    $geocoded = (string)($participant['geocoded_address'] ?? '');
     if ($address !== (string)($participant['address'] ?? '')) {
-        if ($address === '') { $lat = null; $lng = null; }
-        else {
+        $lat = null; $lng = null; $geocoded = '';
+        if ($address !== '') {
             $geo = geocode($address);
-            if ($geo) { $lat = $geo['lat']; $lng = $geo['lng']; }
-            else      { $lat = null; $lng = null; }
+            if ($geo) {
+                $lat = $geo['lat']; $lng = $geo['lng'];
+                $geocoded = $geo['display_name'];
+            }
         }
     }
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -190,8 +193,8 @@ function route_admin_update_participant(string $uuid, string $pid): void {
 
     $pdo->beginTransaction();
     if ($votes_changed) {
-        $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, phone = ?, contact_method = ?, address = ?, latitude = ?, longitude = ?, votes_updated_at = ? WHERE id = ?");
-        $upd->execute([$name, $email, $phone, $contact_method, $address, $lat, $lng, time(), $participant['id']]);
+        $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, phone = ?, contact_method = ?, address = ?, latitude = ?, longitude = ?, geocoded_address = ?, votes_updated_at = ? WHERE id = ?");
+        $upd->execute([$name, $email, $phone, $contact_method, $address, $lat, $lng, $geocoded, time(), $participant['id']]);
         $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
         $del->execute([$participant['id']]);
         $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");
@@ -199,8 +202,8 @@ function route_admin_update_participant(string $uuid, string $pid): void {
             $ins->execute([$participant['id'], $cid, $val]);
         }
     } else {
-        $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, phone = ?, contact_method = ?, address = ?, latitude = ?, longitude = ? WHERE id = ?");
-        $upd->execute([$name, $email, $phone, $contact_method, $address, $lat, $lng, $participant['id']]);
+        $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, phone = ?, contact_method = ?, address = ?, latitude = ?, longitude = ?, geocoded_address = ? WHERE id = ?");
+        $upd->execute([$name, $email, $phone, $contact_method, $address, $lat, $lng, $geocoded, $participant['id']]);
     }
     $pdo->commit();
     flash_set('ok', $votes_changed ? 'Participant mis à jour (votes inclus).' : 'Profil mis à jour (votes inchangés).');

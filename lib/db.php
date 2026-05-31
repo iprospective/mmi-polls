@@ -161,12 +161,14 @@ function db_migrate(PDO $pdo): void {
         $pdo->exec("ALTER TABLE polls ADD COLUMN closed_at TEXT NOT NULL DEFAULT ''");
     }
     foreach ([
-        'start_address' => "TEXT NOT NULL DEFAULT ''",
-        'start_lat'     => "REAL",
-        'start_lng'     => "REAL",
-        'end_address'   => "TEXT NOT NULL DEFAULT ''",
-        'end_lat'       => "REAL",
-        'end_lng'       => "REAL",
+        'start_address'  => "TEXT NOT NULL DEFAULT ''",
+        'start_lat'      => "REAL",
+        'start_lng'      => "REAL",
+        'start_geocoded' => "TEXT NOT NULL DEFAULT ''",
+        'end_address'    => "TEXT NOT NULL DEFAULT ''",
+        'end_lat'        => "REAL",
+        'end_lng'        => "REAL",
+        'end_geocoded'   => "TEXT NOT NULL DEFAULT ''",
         // 1 = astreintes visibles côté participant. 0 = brouillon admin only.
         'assignments_public' => "INTEGER NOT NULL DEFAULT 1",
     ] as $col => $sql_type) {
@@ -203,9 +205,11 @@ function db_migrate(PDO $pdo): void {
         $pdo->exec("ALTER TABLE participants ADD COLUMN ical_token TEXT NOT NULL DEFAULT ''");
     }
     foreach ([
-        'address'   => "TEXT NOT NULL DEFAULT ''",
-        'latitude'  => "REAL",
-        'longitude' => "REAL",
+        'address'          => "TEXT NOT NULL DEFAULT ''",
+        'latitude'         => "REAL",
+        'longitude'        => "REAL",
+        // Adresse normalisée renvoyée par Nominatim (display_name).
+        'geocoded_address' => "TEXT NOT NULL DEFAULT ''",
     ] as $col => $sql_type) {
         if (!in_array($col, $present, true)) {
             $pdo->exec("ALTER TABLE participants ADD COLUMN $col $sql_type");

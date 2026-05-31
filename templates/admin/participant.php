@@ -22,10 +22,18 @@
 
   <label>Adresse / ville
     <input type="text" name="address" value="<?= e($participant['address'] ?? '') ?>" placeholder="ex. 12 rue de la Mairie, Romans">
-    <?php if (!empty($participant['latitude'])): ?>
-      <small class="muted">📍 (<?= number_format((float)$participant['latitude'], 4) ?>, <?= number_format((float)$participant['longitude'], 4) ?>)</small>
-    <?php endif; ?>
   </label>
+  <?php if (!empty($participant['latitude'])): ?>
+    <div class="geo-found">
+      <strong>📍 Adresse localisée</strong><br>
+      <span class="geo-display"><?= e($participant['geocoded_address'] ?? '') ?></span><br>
+      <span class="muted small">coordonnées : <?= number_format((float)$participant['latitude'], 5) ?>, <?= number_format((float)$participant['longitude'], 5) ?></span>
+    </div>
+  <?php elseif (!empty($participant['address'])): ?>
+    <div class="geo-failed">
+      <strong>⚠️ Non géolocalisée</strong> — adresse enregistrée mais Nominatim n'a rien trouvé.
+    </div>
+  <?php endif; ?>
 
   <fieldset class="check-group-wrap">
     <legend>Moyens de contact préférés</legend>

@@ -30,17 +30,29 @@ require __DIR__ . '/_admin_nav.php';
 
   <label>Adresse de départ (lieu de prise en charge)
     <input type="text" name="start_address" value="<?= e($poll['start_address'] ?? '') ?>" placeholder="ex. 12 rue Foo, Romans">
-    <?php if (!empty($poll['start_lat'])): ?>
-      <small class="muted">📍 (<?= number_format((float)$poll['start_lat'], 4) ?>, <?= number_format((float)$poll['start_lng'], 4) ?>)</small>
-    <?php endif; ?>
   </label>
+  <?php if (!empty($poll['start_lat'])): ?>
+    <div class="geo-found">
+      <strong>📍 Localisée</strong><br>
+      <span class="geo-display"><?= e($poll['start_geocoded'] ?? '') ?></span><br>
+      <span class="muted small">coordonnées : <?= number_format((float)$poll['start_lat'], 5) ?>, <?= number_format((float)$poll['start_lng'], 5) ?></span>
+    </div>
+  <?php elseif (!empty($poll['start_address'])): ?>
+    <div class="geo-failed"><strong>⚠️ Non géolocalisée</strong> — précisez ville/pays pour aider.</div>
+  <?php endif; ?>
 
   <label>Adresse d'arrivée (destination)
     <input type="text" name="end_address" value="<?= e($poll['end_address'] ?? '') ?>" placeholder="ex. Maternité, Romans">
-    <?php if (!empty($poll['end_lat'])): ?>
-      <small class="muted">📍 (<?= number_format((float)$poll['end_lat'], 4) ?>, <?= number_format((float)$poll['end_lng'], 4) ?>)</small>
-    <?php endif; ?>
   </label>
+  <?php if (!empty($poll['end_lat'])): ?>
+    <div class="geo-found">
+      <strong>📍 Localisée</strong><br>
+      <span class="geo-display"><?= e($poll['end_geocoded'] ?? '') ?></span><br>
+      <span class="muted small">coordonnées : <?= number_format((float)$poll['end_lat'], 5) ?>, <?= number_format((float)$poll['end_lng'], 5) ?></span>
+    </div>
+  <?php elseif (!empty($poll['end_address'])): ?>
+    <div class="geo-failed"><strong>⚠️ Non géolocalisée</strong> — précisez ville/pays pour aider.</div>
+  <?php endif; ?>
 
   <button type="submit">Enregistrer</button>
 </form>

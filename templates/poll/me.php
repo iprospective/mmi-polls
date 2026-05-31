@@ -60,14 +60,20 @@
 
   <label>Adresse / ville (facultatif)
     <input type="text" name="address" value="<?= e($participant['address'] ?? '') ?>" placeholder="ex. 12 rue de la Mairie, Romans">
-    <?php if (!empty($participant['latitude'])): ?>
-      <small class="muted">📍 Localisée (<?= number_format((float)$participant['latitude'], 4) ?>, <?= number_format((float)$participant['longitude'], 4) ?>)</small>
-    <?php elseif (!empty($participant['address'])): ?>
-      <small class="muted">⚠️ Adresse enregistrée mais non géolocalisée — précisez la ville pour aider la géolocalisation.</small>
-    <?php else: ?>
-      <small class="muted">Permet de privilégier les personnes les plus proches du lieu de départ pour les astreintes de transport.</small>
-    <?php endif; ?>
   </label>
+  <?php if (!empty($participant['latitude'])): ?>
+    <div class="geo-found">
+      <strong>📍 Adresse localisée</strong><br>
+      <span class="geo-display"><?= e($participant['geocoded_address'] ?? '') ?></span><br>
+      <span class="muted small">coordonnées : <?= number_format((float)$participant['latitude'], 5) ?>, <?= number_format((float)$participant['longitude'], 5) ?></span>
+    </div>
+  <?php elseif (!empty($participant['address'])): ?>
+    <div class="geo-failed">
+      <strong>⚠️ Non géolocalisée</strong> — adresse enregistrée mais Nominatim n'a rien trouvé. Précisez la ville ou le pays pour aider.
+    </div>
+  <?php else: ?>
+    <p class="muted small">Permet de privilégier les personnes les plus proches du lieu de départ pour les astreintes de transport.</p>
+  <?php endif; ?>
 
   <fieldset class="check-group-wrap">
     <legend>Pour me contacter (plusieurs possibles)</legend>

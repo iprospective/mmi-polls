@@ -68,21 +68,22 @@ function route_poll_save_votes(string $uuid): void {
     $contact_method = implode(',', $cm_valid);
 
     // Géocode l'adresse SEULEMENT si elle a changé (économise les appels
-    // Nominatim et respecte la politique d'usage).
+    // Nominatim et respecte la politique d'usage). Reset complet si elle
+    // change (lat/lng/geocoded_address tous remis à zéro avant tentative).
     $address = trim((string)($_POST['address'] ?? ''));
-    $lat = $participant['latitude']  ?? null;
-    $lng = $participant['longitude'] ?? null;
-    $geo_msg = '';
+    $lat = $participant['latitude']         ?? null;
+    $lng = $participant['longitude']        ?? null;
+    $geocoded = (string)($participant['geocoded_address'] ?? '');
+    $geo_msg  = '';
     if ($address !== (string)($participant['address'] ?? '')) {
-        if ($address === '') {
-            $lat = null; $lng = null;
-        } else {
+        $lat = null; $lng = null; $geocoded = '';
+        if ($address !== '') {
             $geo = geocode($address);
             if ($geo) {
                 $lat = $geo['lat']; $lng = $geo['lng'];
-                $geo_msg = ' Adresse localisée : ' . $geo['display_name'];
+                $geocoded = $geo['display_name'];
+                $geo_msg  = ' 📍 ' . $geo['display_name'];
             } else {
-                $lat = null; $lng = null;
                 $geo_msg = ' (adresse enregistrée mais pas géolocalisée)';
             }
         }
@@ -121,8 +122,8 @@ function route_poll_save_votes(string $uuid): void {
 
     $pdo->beginTransaction();
     if ($votes_changed) {
-        $upd = $pdo->prepare("UPDATE participants SET name = ?, phone = ?, contact_method = ?, address = ?, latitude = ?, longitude = ?, votes_updated_at = ? WHERE id = ?");
-        $upd->execute([$name, $phone, $contact_method, $address, $lat, $lng, time(), $participant['id']]);
+        $upd = $pdo->prepare("UPDATE participants SET name = ?, phone = ?, contact_method = ?, address = ?, latitude = ?, longitude = ?, geocoded_address = ?, votes_updated_at = ? WHERE id = ?");
+        $upd->execute([$name, $phone, $contact_method, $address, $lat, $lng, $geocoded, time(), $participant['id']]);
         $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
         $del->execute([$participant['id']]);
         $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");
@@ -130,8 +131,8 @@ function route_poll_save_votes(string $uuid): void {
             $ins->execute([$participant['id'], $cid, $val]);
         }
     } else {
-        $upd = $pdo->prepare("UPDATE participants SET name = ?, phone = ?, contact_method = ?, address = ?, latitude = ?, longitude = ? WHERE id = ?");
-        $upd->execute([$name, $phone, $contact_method, $address, $lat, $lng, $participant['id']]);
+        $upd = $pdo->prepare("UPDATE participants SET name = ?, phone = ?, contact_method = ?, address = ?, latitude = ?, longitude = ?, geocoded_address = ? WHERE id = ?");
+        $upd->execute([$name, $phone, $contact_method, $address, $lat, $lng, $geocoded, $participant['id']]);
     }
     $pdo->commit();
 
