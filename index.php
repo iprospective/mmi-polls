@@ -859,6 +859,7 @@ function route_admin_participants_list(string $uuid): void {
     $stmt = $pdo->prepare("
         SELECT
             p.id, p.name, p.email, p.created_at, p.votes_updated_at,
+            p.phone, p.contact_method,
             COALESCE(SUM(CASE WHEN v.value='yes'   THEN 1 ELSE 0 END), 0) AS yes_count,
             COALESCE(SUM(CASE WHEN v.value='maybe' THEN 1 ELSE 0 END), 0) AS maybe_count,
             COALESCE(SUM(CASE WHEN v.value='no'    THEN 1 ELSE 0 END), 0) AS no_count,
@@ -973,6 +974,9 @@ function route_admin_update_participant(string $uuid, string $pid): void {
 
     $name  = trim((string)($_POST['name'] ?? ''));
     $email = strtolower(trim((string)($_POST['email'] ?? '')));
+    $phone = sanitize_phone((string)($_POST['phone'] ?? ''));
+    $contact_method = (string)($_POST['contact_method'] ?? '');
+    if (!array_key_exists($contact_method, contact_methods())) $contact_method = '';
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         flash_set('err', 'Email invalide.');
         redirect('/admin/polls/' . $uuid . '/participants/' . (int)$pid);
@@ -996,8 +1000,8 @@ function route_admin_update_participant(string $uuid, string $pid): void {
     $valid_ids = array_flip(array_map('intval', array_column($valid->fetchAll(), 'id')));
 
     $pdo->beginTransaction();
-    $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, votes_updated_at = ? WHERE id = ?");
-    $upd->execute([$name, $email, time(), $participant['id']]);
+    $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, phone = ?, contact_method = ?, votes_updated_at = ? WHERE id = ?");
+    $upd->execute([$name, $email, $phone, $contact_method, time(), $participant['id']]);
     $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
     $del->execute([$participant['id']]);
     $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");
@@ -1124,6 +1128,9 @@ function route_poll_save_votes(string $uuid): void {
         redirect('/p/' . $uuid . '/login');
     }
     $name = trim((string)($_POST['name'] ?? ''));
+    $phone = sanitize_phone((string)($_POST['phone'] ?? ''));
+    $contact_method = (string)($_POST['contact_method'] ?? '');
+    if (!array_key_exists($contact_method, contact_methods())) $contact_method = '';
     $votes = $_POST['votes'] ?? [];
     if (!is_array($votes)) $votes = [];
 
@@ -1137,8 +1144,8 @@ function route_poll_save_votes(string $uuid): void {
     $valid_ids = array_flip(array_map('intval', array_column($valid->fetchAll(), 'id')));
 
     $pdo->beginTransaction();
-    $upd = $pdo->prepare("UPDATE participants SET name = ?, votes_updated_at = ? WHERE id = ?");
-    $upd->execute([$name, time(), $participant['id']]);
+    $upd = $pdo->prepare("UPDATE participants SET name = ?, phone = ?, contact_method = ?, votes_updated_at = ? WHERE id = ?");
+    $upd->execute([$name, $phone, $contact_method, time(), $participant['id']]);
     $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
     $del->execute([$participant['id']]);
     $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");

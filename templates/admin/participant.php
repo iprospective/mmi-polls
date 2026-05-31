@@ -7,12 +7,27 @@
 
 <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/participants/<?= (int)$participant['id'] ?>" class="card">
   <?= csrf_field() ?>
-  <div class="row">
-    <label style="flex:1">Nom
+  <div class="row" style="align-items: flex-start;">
+    <label style="flex:1; margin-bottom: 0;">Nom
       <input type="text" name="name" value="<?= e($participant['name']) ?>" placeholder="Prénom">
     </label>
-    <label style="flex:2">Email
+    <label style="flex:2; margin-bottom: 0;">Email
       <input type="email" name="email" value="<?= e($participant['email']) ?>" required>
+    </label>
+  </div>
+
+  <div class="row" style="align-items: flex-start;">
+    <label style="flex:2; margin-bottom: 0;">Téléphone
+      <input type="tel" name="phone" value="<?= e($participant['phone'] ?? '') ?>" placeholder="ex. 06 12 34 56 78">
+    </label>
+    <label style="flex:1; margin-bottom: 0;">Contact
+      <select name="contact_method">
+        <option value="">— (non précisé)</option>
+        <?php foreach (contact_methods() as $key => $label):
+          $cur = $participant['contact_method'] ?? ''; ?>
+          <option value="<?= e($key) ?>" <?= $cur === $key ? 'selected' : '' ?>><?= e($label) ?></option>
+        <?php endforeach; ?>
+      </select>
     </label>
   </div>
 

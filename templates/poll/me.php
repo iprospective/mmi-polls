@@ -29,6 +29,21 @@
     <input type="text" name="name" value="<?= e($participant['name']) ?>" placeholder="Votre prénom" required>
   </label>
 
+  <div class="row" style="align-items: flex-start;">
+    <label style="flex: 2; margin-bottom: 0;">Téléphone (facultatif)
+      <input type="tel" name="phone" value="<?= e($participant['phone'] ?? '') ?>" placeholder="ex. 06 12 34 56 78">
+    </label>
+    <label style="flex: 1; margin-bottom: 0;">Pour me contacter
+      <select name="contact_method">
+        <option value="">— (non précisé)</option>
+        <?php foreach (contact_methods() as $key => $label):
+          $cur = $participant['contact_method'] ?? ''; ?>
+          <option value="<?= e($key) ?>" <?= $cur === $key ? 'selected' : '' ?>><?= e($label) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+  </div>
+
   <div class="grid-wrap">
   <table class="vote-grid editable">
     <thead>

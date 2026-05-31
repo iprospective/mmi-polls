@@ -101,12 +101,17 @@ function db_migrate(PDO $pdo): void {
         $pdo->exec("ALTER TABLE polls ADD COLUMN contact_email TEXT NOT NULL DEFAULT ''");
     }
 
-    // Migration : participants.votes_updated_at ajoutée si absente.
+    // Migrations sur la table participants.
     $cols = $pdo->query("PRAGMA table_info(participants)")->fetchAll();
-    $has_vupd = false;
-    foreach ($cols as $col) if ($col['name'] === 'votes_updated_at') { $has_vupd = true; break; }
-    if (!$has_vupd) {
+    $present = array_column($cols, 'name');
+    if (!in_array('votes_updated_at', $present, true)) {
         $pdo->exec("ALTER TABLE participants ADD COLUMN votes_updated_at INTEGER NOT NULL DEFAULT 0");
+    }
+    if (!in_array('phone', $present, true)) {
+        $pdo->exec("ALTER TABLE participants ADD COLUMN phone TEXT NOT NULL DEFAULT ''");
+    }
+    if (!in_array('contact_method', $present, true)) {
+        $pdo->exec("ALTER TABLE participants ADD COLUMN contact_method TEXT NOT NULL DEFAULT ''");
     }
 }
 

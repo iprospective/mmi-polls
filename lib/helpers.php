@@ -55,6 +55,23 @@ function not_found(): void {
     exit;
 }
 
+function contact_methods(): array {
+    return [
+        'telegram' => 'Telegram',
+        'signal'   => 'Signal',
+        'whatsapp' => 'WhatsApp',
+        'sms'      => 'SMS',
+    ];
+}
+function contact_method_label(string $method): string {
+    return contact_methods()[$method] ?? '';
+}
+function sanitize_phone(string $raw): string {
+    // Garde chiffres, +, espaces, tirets, points, parenthèses ; limite à 32 chars.
+    $clean = preg_replace('/[^0-9+\-.\s()]/u', '', $raw) ?? '';
+    return mb_substr(trim($clean), 0, 32);
+}
+
 function fmt_day(string $iso): string {
     static $jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
     static $mois  = ['', 'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];

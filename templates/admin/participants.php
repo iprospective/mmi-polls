@@ -72,11 +72,24 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
     $sum['yes']   += $yes;   $sum['maybe'] += $maybe; $sum['no'] += $no;
     $sum['none']  += $none;  $sum['p']     += $pri;   $sum['b']  += $bak;
 ?>
+    <?php
+      $tooltip_lines = [$r['email']];
+      if ($r['phone']) $tooltip_lines[] = $r['phone'];
+      if ($r['contact_method']) $tooltip_lines[] = 'Préfère ' . contact_method_label($r['contact_method']);
+    ?>
     <tr class="<?= $is_orphan ? 'orphan' : '' ?>">
-      <td data-l="Nom" data-sort-value="<?= e(mb_strtolower($name)) ?>" title="<?= e($r['email']) ?>">
+      <td data-l="Nom" data-sort-value="<?= e(mb_strtolower($name)) ?>" title="<?= e(implode("\n", $tooltip_lines)) ?>">
         <strong><?= e($name) ?></strong>
+        <?php if ($r['contact_method']): ?>
+          <span class="contact-pill cm-<?= e($r['contact_method']) ?>" title="Préfère <?= e(contact_method_label($r['contact_method'])) ?>">
+            <?= e(contact_method_label($r['contact_method'])) ?>
+          </span>
+        <?php endif; ?>
       </td>
       <td data-l="Email" class="email-cell muted small"><?= e($r['email']) ?></td>
+      <td data-l="Téléphone" class="phone-cell muted small">
+        <?= $r['phone'] ? e($r['phone']) : '—' ?>
+      </td>
       <td data-l="Oui"       class="num v-yes-cell"><?= $yes ?></td>
       <td data-l="Peut-être" class="num v-maybe-cell"><?= $maybe ?></td>
       <td data-l="Non"       class="num v-no-cell"><?= $no ?></td>
@@ -143,6 +156,7 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
     <tr>
       <th>Nom ↕</th>
       <th class="email-col">Email ↕</th>
+      <th class="phone-col">Tél ↕</th>
       <th data-sort-type="num" title="Dates / créneaux où la personne a voté Oui"><span class="v-yes">Oui</span> ↕</th>
       <th data-sort-type="num" title="Peut-être"><span class="v-maybe">Peut-être</span> ↕</th>
       <th data-sort-type="num" title="Non"><span class="v-no">Non</span> ↕</th>
@@ -162,7 +176,7 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
   <?php if ($active_rows): ?>
   <tfoot>
     <tr>
-      <td colspan="2"><em>Totaux (<?= count($active_rows) ?> actives)</em></td>
+      <td colspan="3"><em>Totaux (<?= count($active_rows) ?> actives)</em></td>
       <td class="num"><?= $sum['yes'] ?></td>
       <td class="num"><?= $sum['maybe'] ?></td>
       <td class="num"><?= $sum['no'] ?></td>
@@ -190,6 +204,7 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
       <tr>
         <th>Nom ↕</th>
         <th class="email-col">Email ↕</th>
+        <th class="phone-col">Tél ↕</th>
         <th data-sort-type="num">Oui</th>
         <th data-sort-type="num">Peut-être</th>
         <th data-sort-type="num">Non</th>
