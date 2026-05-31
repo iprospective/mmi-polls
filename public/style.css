@@ -1026,12 +1026,15 @@ table.sortable thead th.sorted-desc::after { content: ' ↓'; }
     border: none;
     text-align: left !important;
   }
-  .participants-table td.num::before,
-  .participants-table td.usage-cell::before {
-    content: attr(data-l);
+  /* Label de colonne (data-l) affiché avant la valeur sur mobile —
+   * applique aux cellules autres que la 1re (qui est le nom, déjà
+   * lisible tel quel) */
+  .participants-table tbody td[data-l]:not(:first-child)::before {
+    content: attr(data-l) ': ';
     color: var(--muted);
     font-size: 0.75rem;
-    margin-right: 0.5rem;
+    margin-right: 0.35rem;
+    font-weight: 500;
   }
 
   /* Sur mobile, on réaffiche email + téléphone puisque les cellules
@@ -1040,6 +1043,21 @@ table.sortable thead th.sorted-desc::after { content: ' ↓'; }
   .participants-table th.phone-col,
   .participants-table td.email-cell,
   .participants-table td.phone-cell { display: block; }
+
+  /* Tableau Coordonnées : colonnes ✓/— en bloc plein, sans fond
+   * coloré (qui serait moche en plein écran) */
+  .contacts-table .check-col {
+    width: auto;
+    min-width: 0;
+    text-align: left !important;
+    background: transparent !important;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  .contacts-table .check-col.cm-telegram,
+  .contacts-table .check-col.cm-signal,
+  .contacts-table .check-col.cm-whatsapp,
+  .contacts-table .check-col.cm-sms { color: var(--fg); }
 }
 
 /* ====================================================================
@@ -1057,6 +1075,18 @@ table.sortable thead th.sorted-desc::after { content: ' ↓'; }
   h2 { font-size: 1.05rem; margin-top: 1.25rem; }
   h3 { font-size: 0.95rem; }
   .card { padding: 0.85rem 0.95rem; }
+
+  /* Les wrappers de tables ne doivent pas créer une mini-fenêtre
+   * scrollable sur mobile : on laisse les tables (qui passent en
+   * cartes via display:block plus bas) s'étendre naturellement. */
+  .grid-wrap {
+    max-height: none;
+    overflow: visible;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+  }
 
   /* Bascule grille récap → cartes */
   .grid-wrap   { display: none; }

@@ -720,12 +720,12 @@ function route_admin_set_contact_email(string $uuid): void {
     $email = trim((string)($_POST['contact_email'] ?? ''));
     if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         flash_set('err', 'Email de contact invalide.');
-        redirect('/admin/polls/' . $uuid . '/assignments');
+        redirect('/admin/polls/' . $uuid . '/settings');
     }
     $upd = db()->prepare("UPDATE polls SET contact_email = ? WHERE id = ?");
     $upd->execute([strtolower($email), $poll['id']]);
     flash_set('ok', 'Email de contact mis à jour.');
-    redirect('/admin/polls/' . $uuid . '/assignments');
+    redirect('/admin/polls/' . $uuid . '/settings');
 }
 
 function route_admin_send_notifications(string $uuid): void {

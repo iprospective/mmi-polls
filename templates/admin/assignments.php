@@ -198,15 +198,18 @@ $toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
 
 <h2>Notifications &amp; confirmations</h2>
 
-<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/contact-email" class="card">
-  <?= csrf_field() ?>
-  <label>Email de contact (pour recevoir les signalements de problèmes)
-    <input type="email" name="contact_email"
-           value="<?= e($poll['contact_email']) ?>"
-           placeholder="ex. moi@exemple.com">
-  </label>
-  <button type="submit">Enregistrer</button>
-</form>
+<?php if (!$poll['contact_email']): ?>
+<p class="muted small">
+  ⚠️ Aucune adresse de contact configurée pour ce sondage.
+  Les signalements de problèmes seront enregistrés en base mais pas envoyés par email.
+  <a href="/admin/polls/<?= e($poll['uuid']) ?>/settings">Configurer dans Paramètres →</a>
+</p>
+<?php else: ?>
+<p class="muted small">
+  Signalements envoyés à <code><?= e($poll['contact_email']) ?></code>
+  (<a href="/admin/polls/<?= e($poll['uuid']) ?>/settings">modifier</a>).
+</p>
+<?php endif; ?>
 
 <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/notify" class="card"
       onsubmit="return confirm('Envoyer la notification d\'astreintes aux destinataires sélectionnés ?');">

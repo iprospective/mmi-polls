@@ -14,6 +14,19 @@ require __DIR__ . '/_admin_nav.php';
   <button type="submit">Enregistrer</button>
 </form>
 
+<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/contact-email" class="card">
+  <?= csrf_field() ?>
+  <h2 style="margin-top:0;">Email de contact</h2>
+  <p class="muted small">Adresse qui reçoit les signalements quand un·e
+     participant·e conteste ses astreintes après notification.
+     Laissez vide pour désactiver l'envoi (les signalements restent
+     consultables dans l'onglet Astreintes).</p>
+  <label>Email <input type="email" name="contact_email"
+                      value="<?= e($poll['contact_email']) ?>"
+                      placeholder="ex. moi@exemple.com"></label>
+  <button type="submit">Enregistrer</button>
+</form>
+
 <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/delete" class="card danger-zone"
       onsubmit="return confirm('Supprimer définitivement ce sondage ? Cette action est irréversible : votes, participants, astreintes, notifications seront perdus.');">
   <?= csrf_field() ?>
