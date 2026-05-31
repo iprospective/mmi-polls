@@ -1,0 +1,184 @@
+<?php
+// Controller : gestion des participants (liste, création, édition,
+// suppression, vue calendrier individuel).
+require_once __DIR__ . '/../lib/auth.php';
+require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/../lib/helpers.php';
+require_once __DIR__ . '/../services/polls.php';
+require_once __DIR__ . '/../services/participants.php';
+require_once __DIR__ . '/../services/assignments.php';
+
+function route_admin_participants_list(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $pdo = db();
+
+    $stmt = $pdo->prepare("
+        SELECT
+            p.id, p.name, p.email, p.created_at, p.votes_updated_at,
+            p.phone, p.contact_method,
+            COALESCE(SUM(CASE WHEN v.value='yes'   THEN 1 ELSE 0 END), 0) AS yes_count,
+            COALESCE(SUM(CASE WHEN v.value='maybe' THEN 1 ELSE 0 END), 0) AS maybe_count,
+            COALESCE(SUM(CASE WHEN v.value='no'    THEN 1 ELSE 0 END), 0) AS no_count,
+            COALESCE((SELECT COUNT(*) FROM assignments a WHERE a.participant_id = p.id AND a.role='primary'), 0) AS primary_count,
+            COALESCE((SELECT COUNT(*) FROM assignments a WHERE a.participant_id = p.id AND a.role='backup'),  0) AS backup_count,
+            (SELECT n.status FROM notifications n WHERE n.poll_id = p.poll_id AND n.participant_id = p.id) AS notif_status,
+            (SELECT n.responded_at FROM notifications n WHERE n.poll_id = p.poll_id AND n.participant_id = p.id) AS notif_responded_at
+        FROM participants p
+        LEFT JOIN votes v ON v.participant_id = p.id
+        WHERE p.poll_id = ?
+        GROUP BY p.id
+        ORDER BY p.name, p.email
+    ");
+    $stmt->execute([$poll['id']]);
+    $rows = $stmt->fetchAll();
+
+    $total_choices = poll_total_choices((int)$poll['id']);
+
+    render('admin/participants', [
+        'page_title' => 'Participants — ' . $poll['title'],
+        'poll' => $poll,
+        'rows' => $rows,
+        'total_choices' => $total_choices,
+        'include_sortable' => true,
+    ]);
+}
+
+function route_admin_participant_calendar(string $uuid, string $pid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $pdo  = db();
+    $stmt = $pdo->prepare("SELECT * FROM participants WHERE id = ? AND poll_id = ?");
+    $stmt->execute([(int)$pid, $poll['id']]);
+    $participant = $stmt->fetch();
+    if (!$participant) not_found();
+
+    $assigns = assignments_for_participant((int)$poll['id'], (int)$participant['id']);
+    $cnt = $pdo->prepare("
+        SELECT
+            SUM(CASE WHEN value='yes'   THEN 1 ELSE 0 END) AS yes_count,
+            SUM(CASE WHEN value='maybe' THEN 1 ELSE 0 END) AS maybe_count,
+            SUM(CASE WHEN value='no'    THEN 1 ELSE 0 END) AS no_count
+        FROM votes WHERE participant_id = ?
+    ");
+    $cnt->execute([$participant['id']]);
+    $vote_counts = $cnt->fetch() ?: ['yes_count' => 0, 'maybe_count' => 0, 'no_count' => 0];
+
+    render('admin/participant_calendar', [
+        'page_title' => 'Calendrier — ' . ($participant['name'] !== '' ? $participant['name'] : $participant['email']),
+        'poll' => $poll,
+        'participant' => $participant,
+        'assigns' => $assigns,
+        'vote_counts' => $vote_counts,
+    ]);
+}
+
+function route_admin_create_participant(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $name  = trim((string)($_POST['name'] ?? ''));
+    $email = strtolower(trim((string)($_POST['email'] ?? '')));
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        flash_set('err', 'Email invalide.');
+        redirect('/admin/polls/' . $uuid . '/participants');
+    }
+    $pdo = db();
+    $check = $pdo->prepare("SELECT id FROM participants WHERE poll_id = ? AND email = ?");
+    $check->execute([$poll['id'], $email]);
+    if ($row = $check->fetch()) {
+        flash_set('err', 'Un participant avec cet email existe déjà.');
+        redirect('/admin/polls/' . $uuid . '/participants/' . (int)$row['id']);
+    }
+    $ins = $pdo->prepare("INSERT INTO participants (poll_id, email, name, created_at) VALUES (?, ?, ?, ?)");
+    $ins->execute([$poll['id'], $email, $name, time()]);
+    $new_id = (int)$pdo->lastInsertId();
+    flash_set('ok', 'Participant ajouté. Saisissez maintenant ses disponibilités.');
+    redirect('/admin/polls/' . $uuid . '/participants/' . $new_id);
+}
+
+function route_admin_edit_participant(string $uuid, string $pid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $pdo = db();
+    $p = $pdo->prepare("SELECT * FROM participants WHERE id = ? AND poll_id = ?");
+    $p->execute([(int)$pid, $poll['id']]);
+    $participant = $p->fetch();
+    if (!$participant) not_found();
+    $dates = poll_structure((int)$poll['id']);
+    $v = $pdo->prepare("SELECT choice_id, value FROM votes WHERE participant_id = ?");
+    $v->execute([$participant['id']]);
+    $myvotes = [];
+    foreach ($v as $row) $myvotes[(int)$row['choice_id']] = $row['value'];
+    render('admin/participant', [
+        'page_title' => 'Édition — ' . ($participant['name'] !== '' ? $participant['name'] : $participant['email']),
+        'poll' => $poll,
+        'dates' => $dates,
+        'participant' => $participant,
+        'myvotes' => $myvotes,
+    ]);
+}
+
+function route_admin_update_participant(string $uuid, string $pid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $pdo = db();
+    $p = $pdo->prepare("SELECT * FROM participants WHERE id = ? AND poll_id = ?");
+    $p->execute([(int)$pid, $poll['id']]);
+    $participant = $p->fetch();
+    if (!$participant) not_found();
+
+    $name  = trim((string)($_POST['name'] ?? ''));
+    $email = strtolower(trim((string)($_POST['email'] ?? '')));
+    $phone = sanitize_phone((string)($_POST['phone'] ?? ''));
+    $cm_input = $_POST['contact_method'] ?? [];
+    if (!is_array($cm_input)) $cm_input = [$cm_input];
+    $cm_valid = array_values(array_unique(array_intersect($cm_input, array_keys(contact_methods()))));
+    sort($cm_valid);
+    $contact_method = implode(',', $cm_valid);
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        flash_set('err', 'Email invalide.');
+        redirect('/admin/polls/' . $uuid . '/participants/' . (int)$pid);
+    }
+    // Detect email collision with another participant of the same poll.
+    $coll = $pdo->prepare("SELECT id FROM participants WHERE poll_id = ? AND email = ? AND id != ?");
+    $coll->execute([$poll['id'], $email, $participant['id']]);
+    if ($coll->fetch()) {
+        flash_set('err', 'Un autre participant du sondage utilise déjà cet email.');
+        redirect('/admin/polls/' . $uuid . '/participants/' . (int)$pid);
+    }
+
+    $votes = $_POST['votes'] ?? [];
+    if (!is_array($votes)) $votes = [];
+    $valid = $pdo->prepare("
+        SELECT c.id FROM poll_choices c
+        JOIN poll_dates d ON d.id = c.date_id
+        WHERE d.poll_id = ?
+    ");
+    $valid->execute([$poll['id']]);
+    $valid_ids = array_flip(array_map('intval', array_column($valid->fetchAll(), 'id')));
+
+    $pdo->beginTransaction();
+    $upd = $pdo->prepare("UPDATE participants SET name = ?, email = ?, phone = ?, contact_method = ?, votes_updated_at = ? WHERE id = ?");
+    $upd->execute([$name, $email, $phone, $contact_method, time(), $participant['id']]);
+    $del = $pdo->prepare("DELETE FROM votes WHERE participant_id = ?");
+    $del->execute([$participant['id']]);
+    $ins = $pdo->prepare("INSERT INTO votes (participant_id, choice_id, value) VALUES (?, ?, ?)");
+    foreach ($votes as $cid => $val) {
+        $cid = (int)$cid;
+        if (!isset($valid_ids[$cid])) continue;
+        if (!in_array($val, ['yes', 'no', 'maybe'], true)) continue;
+        $ins->execute([$participant['id'], $cid, $val]);
+    }
+    $pdo->commit();
+    flash_set('ok', 'Participant mis à jour.');
+    redirect('/admin/polls/' . $uuid . '/participants/' . (int)$pid);
+}
+
+function route_admin_delete_participant(string $uuid, string $pid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $stmt = db()->prepare("DELETE FROM participants WHERE id = ? AND poll_id = ?");
+    $stmt->execute([(int)$pid, $poll['id']]);
+    flash_set('ok', 'Participant supprimé.');
+    redirect('/admin/polls/' . $uuid . '/participants');
+}

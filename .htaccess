@@ -5,8 +5,8 @@ DirectoryIndex index.php
     RewriteEngine On
 
     # Bloque l'accès direct aux dossiers internes et fichiers sensibles.
-    RewriteRule ^(data|lib|templates)(/|$) - [F,L]
-    RewriteRule ^(config\.php|config\.php\.example|seed[a-z_]*\.php|\.gitignore)$ - [F,L]
+    RewriteRule ^(data|lib|templates|controllers|services)(/|$) - [F,L]
+    RewriteRule ^(config\.php|config\.php\.example|routes\.php|seed[a-z_]*\.php|migrate_from_frama[a-z_]*\.php|\.gitignore)$ - [F,L]
     RewriteRule \.(sqlite|sqlite-journal|sqlite-wal|sqlite-shm|log)$ - [F,L]
 
     # Si le fichier existe sur disque (ex: public/style.css), sert tel quel.
