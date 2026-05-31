@@ -135,19 +135,40 @@ foreach ($dates as $d) $total_choices += count($d['choices']);
   </div>
 </form>
 
+<div class="auto-fill-wrap">
+
 <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/auto-fill"
       class="card"
       onsubmit="return confirm('Remplir automatiquement tous les créneaux encore vides ? Les assignations existantes ne seront pas touchées.');">
   <?= csrf_field() ?>
   <h3 style="margin-top:0;">Remplissage automatique</h3>
   <p class="muted small">
-    Remplit les créneaux <strong>encore vides</strong> en priorité Nuit &gt; Soirée &gt; Journée,
-    en répartissant équitablement (round-robin) parmi les candidat·e·s ayant voté Oui (en priorité)
-    ou Peut-être, et en espaçant au maximum dans le temps les astreintes d'une même personne.
-    N'écrase rien de ce qui est déjà posé.
+    <strong>Tous les principaux d'abord, puis tous les suppléants.</strong>
+    Priorité de libellé&nbsp;: Nuit &gt; Soirée &gt; Journée. Au sein de chaque créneau,
+    les candidat·e·s (Oui en priorité, sinon Peut-être) sont classé·e·s par
+    pourcentage d'usage&nbsp;:
+    <span class="tier-badge tier-0">&lt;50&nbsp;% prioritaire</span>,
+    <span class="tier-badge tier-1">50–75&nbsp;%</span>,
+    <span class="tier-badge tier-2">75–90&nbsp;%</span>,
+    <span class="tier-badge tier-3">≥90&nbsp;% dernier recours</span>.
+    Au sein des prioritaires, les personnes qui ont coché peu de Oui passent en
+    premier (sinon elles seraient noyées). N'écrase rien de ce qui est déjà posé.
   </p>
   <button type="submit">Remplir auto les créneaux vides</button>
 </form>
+
+<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/clear"
+      class="card"
+      onsubmit="return confirm('Supprimer TOUTES les astreintes posées sur ce sondage ? Action irréversible.');">
+  <?= csrf_field() ?>
+  <h3 style="margin-top:0;">Repartir de zéro</h3>
+  <p class="muted small">Supprime toutes les astreintes (principales et suppléantes)
+    posées sur ce sondage. Utile avant un remplissage auto si tu veux que l'algo
+    décide de tout de bout en bout.</p>
+  <button type="submit" class="danger">Vider toutes les astreintes</button>
+</form>
+
+</div>
 
 <h2>Notifications &amp; confirmations</h2>
 

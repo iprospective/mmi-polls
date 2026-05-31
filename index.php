@@ -54,6 +54,8 @@ $routes = [
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/assignments$#',           'route_admin_assignments'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments$#',           'route_admin_save_assignments'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/auto-fill$#', 'route_admin_auto_fill_assignments'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/clear$#',     'route_admin_clear_assignments'],
+    ['GET',  '#^/admin/polls/([0-9a-f-]+)/participants$#',          'route_admin_participants_list'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/contact-email$#',         'route_admin_set_contact_email'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/notify$#',    'route_admin_send_notifications'],
 
@@ -482,19 +484,19 @@ function route_admin_auto_fill_assignments(string $uuid): void {
     $poll = find_poll($uuid);
     $pdo = db();
 
-    // 1. Charge l'état existant : assignations posées, votes par créneau,
-    //    listes de candidats yes / maybe.
+    // 1. État existant : assignations posées, votes par créneau,
+    //    crédits "Oui" et "Peut-être" par personne.
     $assigns_stmt = $pdo->prepare("
-        SELECT a.choice_id, a.role, a.participant_id, c.label, d.day
+        SELECT a.choice_id, a.role, a.participant_id, d.day
         FROM assignments a
         JOIN poll_choices c ON c.id = a.choice_id
         JOIN poll_dates   d ON d.id = c.date_id
         WHERE d.poll_id = ?
     ");
     $assigns_stmt->execute([$poll['id']]);
-    $existing  = [];   // [choice_id][role] => pid
-    $counts    = [];   // [pid] => int (assignations posées toutes époques confondues)
-    $last_ts   = [];   // [pid] => epoch du jour de la dernière assignation
+    $existing = [];   // [choice_id][role] => pid
+    $counts   = [];   // [pid] => assignations courantes
+    $last_ts  = [];   // [pid] => epoch du jour de la dernière assignation
     foreach ($assigns_stmt as $r) {
         $cid = (int)$r['choice_id'];
         $pid = (int)$r['participant_id'];
@@ -505,7 +507,7 @@ function route_admin_auto_fill_assignments(string $uuid): void {
     }
 
     $choices_stmt = $pdo->prepare("
-        SELECT c.id AS choice_id, c.label, d.day, d.sort_order AS d_order, c.sort_order AS c_order
+        SELECT c.id AS choice_id, c.label, d.day, c.sort_order AS c_order
         FROM poll_choices c
         JOIN poll_dates d ON d.id = c.date_id
         WHERE d.poll_id = ?
@@ -513,6 +515,10 @@ function route_admin_auto_fill_assignments(string $uuid): void {
     $choices_stmt->execute([$poll['id']]);
     $choices = $choices_stmt->fetchAll();
 
+    $yes_by_choice = [];
+    $maybe_by_choice = [];
+    $yes_credits   = [];     // [pid] => nb total de votes 'yes'
+    $maybe_credits = [];     // [pid] => nb total de votes 'maybe'
     $votes_stmt = $pdo->prepare("
         SELECT v.choice_id, v.participant_id, v.value
         FROM votes v
@@ -521,16 +527,35 @@ function route_admin_auto_fill_assignments(string $uuid): void {
         WHERE d.poll_id = ?
     ");
     $votes_stmt->execute([$poll['id']]);
-    $yes_by_choice = [];
-    $maybe_by_choice = [];
     foreach ($votes_stmt as $r) {
         $cid = (int)$r['choice_id'];
         $pid = (int)$r['participant_id'];
-        if      ($r['value'] === 'yes')   $yes_by_choice[$cid][]   = $pid;
-        elseif  ($r['value'] === 'maybe') $maybe_by_choice[$cid][] = $pid;
+        if ($r['value'] === 'yes') {
+            $yes_by_choice[$cid][] = $pid;
+            $yes_credits[$pid] = ($yes_credits[$pid] ?? 0) + 1;
+        } elseif ($r['value'] === 'maybe') {
+            $maybe_by_choice[$cid][] = $pid;
+            $maybe_credits[$pid] = ($maybe_credits[$pid] ?? 0) + 1;
+        }
     }
 
-    // 2. Définit l'ordre de priorité des libellés (nuit > soirée > journée > reste).
+    // Capacité effective = crédits Oui + 0.5 × Peut-être.
+    // Le ratio d'usage = assignations / capacité est la base du tier.
+    $capacity = function (int $pid) use ($yes_credits, $maybe_credits): float {
+        $y = $yes_credits[$pid]   ?? 0;
+        $m = $maybe_credits[$pid] ?? 0;
+        $cap = $y + 0.5 * $m;
+        return $cap > 0 ? $cap : 1.0;
+    };
+    $tier_of = function (int $pid) use ($counts, $capacity): int {
+        $usage = ($counts[$pid] ?? 0) / $capacity($pid);
+        if ($usage < 0.50) return 0;       // prioritaire
+        if ($usage < 0.75) return 1;       // moins susceptible
+        if ($usage < 0.90) return 2;       // encore moins
+        return 3;                          // last resort
+    };
+
+    // 2. Ordre des créneaux : priorité de libellé puis chronologique.
     $priority = $GLOBALS['CONFIG']['auto_fill']['priority']
         ?? ['Nuit', 'Soirée', 'Journée'];
     $rank_of = [];
@@ -538,7 +563,6 @@ function route_admin_auto_fill_assignments(string $uuid): void {
     $label_rank = function (string $label) use ($rank_of) {
         return $rank_of[mb_strtolower($label)] ?? 999;
     };
-
     usort($choices, function ($a, $b) use ($label_rank) {
         $ra = $label_rank($a['label']);
         $rb = $label_rank($b['label']);
@@ -547,48 +571,82 @@ function route_admin_auto_fill_assignments(string $uuid): void {
         return (int)$a['c_order'] - (int)$b['c_order'];
     });
 
-    // 3. Round-robin équitable : pour chaque rôle (primary puis backup),
-    //    chaque créneau encore vide, on choisit le candidat qui a le moins
-    //    d'assignations, puis (à égalité) celui qui a la dernière astreinte
-    //    la plus ancienne, pour bien étaler dans le temps.
-    $new_assigns = [];   // [choice_id][role] => pid
+    // 3. Algorithme : tous les PRINCIPAUX d'abord, puis tous les
+    //    SUPPLÉANTS (l'utilisateur a insisté : on a besoin d'avoir au
+    //    moins un principal partout avant de poser le moindre suppléant).
+    //
+    //    Pour chaque créneau, on regroupe les candidats par tier d'usage :
+    //      tier 0 : < 50 %  → prioritaire ; on trie alors par (count ASC,
+    //               crédits Oui ASC, gap DESC, id) pour donner sa chance
+    //               aux personnes qui ont peu coché Oui (sinon elles
+    //               passent inaperçues).
+    //      tier 1 : 50–75 % → trié par (count ASC, gap DESC, crédits ASC).
+    //      tier 2 : 75–90 % → idem mais consulté après tier 1.
+    //      tier 3 : ≥ 90 %  → uniquement s'il n'y a aucun candidat
+    //               disponible dans les tiers précédents.
+    //
+    //    Candidats : Oui d'abord, sinon Peut-être ; on exclut la personne
+    //    déjà posée sur l'autre rôle du même créneau.
+    $new_assigns = [];
+    $pick_for = function (int $cid, int $today_ts, int $blocked, array $yes_pool, array $maybe_pool)
+                use ($counts, $last_ts, $yes_credits, $tier_of): ?int {
+        foreach ([$yes_pool, $maybe_pool] as $pool) {
+            $cands = array_values(array_filter($pool, fn($p) => $p !== $blocked));
+            if (empty($cands)) continue;
+            $by_tier = [0 => [], 1 => [], 2 => [], 3 => []];
+            foreach ($cands as $pid) $by_tier[$tier_of((int)$pid)][] = $pid;
+            foreach ([0, 1, 2, 3] as $t) {
+                if (empty($by_tier[$t])) continue;
+                $list = $by_tier[$t];
+                usort($list, function ($a, $b) use ($t, $counts, $last_ts, $yes_credits, $today_ts) {
+                    $ca = $counts[$a] ?? 0;
+                    $cb = $counts[$b] ?? 0;
+                    if ($ca !== $cb) return $ca - $cb;
+                    $ya = $yes_credits[$a] ?? 0;
+                    $yb = $yes_credits[$b] ?? 0;
+                    $la = isset($last_ts[$a]) ? $today_ts - $last_ts[$a] : PHP_INT_MAX;
+                    $lb = isset($last_ts[$b]) ? $today_ts - $last_ts[$b] : PHP_INT_MAX;
+                    if ($t === 0) {
+                        // Tier 0 : low yes_credits avant gap (donner sa
+                        // chance aux gens à peu de Oui).
+                        if ($ya !== $yb) return $ya - $yb;
+                        if ($la !== $lb) return $lb <=> $la;
+                    } else {
+                        // Tiers 1+ : on étale d'abord temporellement.
+                        if ($la !== $lb) return $lb <=> $la;
+                        if ($ya !== $yb) return $ya - $yb;
+                    }
+                    return $a - $b;
+                });
+                return (int)$list[0];
+            }
+        }
+        return null;
+    };
+
     foreach (['primary', 'backup'] as $role) {
         $other = $role === 'primary' ? 'backup' : 'primary';
         foreach ($choices as $c) {
             $cid = (int)$c['choice_id'];
             if (isset($existing[$cid][$role])) continue;
-
             $blocked = $existing[$cid][$other] ?? ($new_assigns[$cid][$other] ?? 0);
-            $cands = array_values(array_filter($yes_by_choice[$cid] ?? [], fn($p) => $p !== $blocked));
-            if (empty($cands)) {
-                $cands = array_values(array_filter($maybe_by_choice[$cid] ?? [], fn($p) => $p !== $blocked));
-            }
-            if (empty($cands)) continue;
-
             $today_ts = strtotime($c['day']) ?: 0;
-            usort($cands, function ($a, $b) use ($counts, $last_ts, $today_ts) {
-                $ca = $counts[$a] ?? 0;
-                $cb = $counts[$b] ?? 0;
-                if ($ca !== $cb) return $ca - $cb;
-                // Préfère candidat dont la dernière astreinte est la plus
-                // ancienne (gap au jour courant le plus grand). Ceux qui
-                // n'ont aucune assignation comptent comme gap "infini".
-                $la = isset($last_ts[$a]) ? $today_ts - $last_ts[$a] : PHP_INT_MAX;
-                $lb = isset($last_ts[$b]) ? $today_ts - $last_ts[$b] : PHP_INT_MAX;
-                if ($la !== $lb) return $lb <=> $la;
-                return $a - $b; // tie-break déterministe par id
-            });
-
-            $pick = $cands[0];
+            $pick = $pick_for(
+                $cid, $today_ts, (int)$blocked,
+                $yes_by_choice[$cid]   ?? [],
+                $maybe_by_choice[$cid] ?? []
+            );
+            if ($pick === null) continue;
             $new_assigns[$cid][$role] = $pick;
             $counts[$pick] = ($counts[$pick] ?? 0) + 1;
             $last_ts[$pick] = max($last_ts[$pick] ?? 0, $today_ts);
         }
     }
 
-    // 4. Persiste les nouvelles assignations (INSERT only, ne touche pas
-    //    aux assignations existantes).
-    $inserted = 0;
+    // 4. Persistance (INSERT only, on ne touche pas aux assignations
+    //    déjà saisies à la main).
+    $inserted_p = 0;
+    $inserted_b = 0;
     if ($new_assigns) {
         $pdo->beginTransaction();
         $ins = $pdo->prepare("INSERT INTO assignments (choice_id, role, participant_id) VALUES (?, ?, ?)");
@@ -596,20 +654,38 @@ function route_admin_auto_fill_assignments(string $uuid): void {
             foreach ($by_role as $role => $pid) {
                 try {
                     $ins->execute([$cid, $role, $pid]);
-                    $inserted++;
+                    if ($role === 'primary') $inserted_p++; else $inserted_b++;
                 } catch (Throwable $e) {
-                    // PK clash improbable (on a contrôlé existing) : on ignore.
+                    // PK clash improbable (existing déjà filtré), on ignore.
                 }
             }
         }
         $pdo->commit();
     }
 
-    if ($inserted > 0) {
-        flash_set('ok', "Remplissage automatique : $inserted créneaux remplis.");
+    $total = $inserted_p + $inserted_b;
+    if ($total > 0) {
+        flash_set('ok', "Remplissage automatique : $total créneaux remplis "
+            . "($inserted_p principaux, $inserted_b suppléants).");
     } else {
-        flash_set('ok', "Aucun créneau à remplir (tout est déjà assigné ou pas de candidat dispo).");
+        flash_set('ok', "Aucun créneau à remplir.");
     }
+    redirect('/admin/polls/' . $uuid . '/assignments');
+}
+
+function route_admin_clear_assignments(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $stmt = db()->prepare("
+        DELETE FROM assignments
+        WHERE choice_id IN (
+            SELECT c.id FROM poll_choices c
+            JOIN poll_dates d ON d.id = c.date_id
+            WHERE d.poll_id = ?
+        )
+    ");
+    $stmt->execute([$poll['id']]);
+    flash_set('ok', 'Toutes les astreintes ont été supprimées.');
     redirect('/admin/polls/' . $uuid . '/assignments');
 }
 
@@ -748,6 +824,42 @@ function route_poll_confirm_post(string $uuid): void {
         redirect($redir);
     }
     redirect($redir);
+}
+
+function route_admin_participants_list(string $uuid): void {
+    require_admin();
+    $poll = find_poll($uuid);
+    $pdo = db();
+
+    $stmt = $pdo->prepare("
+        SELECT
+            p.id, p.name, p.email, p.created_at,
+            COALESCE(SUM(CASE WHEN v.value='yes'   THEN 1 ELSE 0 END), 0) AS yes_count,
+            COALESCE(SUM(CASE WHEN v.value='maybe' THEN 1 ELSE 0 END), 0) AS maybe_count,
+            COALESCE(SUM(CASE WHEN v.value='no'    THEN 1 ELSE 0 END), 0) AS no_count,
+            COALESCE((SELECT COUNT(*) FROM assignments a WHERE a.participant_id = p.id AND a.role='primary'), 0) AS primary_count,
+            COALESCE((SELECT COUNT(*) FROM assignments a WHERE a.participant_id = p.id AND a.role='backup'),  0) AS backup_count,
+            (SELECT n.status FROM notifications n WHERE n.poll_id = p.poll_id AND n.participant_id = p.id) AS notif_status,
+            (SELECT n.responded_at FROM notifications n WHERE n.poll_id = p.poll_id AND n.participant_id = p.id) AS notif_responded_at
+        FROM participants p
+        LEFT JOIN votes v ON v.participant_id = p.id
+        WHERE p.poll_id = ?
+        GROUP BY p.id
+        ORDER BY p.name, p.email
+    ");
+    $stmt->execute([$poll['id']]);
+    $rows = $stmt->fetchAll();
+
+    $tc = $pdo->prepare("SELECT COUNT(*) FROM poll_choices c JOIN poll_dates d ON d.id = c.date_id WHERE d.poll_id = ?");
+    $tc->execute([$poll['id']]);
+    $total_choices = (int)$tc->fetchColumn();
+
+    render('admin/participants', [
+        'page_title' => 'Participants — ' . $poll['title'],
+        'poll' => $poll,
+        'rows' => $rows,
+        'total_choices' => $total_choices,
+    ]);
 }
 
 function route_admin_create_participant(string $uuid): void {

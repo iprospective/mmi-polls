@@ -10,6 +10,7 @@ $public_url = rtrim($GLOBALS['CONFIG']['app_url'], '/') . '/p/' . $poll['uuid'];
   </p>
   <p>
     <a href="/admin/polls/<?= e($poll['uuid']) ?>/assignments" class="btn">Gérer les astreintes</a>
+    <a href="/admin/polls/<?= e($poll['uuid']) ?>/participants" class="btn btn-ghost">Vue participants</a>
   </p>
 </div>
 

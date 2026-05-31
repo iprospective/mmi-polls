@@ -614,6 +614,132 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .notif-status tr.status-confirmed-row { background: #f0fdf4; }
 .notif-status tr.status-contested-row { background: #fffbeb; }
 
+/* ---------- Auto-fill : badges de tiers ---------- */
+.auto-fill-wrap { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 720px) {
+  .auto-fill-wrap { grid-template-columns: 2fr 1fr; align-items: start; }
+}
+.tier-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  margin: 0 0.1rem;
+  white-space: nowrap;
+}
+.tier-0 { background: #d1fae5; color: #065f46; }
+.tier-1 { background: #ecfccb; color: #4d7c0f; }
+.tier-2 { background: #fef3c7; color: #78350f; }
+.tier-3 { background: #fee2e2; color: #7f1d1d; }
+
+a.btn-ghost {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); text-decoration: none; }
+
+/* ---------- Vue participants : tableau stats ---------- */
+.participants-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: 0.9rem;
+}
+.participants-table th,
+.participants-table td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+.participants-table thead th {
+  background: #f1f5f9;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--fg-soft);
+  text-transform: uppercase;
+}
+.participants-table td.num,
+.participants-table th.num,
+.participants-table td:nth-child(n+3):not(.usage-cell),
+.participants-table th:nth-child(n+3):not(.usage-cell) {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.participants-table tbody tr:hover { background: #f8fafc; }
+.participants-table .v-yes-cell   { color: var(--yes); font-weight: 600; }
+.participants-table .v-maybe-cell { color: var(--maybe); font-weight: 600; }
+.participants-table .v-no-cell    { color: var(--no); }
+.participants-table tfoot td {
+  background: #f8fafc;
+  font-weight: 500;
+  border-top: 2px solid var(--border-strong);
+}
+.usage-cell {
+  min-width: 130px;
+  text-align: left !important;
+}
+.usage-bar {
+  display: inline-block;
+  width: 60px;
+  height: 7px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  vertical-align: middle;
+  margin-right: 0.35rem;
+}
+.usage-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+.usage-fill.tier-0 { background: #16a34a; }
+.usage-fill.tier-1 { background: #84cc16; }
+.usage-fill.tier-2 { background: #d97706; }
+.usage-fill.tier-3 { background: #dc2626; }
+.usage-pct { font-weight: 600; font-variant-numeric: tabular-nums; }
+.usage-pct.tier-0 { color: #15803d; }
+.usage-pct.tier-1 { color: #4d7c0f; }
+.usage-pct.tier-2 { color: #b45309; }
+.usage-pct.tier-3 { color: #b91c1c; }
+
+@media (max-width: 700px) {
+  /* Le tableau participants devient un empilement de cartes */
+  .participants-table,
+  .participants-table thead,
+  .participants-table tbody,
+  .participants-table tr,
+  .participants-table th,
+  .participants-table td {
+    display: block;
+    width: auto;
+  }
+  .participants-table thead { display: none; }
+  .participants-table tr {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+  .participants-table td {
+    padding: 0.2rem 0;
+    border: none;
+    text-align: left !important;
+  }
+  .participants-table td.num::before,
+  .participants-table td.usage-cell::before {
+    content: attr(data-l);
+    color: var(--muted);
+    font-size: 0.75rem;
+    margin-right: 0.5rem;
+  }
+}
+
 /* ====================================================================
  * Mobile : vue alternative "cartes par créneau" pour la grille récap
  * et stack en blocs pour la grille d'astreintes admin.
