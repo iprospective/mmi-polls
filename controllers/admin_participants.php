@@ -42,6 +42,7 @@ function route_admin_participants_list(string $uuid): void {
         'rows' => $rows,
         'total_choices' => $total_choices,
         'include_sortable' => true,
+        'include_contact_toggles' => true,
     ]);
 }
 
@@ -271,6 +272,44 @@ function send_reminder_email(array $poll, array $participant): void {
     $body .= "Ce lien est valable " . (int)($GLOBALS['CONFIG']['magic_link_ttl'] / 60) . " minutes.\n\n";
     $body .= "Merci !\n";
     send_mail($participant['email'], $subject, $body);
+}
+
+function route_admin_toggle_participant_contact(string $uuid, string $pid): void {
+    $poll = find_poll($uuid);
+    require_poll_access($poll);
+    header('Content-Type: application/json; charset=UTF-8');
+
+    $method = (string)($_POST['method'] ?? '');
+    if (!array_key_exists($method, contact_methods())) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'invalid_method']);
+        exit;
+    }
+
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT contact_method FROM participants WHERE id = ? AND poll_id = ?");
+    $stmt->execute([(int)$pid, $poll['id']]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        http_response_code(404);
+        echo json_encode(['ok' => false, 'error' => 'not_found']);
+        exit;
+    }
+
+    $cur = parse_contact_methods($row['contact_method'] ?? '');
+    if (in_array($method, $cur, true)) {
+        $cur = array_values(array_filter($cur, fn($m) => $m !== $method));
+    } else {
+        $cur[] = $method;
+    }
+    sort($cur);
+    $new_csv = implode(',', $cur);
+
+    $upd = $pdo->prepare("UPDATE participants SET contact_method = ? WHERE id = ?");
+    $upd->execute([$new_csv, (int)$pid]);
+
+    echo json_encode(['ok' => true, 'methods' => $cur]);
+    exit;
 }
 
 function route_admin_toggle_participant_visibility(string $uuid, string $pid): void {

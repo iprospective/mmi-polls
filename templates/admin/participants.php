@@ -293,7 +293,13 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
           $has = in_array($key, $cms, true); ?>
           <td data-l="<?= e($label) ?>" class="check-col <?= $has ? 'cm-' . e($key) : '' ?>"
               data-sort-value="<?= $has ? 1 : 0 ?>">
-            <?= $has ? '✓' : '<span class="muted">—</span>' ?>
+            <button type="button"
+                    class="toggle-cm <?= $has ? 'is-active cm-' . e($key) : '' ?>"
+                    data-pid="<?= (int)$r['id'] ?>"
+                    data-method="<?= e($key) ?>"
+                    data-toggle-url="/admin/polls/<?= e($poll['uuid']) ?>/participants/<?= (int)$r['id'] ?>/toggle-contact"
+                    aria-pressed="<?= $has ? 'true' : 'false' ?>"
+                    title="<?= e($label) ?> — cliquer pour <?= $has ? 'retirer' : 'activer' ?>"><?= $has ? '✓' : '—' ?></button>
           </td>
         <?php endforeach; ?>
         <td class="actions-cell">

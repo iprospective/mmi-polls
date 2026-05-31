@@ -1113,6 +1113,31 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
 .contacts-table .check-col.cm-sms      { color: #78350f; background: #fffbeb; }
 .contacts-table .check-col .muted { font-weight: 400; font-size: 0.9rem; }
 
+/* Bouton toggle dans la cellule (clic direct sur ✓ / —) */
+.toggle-cm {
+  background: transparent;
+  border: 1px dashed transparent;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  padding: 0.25rem 0.4rem;
+  color: #94a3b8;
+  transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease, transform 0.06s ease;
+}
+.toggle-cm:hover { border-color: var(--border-strong); background: rgba(0,0,0,0.03); }
+.toggle-cm:active { transform: scale(0.96); }
+.toggle-cm.is-active { color: inherit; }   /* couleur déjà fixée par .check-col.cm-* */
+.toggle-cm:disabled { cursor: wait; opacity: 0.5; }
+.toggle-cm.toggle-err {
+  background: var(--no-bg);
+  border-color: var(--no);
+  color: var(--no);
+}
+
 /* Tri : indicateurs et hover sur en-tête */
 table.sortable thead th.sortable-col {
   cursor: pointer;

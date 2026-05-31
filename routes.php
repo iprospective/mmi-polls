@@ -44,6 +44,7 @@ return [
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)$#',          'admin_participants',  'route_admin_update_participant'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)/delete$#',   'admin_participants',  'route_admin_delete_participant'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)/toggle-visibility$#', 'admin_participants', 'route_admin_toggle_participant_visibility'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)/toggle-contact$#',    'admin_participants', 'route_admin_toggle_participant_contact'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)/remind$#',    'admin_participants',  'route_admin_remind_participant'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/participants/remind-all$#',      'admin_participants',  'route_admin_remind_non_responders'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/participants/(\d+)/calendar$#', 'admin_participants',  'route_admin_participant_calendar'],
