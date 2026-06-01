@@ -61,6 +61,13 @@ return [
         'enabled' => true,
     ],
 
+    'geocoder' => [
+        // Backends tentés dans l'ordre. Choisir 'photon' en premier si
+        // Nominatim retourne 403 (politique d'usage stricte sur IP
+        // partagées). Possibles : 'nominatim', 'photon'.
+        'backends' => ['photon', 'nominatim'],
+    ],
+
     'notifications' => [
         // Message par défaut pré-rempli dans le formulaire d'envoi des
         // notifications d'astreintes. Vide = pas de pré-remplissage.

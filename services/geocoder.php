@@ -1,21 +1,20 @@
 <?php
-// Service Geocoder : convertit une adresse texte en coordonnées GPS via
-// l'API Nominatim d'OpenStreetMap (gratuit, sans clé). Avec cache local
-// (TTL différencié : 30 jours pour les succès, 5 min pour les échecs)
-// pour limiter les appels et permettre les retries rapides.
+// Service Geocoder : adresse texte → coordonnées GPS via OSM.
+// Multi-backend : essaie chaque backend listé dans CONFIG.geocoder.backends
+// jusqu'à ce qu'un réponde avec un résultat. Cache local avec TTL
+// différencié (30j pour les hits, 5min pour les miss pour permettre
+// les retries rapides).
 //
-// Préfère curl (plus robuste sur SSL/timeouts) avec fallback
-// file_get_contents si curl absent. Loggue tous les échecs dans
-// data/geocode.log pour diagnostic.
+// Backends supportés :
+//   nominatim : api officielle OSM, souvent 403 sur IP partagées
+//   photon    : photon.komoot.io, basé sur OSM, plus permissif
+//
+// Tous loggués dans data/geocode.log avec leur erreur respective.
 require_once __DIR__ . '/../lib/db.php';
 
-const GEOCODE_TTL_HIT  = 86400 * 30;  // résultats positifs : 30 jours
-const GEOCODE_TTL_MISS = 300;         // résultats négatifs : 5 min (retry rapide)
+const GEOCODE_TTL_HIT  = 86400 * 30;
+const GEOCODE_TTL_MISS = 300;
 
-/**
- * Géocode une adresse libre. Renvoie ['lat', 'lng', 'display_name']
- * ou null si non trouvée / erreur.
- */
 function geocode(string $query): ?array {
     $query = trim($query);
     if ($query === '') return null;
@@ -25,7 +24,6 @@ function geocode(string $query): ?array {
     $stmt = $pdo->prepare("SELECT latitude, longitude, display_name, fetched_at FROM geocode_cache WHERE query_hash = ?");
     $stmt->execute([$hash]);
     $row = $stmt->fetch();
-
     if ($row) {
         $age = time() - (int)$row['fetched_at'];
         $is_negative = ($row['latitude'] === null);
@@ -40,7 +38,18 @@ function geocode(string $query): ?array {
         }
     }
 
-    $result = geocode_nominatim($query);
+    $backends = $GLOBALS['CONFIG']['geocoder']['backends'] ?? ['photon', 'nominatim'];
+    $result = null;
+    foreach ($backends as $backend) {
+        $fn = 'geocode_' . $backend;
+        if (!function_exists($fn)) {
+            geocode_log($query, "backend inconnu : $backend");
+            continue;
+        }
+        $r = $fn($query);
+        if ($r !== null) { $result = $r; break; }
+    }
+
     $ins = $pdo->prepare("INSERT OR REPLACE INTO geocode_cache
                           (query_hash, query_text, latitude, longitude, display_name, fetched_at)
                           VALUES (?, ?, ?, ?, ?, ?)");
@@ -52,6 +61,8 @@ function geocode(string $query): ?array {
     return $result;
 }
 
+// --- Backend : Nominatim OSM ---------------------------------------------
+
 function geocode_nominatim(string $query): ?array {
     $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
         'q'              => $query,
@@ -59,12 +70,77 @@ function geocode_nominatim(string $query): ?array {
         'limit'          => 1,
         'addressdetails' => 0,
     ]);
-    $contact = trim((string)($GLOBALS['CONFIG']['admin']['email'] ?? '')) ?: 'contact@example.com';
-    $ua = 'mmidate/1.0 (' . rtrim($GLOBALS['CONFIG']['app_url'] ?? 'mmidate', '/') . '; ' . $contact . ')';
+    [$body, $err] = http_get($url, geocode_user_agent(), [
+        'Accept: application/json',
+        'Accept-Language: fr,en',
+        'From: ' . geocode_contact_email(),
+    ]);
+    if ($body === null) { geocode_log($query, "nominatim: $err"); return null; }
+    $json = json_decode($body, true);
+    if (!is_array($json) || empty($json)) {
+        geocode_log($query, 'nominatim: ' . (is_array($json) ? 'empty' : 'bad JSON: ' . substr($body, 0, 200)));
+        return null;
+    }
+    $r = $json[0];
+    if (!isset($r['lat'], $r['lon'])) {
+        geocode_log($query, 'nominatim: missing lat/lon');
+        return null;
+    }
+    return [
+        'lat' => (float)$r['lat'],
+        'lng' => (float)$r['lon'],
+        'display_name' => (string)($r['display_name'] ?? $query),
+    ];
+}
 
-    $body = null;
-    $err  = '';
+// --- Backend : Photon (komoot) -------------------------------------------
 
+function geocode_photon(string $query): ?array {
+    $url = 'https://photon.komoot.io/api/?' . http_build_query([
+        'q'     => $query,
+        'limit' => 1,
+        'lang'  => 'fr',
+    ]);
+    [$body, $err] = http_get($url, geocode_user_agent(), [
+        'Accept: application/json',
+        'Accept-Language: fr,en',
+    ]);
+    if ($body === null) { geocode_log($query, "photon: $err"); return null; }
+    $json = json_decode($body, true);
+    if (!is_array($json) || empty($json['features'])) {
+        geocode_log($query, 'photon: ' . (is_array($json) ? 'no features' : 'bad JSON'));
+        return null;
+    }
+    $f = $json['features'][0];
+    $coords = $f['geometry']['coordinates'] ?? null;
+    if (!is_array($coords) || count($coords) < 2) {
+        geocode_log($query, 'photon: missing coordinates');
+        return null;
+    }
+    // Photon : coordinates = [lng, lat]
+    $lng = (float)$coords[0];
+    $lat = (float)$coords[1];
+
+    // Reconstitue un display_name lisible depuis les properties.
+    $p = $f['properties'] ?? [];
+    $parts = array_filter([
+        $p['name'] ?? null,
+        $p['housenumber'] ?? null,
+        $p['street'] ?? null,
+        $p['postcode'] ?? null,
+        $p['city'] ?? $p['locality'] ?? null,
+        $p['state'] ?? null,
+        $p['country'] ?? null,
+    ]);
+    $display = implode(', ', array_values(array_unique($parts)));
+    if ($display === '') $display = $query;
+
+    return ['lat' => $lat, 'lng' => $lng, 'display_name' => $display];
+}
+
+// --- Helpers HTTP / UA / log --------------------------------------------
+
+function http_get(string $url, string $ua, array $headers = []): array {
     if (function_exists('curl_init')) {
         $ch = curl_init($url);
         curl_setopt_array($ch, [
@@ -74,54 +150,38 @@ function geocode_nominatim(string $query): ?array {
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS      => 3,
             CURLOPT_USERAGENT      => $ua,
-            CURLOPT_HTTPHEADER     => ['Accept: application/json', 'Accept-Language: fr,en'],
+            CURLOPT_HTTPHEADER     => $headers,
         ]);
         $body = curl_exec($ch);
         $http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        if ($body === false) {
-            $err = 'curl: ' . curl_error($ch);
-            $body = null;
-        } elseif ($http !== 200) {
-            $err = "HTTP $http: " . substr((string)$body, 0, 200);
-            $body = null;
-        }
+        $cerr = curl_error($ch);
         curl_close($ch);
-    } else {
-        $ctx = stream_context_create([
-            'http' => [
-                'method'        => 'GET',
-                'header'        => "User-Agent: $ua\r\nAccept: application/json\r\nAccept-Language: fr,en\r\n",
-                'timeout'       => 15,
-                'ignore_errors' => true,
-            ],
-        ]);
-        $body = @file_get_contents($url, false, $ctx);
-        if ($body === false) {
-            $err = 'file_get_contents=false (allow_url_fopen ? DNS ? SSL ?)';
-            $body = null;
-        }
+        if ($body === false) return [null, 'curl: ' . $cerr];
+        if ($http !== 200)   return [null, "HTTP $http: " . substr((string)$body, 0, 200)];
+        return [(string)$body, ''];
     }
+    $hdr = "User-Agent: $ua\r\n";
+    foreach ($headers as $h) $hdr .= $h . "\r\n";
+    $ctx = stream_context_create([
+        'http' => ['method' => 'GET', 'header' => $hdr, 'timeout' => 15, 'ignore_errors' => true],
+    ]);
+    $body = @file_get_contents($url, false, $ctx);
+    if ($body === false) return [null, 'file_get_contents=false (allow_url_fopen ?)'];
+    return [(string)$body, ''];
+}
 
-    if ($body === null) { geocode_log($query, $err); return null; }
-    $json = json_decode((string)$body, true);
-    if (!is_array($json)) {
-        geocode_log($query, 'JSON parse failed: ' . substr((string)$body, 0, 200));
-        return null;
-    }
-    if (empty($json)) {
-        geocode_log($query, 'empty result from Nominatim');
-        return null;
-    }
-    $r = $json[0];
-    if (!isset($r['lat'], $r['lon'])) {
-        geocode_log($query, 'missing lat/lon in first result: ' . substr((string)$body, 0, 200));
-        return null;
-    }
-    return [
-        'lat' => (float)$r['lat'],
-        'lng' => (float)$r['lon'],
-        'display_name' => (string)($r['display_name'] ?? $query),
-    ];
+function geocode_user_agent(): string {
+    $app = rtrim((string)($GLOBALS['CONFIG']['app_url'] ?? 'mmidate'), '/');
+    $contact = geocode_contact_email();
+    return "mmidate/1.0 ($app; $contact)";
+}
+
+function geocode_contact_email(): string {
+    $email = trim((string)($GLOBALS['CONFIG']['admin']['email'] ?? ''));
+    if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) return $email;
+    // Fallback : noreply@<domain de app_url>
+    $host = parse_url((string)($GLOBALS['CONFIG']['app_url'] ?? ''), PHP_URL_HOST) ?: 'mmidate.local';
+    return 'noreply@' . $host;
 }
 
 function geocode_log(string $query, string $msg): void {
