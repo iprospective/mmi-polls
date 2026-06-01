@@ -24,6 +24,11 @@
 <?php if (!empty($include_contact_toggles)): ?>
   <script src="<?= e(asset_url('/public/contact-toggles.js')) ?>" defer></script>
 <?php endif; ?>
+<?php if (!empty($include_map)): ?>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <script src="<?= e(asset_url('/public/map-render.js')) ?>" defer></script>
+<?php endif; ?>
 </head>
 <body>
 <header class="topbar">

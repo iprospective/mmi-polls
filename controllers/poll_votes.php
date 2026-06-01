@@ -155,6 +155,58 @@ function route_poll_save_votes(string $uuid): void {
     redirect('/p/' . $uuid . '/me');
 }
 
+function route_poll_my_map(string $uuid): void {
+    $poll = find_poll($uuid);
+    $auth = participant_session($uuid);
+    if (!$auth) redirect('/p/' . $uuid . '/login');
+    $pdo = db();
+    $p = $pdo->prepare("SELECT * FROM participants WHERE id = ? AND poll_id = ?");
+    $p->execute([$auth['participant_id'], $poll['id']]);
+    $participant = $p->fetch();
+    if (!$participant) {
+        participant_logout($uuid);
+        redirect('/p/' . $uuid . '/login');
+    }
+
+    $markers = [];
+    if ($poll['start_lat'] !== null && $poll['start_lng'] !== null) {
+        $markers[] = [
+            'lat'   => (float)$poll['start_lat'],
+            'lng'   => (float)$poll['start_lng'],
+            'kind'  => 'start',
+            'label' => 'Départ du trajet',
+            'desc'  => $poll['start_geocoded'] ?: $poll['start_address'],
+        ];
+    }
+    if ($poll['end_lat'] !== null && $poll['end_lng'] !== null) {
+        $markers[] = [
+            'lat'   => (float)$poll['end_lat'],
+            'lng'   => (float)$poll['end_lng'],
+            'kind'  => 'end',
+            'label' => 'Arrivée du trajet',
+            'desc'  => $poll['end_geocoded'] ?: $poll['end_address'],
+        ];
+    }
+    if ($participant['latitude'] !== null && $participant['longitude'] !== null) {
+        $name = $participant['name'] !== '' ? $participant['name'] : 'Moi';
+        $markers[] = [
+            'lat'   => (float)$participant['latitude'],
+            'lng'   => (float)$participant['longitude'],
+            'kind'  => 'self',
+            'label' => $name . ' (moi)',
+            'desc'  => $participant['geocoded_address'] ?: $participant['address'],
+        ];
+    }
+
+    render('poll/me_map', [
+        'page_title' => 'Carte — ' . $poll['title'],
+        'poll'       => $poll,
+        'participant' => $participant,
+        'markers'    => $markers,
+        'include_map' => true,
+    ]);
+}
+
 function route_poll_my_calendar(string $uuid): void {
     $poll = find_poll($uuid);
     $auth = participant_session($uuid);

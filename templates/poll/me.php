@@ -29,6 +29,9 @@
   </ul>
   <p style="margin-top: 1rem;">
     <a href="/p/<?= e($poll['uuid']) ?>/me/calendar" class="btn btn-ghost">📅 Voir mon calendrier mensuel</a>
+    <?php if (poll_addresses_enabled($poll) && !empty($participant['latitude'])): ?>
+      <a href="/p/<?= e($poll['uuid']) ?>/me/map" class="btn btn-ghost">🗺️ Voir ma position sur la carte</a>
+    <?php endif; ?>
   </p>
 
   <?php if (!empty($ical_token)):

@@ -56,6 +56,7 @@ return [
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/clear$#',           'admin_assignments',   'route_admin_clear_assignments'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/calendar$#',                    'admin_calendar',      'route_admin_calendar'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/activity$#',                    'admin_activity',      'route_admin_activity'],
+    ['GET',  '#^/admin/polls/([0-9a-f-]+)/map$#',                         'admin_map',           'route_admin_map'],
 
     ['POST', '#^/admin/polls/([0-9a-f-]+)/contact-email$#',               'admin_notifications', 'route_admin_set_contact_email'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/notify$#',          'admin_notifications', 'route_admin_send_notifications'],
@@ -76,6 +77,7 @@ return [
     ['POST', '#^/p/([0-9a-f-]+)/me$#',                                    'poll_votes',          'route_poll_save_votes'],
     ['POST', '#^/p/([0-9a-f-]+)/me/delete$#',                             'poll_votes',          'route_poll_delete_votes'],
     ['GET',  '#^/p/([0-9a-f-]+)/me/calendar$#',                           'poll_votes',          'route_poll_my_calendar'],
+    ['GET',  '#^/p/([0-9a-f-]+)/me/map$#',                                'poll_votes',          'route_poll_my_map'],
 
     ['GET',  '#^/p/([0-9a-f-]+)/confirm$#',                               'poll_confirm',        'route_poll_confirm_get'],
     ['POST', '#^/p/([0-9a-f-]+)/confirm$#',                               'poll_confirm',        'route_poll_confirm_post'],

@@ -8,6 +8,7 @@ $tabs = [
     'participants' => ['Participants',     '/admin/polls/' . $poll['uuid'] . '/participants'],
     'assignments'  => ['Astreintes',       '/admin/polls/' . $poll['uuid'] . '/assignments'],
     'calendar'     => ['Calendrier',       '/admin/polls/' . $poll['uuid'] . '/calendar'],
+    'map'          => ['Carte',            '/admin/polls/' . $poll['uuid'] . '/map'],
     'activity'     => ['Activité',         '/admin/polls/' . $poll['uuid'] . '/activity'],
     'settings'     => ['Paramètres',       '/admin/polls/' . $poll['uuid'] . '/settings'],
 ];

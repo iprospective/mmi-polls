@@ -781,6 +781,48 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 }
 .geo-failed strong { color: var(--maybe); font-weight: 600; }
 
+/* Carte Leaflet */
+#map {
+  height: 70vh;
+  min-height: 400px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  z-index: 0;
+}
+.mm-pin .mm-pin-body {
+  width: 22px;
+  height: 30px;
+  position: relative;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transform: rotate(-45deg);
+  margin-top: -4px;
+  margin-left: -2px;
+}
+.mm-pin .mm-pin-body::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 0; height: 0;
+  border: 6px solid transparent;
+  border-top-color: inherit;
+  transform: translate(-50%, -2px) rotate(45deg);
+}
+.mm-pin .mm-pin-inner {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+.leaflet-popup-content strong { display: block; margin-bottom: 0.25rem; }
+.leaflet-popup-content small { display: block; font-size: 0.8rem; }
+.leaflet-popup-content .muted { color: var(--muted); }
+
 /* Bandeau mode brouillon des astreintes (page admin assignments) */
 .draft-banner {
   background: #fffbeb;
