@@ -60,4 +60,10 @@ return [
     'addresses' => [
         'enabled' => true,
     ],
+
+    'notifications' => [
+        // Message par défaut pré-rempli dans le formulaire d'envoi des
+        // notifications d'astreintes. Vide = pas de pré-remplissage.
+        'default_message' => '',
+    ],
 ];

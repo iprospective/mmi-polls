@@ -58,6 +58,7 @@ return [
 
     ['POST', '#^/admin/polls/([0-9a-f-]+)/contact-email$#',               'admin_notifications', 'route_admin_set_contact_email'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/notify$#',          'admin_notifications', 'route_admin_send_notifications'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/notify-test$#',     'admin_notifications', 'route_admin_test_notification'],
 
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/settings$#',                    'admin_settings',      'route_admin_settings'],
 

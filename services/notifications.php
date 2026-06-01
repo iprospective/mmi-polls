@@ -72,6 +72,40 @@ function send_notification_email(array $poll, array $participant, array $assigns
 }
 
 /**
+ * Envoie un email DE TEST à une adresse arbitraire avec des données
+ * d'astreintes simulées. Utile pour vérifier le rendu et le bon
+ * acheminement chez différents fournisseurs avant un envoi réel.
+ */
+function send_test_notification_email(array $poll, string $to_email, string $custom_message): void {
+    $app_url = rtrim($GLOBALS['CONFIG']['app_url'], '/');
+    $name = 'Destinataire de test';
+    $subject = '[TEST] Vos astreintes pour « ' . $poll['title'] . ' »';
+    $body  = "============ EMAIL DE TEST ============\n";
+    $body .= "Ce message simule celui qu'un·e participant·e recevra.\n";
+    $body .= "Aucune action n'est enregistrée.\n";
+    $body .= "=======================================\n\n";
+
+    $body .= "Bonjour $name,\n\n";
+    $body .= "Les astreintes du sondage « {$poll['title']} » viennent d'être posées par l'organisateur.\n\n";
+    $body .= "Vos créneaux (exemple) :\n";
+    $body .= "  • Lundi 1er juin 2026 — Soirée — Principal·e\n";
+    $body .= "  • Mardi 2 juin 2026 — Nuit — Suppléant·e\n";
+    $body .= "  • Vendredi 5 juin 2026 — Journée — Suppléant·e\n\n";
+
+    if ($custom_message !== '') {
+        $body .= "Message de l'organisateur :\n$custom_message\n\n";
+    }
+    $body .= "Pour confirmer (ou signaler un problème) :\n";
+    $body .= "[Ici serait inséré le lien de confirmation unique]\n\n";
+    $body .= "Voir l'ensemble du sondage :\n$app_url/p/{$poll['uuid']}\n\n";
+    $body .= "Merci !\n\n";
+    $body .= "=======================================\n";
+    $body .= "Fin de l'email de test.\n";
+
+    send_mail($to_email, $subject, $body);
+}
+
+/**
  * Génère un token frais, invalide la notification précédente s'il y
  * en a une pour ce (poll, participant), persiste la nouvelle. Retourne
  * le token en clair (à inclure dans l'email).

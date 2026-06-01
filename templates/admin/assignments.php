@@ -219,8 +219,7 @@ $toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
 </p>
 <?php endif; ?>
 
-<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/notify" class="card"
-      onsubmit="return confirm('Envoyer la notification d\'astreintes aux destinataires sélectionnés ?');">
+<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/assignments/notify" class="card">
   <?= csrf_field() ?>
   <h3 style="margin-top:0;">Envoyer une notification</h3>
 
@@ -246,13 +245,33 @@ $toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
   </fieldset>
 
   <label>Message personnalisé (facultatif)
-    <textarea name="message" rows="3" placeholder="Ce qui sera ajouté au début de l'email avant la liste des astreintes…"></textarea>
+    <textarea name="message" id="notif-message" rows="3" placeholder="Ce qui sera ajouté à l'email avant la liste des astreintes…"><?= e((string)($GLOBALS['CONFIG']['notifications']['default_message'] ?? '')) ?></textarea>
+    <?php if (!empty($GLOBALS['CONFIG']['notifications']['default_message'])): ?>
+      <small class="muted">Pré-rempli avec le message par défaut de la config. Éditable ou videable au cas par cas.</small>
+    <?php endif; ?>
   </label>
 
   <p class="muted small">Chaque destinataire reçoit la liste de ses propres astreintes
      et un lien unique pour confirmer ou signaler un problème.
      Renvoyer une notification à une personne invalide le lien précédent.</p>
-  <button type="submit">Envoyer</button>
+
+  <hr style="border: none; border-top: 1px dashed var(--border-strong); margin: 1rem 0;">
+
+  <h4 style="margin: 0.5rem 0;">Envoi de test (vérification du rendu)</h4>
+  <p class="muted small">Envoie un email avec des créneaux d'exemple (et le message personnalisé ci-dessus) à l'adresse de votre choix. Pratique pour vérifier le rendu chez différents fournisseurs (Gmail, Outlook, ProtonMail…) avant l'envoi réel. <strong>Aucune notification persistée, aucun token généré.</strong></p>
+  <div class="row">
+    <input type="email" name="test_email" placeholder="votre.email@exemple.com">
+    <button type="submit"
+            formaction="/admin/polls/<?= e($poll['uuid']) ?>/assignments/notify-test"
+            formnovalidate>📨 Envoyer un test</button>
+  </div>
+
+  <hr style="border: none; border-top: 1px dashed var(--border-strong); margin: 1rem 0;">
+
+  <button type="submit"
+          onclick="return confirm('Envoyer la notification d\'astreintes aux destinataires sélectionnés ?');">
+    Envoyer aux destinataires sélectionnés
+  </button>
 </form>
 
 <?php if ($notifs): ?>

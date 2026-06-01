@@ -9,6 +9,25 @@ require_once __DIR__ . '/../services/assignments.php';
 require_once __DIR__ . '/../services/notifications.php';
 require_once __DIR__ . '/../services/activity_log.php';
 
+function route_admin_test_notification(string $uuid): void {
+    $poll = find_poll($uuid);
+    require_poll_access($poll);
+    $email  = trim((string)($_POST['test_email'] ?? ''));
+    $custom = trim((string)($_POST['message']    ?? ''));
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        flash_set('err', 'Email de test invalide.');
+        redirect('/admin/polls/' . $uuid . '/assignments');
+    }
+    try {
+        send_test_notification_email($poll, $email, $custom);
+        flash_set('ok', "Email de test envoyé à $email. Vérifiez la réception (et les spams).");
+    } catch (Throwable $e) {
+        mail_log($email, '[test notif failed] ' . $e->getMessage(), '');
+        flash_set('err', "Échec de l'envoi : " . $e->getMessage());
+    }
+    redirect('/admin/polls/' . $uuid . '/assignments');
+}
+
 function route_admin_set_contact_email(string $uuid): void {
     $poll = find_poll($uuid);
     require_poll_access($poll);
