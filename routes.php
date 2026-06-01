@@ -74,6 +74,7 @@ return [
     ['GET',  '#^/p/([0-9a-f-]+)/me$#',                                    'poll_votes',          'route_poll_me'],
     ['POST', '#^/p/([0-9a-f-]+)/me$#',                                    'poll_votes',          'route_poll_save_votes'],
     ['POST', '#^/p/([0-9a-f-]+)/me/delete$#',                             'poll_votes',          'route_poll_delete_votes'],
+    ['GET',  '#^/p/([0-9a-f-]+)/me/calendar$#',                           'poll_votes',          'route_poll_my_calendar'],
 
     ['GET',  '#^/p/([0-9a-f-]+)/confirm$#',                               'poll_confirm',        'route_poll_confirm_get'],
     ['POST', '#^/p/([0-9a-f-]+)/confirm$#',                               'poll_confirm',        'route_poll_confirm_post'],

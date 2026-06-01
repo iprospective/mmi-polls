@@ -27,6 +27,10 @@
       </li>
     <?php endforeach; ?>
   </ul>
+  <p style="margin-top: 1rem;">
+    <a href="/p/<?= e($poll['uuid']) ?>/me/calendar" class="btn btn-ghost">📅 Voir mon calendrier mensuel</a>
+  </p>
+
   <?php if (!empty($ical_token)):
     $ical_url = rtrim($GLOBALS['CONFIG']['app_url'], '/') . '/ical/' . $ical_token . '.ics';
   ?>

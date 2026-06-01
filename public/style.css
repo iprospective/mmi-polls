@@ -1094,6 +1094,30 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
 .cal-slots .role-marker { position: static; font-size: 0.6rem; }
 .cal-slots .role-marker.cal-empty { opacity: 0.35; }
 .cal-empty-text { color: var(--muted); font-style: italic; }
+/* Couple P+nom (ou S+nom) gardé groupé : white-space:nowrap empêche
+ * le wrap entre le marqueur et le nom de la personne. */
+.cal-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  white-space: nowrap;
+}
+
+/* Filtre participant sur le calendrier admin */
+.cal-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+}
+.cal-filter select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  background: #fff;
+}
 
 @media (max-width: 700px) {
   .month-cal { font-size: 0.7rem; min-width: 720px; }

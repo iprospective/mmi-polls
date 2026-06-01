@@ -153,6 +153,61 @@ function route_poll_save_votes(string $uuid): void {
     redirect('/p/' . $uuid . '/me');
 }
 
+function route_poll_my_calendar(string $uuid): void {
+    $poll = find_poll($uuid);
+    $auth = participant_session($uuid);
+    if (!$auth) redirect('/p/' . $uuid . '/login');
+    $pdo = db();
+    $p = $pdo->prepare("SELECT * FROM participants WHERE id = ? AND poll_id = ?");
+    $p->execute([$auth['participant_id'], $poll['id']]);
+    $participant = $p->fetch();
+    if (!$participant) {
+        participant_logout($uuid);
+        redirect('/p/' . $uuid . '/login');
+    }
+    if (empty($poll['assignments_public'])) {
+        flash_set('err', 'Les astreintes ne sont pas encore publiées.');
+        redirect('/p/' . $uuid . '/me');
+    }
+
+    // Mois affiché
+    $month = (string)($_GET['month'] ?? '');
+    if (!preg_match('/^\d{4}-\d{2}$/', $month)) $month = date('Y-m');
+    [$year, $mon] = array_map('intval', explode('-', $month));
+    $first = new DateTimeImmutable(sprintf('%04d-%02d-01', $year, $mon));
+
+    $rows = $pdo->prepare("
+        SELECT d.day, c.label, c.sort_order AS c_order, a.role
+        FROM assignments a
+        JOIN poll_choices c ON c.id = a.choice_id
+        JOIN poll_dates   d ON d.id = c.date_id
+        WHERE d.poll_id = ? AND a.participant_id = ?
+        ORDER BY d.day, c.sort_order, c.id
+    ");
+    $rows->execute([$poll['id'], $participant['id']]);
+    $self_name = $participant['name'] !== '' ? $participant['name'] : explode('@', $participant['email'])[0];
+    $by_day = [];
+    foreach ($rows as $r) {
+        $by_day[$r['day']][$r['label']][$r['role']] = $self_name;
+    }
+
+    $span = $pdo->prepare("SELECT MIN(day) AS min_d, MAX(day) AS max_d FROM poll_dates WHERE poll_id = ?");
+    $span->execute([$poll['id']]);
+    $sp = $span->fetch();
+
+    render('poll/me_calendar', [
+        'page_title' => 'Mon calendrier — ' . $poll['title'],
+        'poll' => $poll,
+        'participant' => $participant,
+        'first' => $first,
+        'prev_month' => $first->modify('-1 month')->format('Y-m'),
+        'next_month' => $first->modify('+1 month')->format('Y-m'),
+        'by_day' => $by_day,
+        'poll_min' => $sp['min_d'] ?? '',
+        'poll_max' => $sp['max_d'] ?? '',
+    ]);
+}
+
 function route_poll_delete_votes(string $uuid): void {
     $poll = find_poll($uuid);
     $auth = participant_session($uuid);
