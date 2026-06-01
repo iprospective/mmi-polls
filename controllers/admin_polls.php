@@ -111,12 +111,15 @@ function route_admin_update_poll(string $uuid): void {
  * non géocodable ou vide.
  */
 function geo_resolve(string $address, array $poll, string $kind): array {
-    $old_addr_key = $kind . '_address';
-    $old = (string)($poll[$old_addr_key] ?? '');
     if ($address === '') return [null, null, ''];
-    if ($address === $old) {
+    $old = (string)($poll[$kind . '_address'] ?? '');
+    $cached_lat = $poll[$kind . '_lat'] ?? null;
+    // Réutilise les coords stockées si l'adresse n'a pas changé ET qu'on
+    // a déjà un résultat positif. Sinon (adresse modifiée OU lat manquante),
+    // on retente le géocodage — utile quand une 1re tentative a échoué.
+    if ($address === $old && $cached_lat !== null) {
         return [
-            $poll[$kind . '_lat'] ?? null,
+            $cached_lat,
             $poll[$kind . '_lng'] ?? null,
             (string)($poll[$kind . '_geocoded'] ?? ''),
         ];

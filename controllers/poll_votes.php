@@ -77,7 +77,9 @@ function route_poll_save_votes(string $uuid): void {
     $geo_msg  = '';
     if (poll_addresses_enabled($poll)) {
         $address = trim((string)($_POST['address'] ?? ''));
-        if ($address !== (string)($participant['address'] ?? '')) {
+        $addr_changed = ($address !== (string)($participant['address'] ?? ''));
+        $retry_missing = ($address !== '' && empty($participant['latitude']));
+        if ($addr_changed || $retry_missing) {
             $lat = null; $lng = null; $geocoded = '';
             if ($address !== '') {
                 $geo = geocode($address);
@@ -86,7 +88,7 @@ function route_poll_save_votes(string $uuid): void {
                     $geocoded = $geo['display_name'];
                     $geo_msg  = ' 📍 ' . $geo['display_name'];
                 } else {
-                    $geo_msg = ' (adresse enregistrée mais pas géolocalisée)';
+                    $geo_msg = ' (adresse enregistrée mais pas géolocalisée — voir data/geocode.log)';
                 }
             }
         }
