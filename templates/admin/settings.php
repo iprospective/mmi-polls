@@ -54,7 +54,14 @@ require __DIR__ . '/_admin_nav.php';
       <span class="muted small">coordonnées : <?= number_format((float)$poll['start_lat'], 5) ?>, <?= number_format((float)$poll['start_lng'], 5) ?></span>
     </div>
   <?php elseif (!empty($poll['start_address'])): ?>
-    <div class="geo-failed"><strong>⚠️ Non géolocalisée</strong> — précisez ville/pays pour aider.</div>
+    <div class="geo-failed">
+      <strong>⚠️ Non géolocalisée</strong> — précisez ville/pays pour aider, ou bypassez le cache :
+      <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/geocode/start" class="inline" style="display: inline;">
+        <?= csrf_field() ?>
+        <button type="submit" class="link">Retenter le géocodage maintenant</button>
+      </form>
+      · voir <code>data/geocode.log</code> pour la cause.
+    </div>
   <?php endif; ?>
 
   <label>Adresse d'arrivée (destination)
@@ -67,7 +74,14 @@ require __DIR__ . '/_admin_nav.php';
       <span class="muted small">coordonnées : <?= number_format((float)$poll['end_lat'], 5) ?>, <?= number_format((float)$poll['end_lng'], 5) ?></span>
     </div>
   <?php elseif (!empty($poll['end_address'])): ?>
-    <div class="geo-failed"><strong>⚠️ Non géolocalisée</strong> — précisez ville/pays pour aider.</div>
+    <div class="geo-failed">
+      <strong>⚠️ Non géolocalisée</strong> — précisez ville/pays pour aider, ou bypassez le cache :
+      <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/geocode/end" class="inline" style="display: inline;">
+        <?= csrf_field() ?>
+        <button type="submit" class="link">Retenter le géocodage maintenant</button>
+      </form>
+      · voir <code>data/geocode.log</code> pour la cause.
+    </div>
   <?php endif; ?>
   <?php endif; /* poll_addresses_enabled */ ?>
 

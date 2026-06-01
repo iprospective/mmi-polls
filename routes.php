@@ -30,6 +30,7 @@ return [
     ['GET',  '#^/admin/polls/([0-9a-f-]+)$#',                             'admin_polls',         'route_admin_poll'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)$#',                             'admin_polls',         'route_admin_update_poll'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/delete$#',                      'admin_polls',         'route_admin_delete_poll'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/geocode/(start|end)$#',         'admin_polls',         'route_admin_retry_geocode'],
 
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/dates$#',                       'admin_dates',         'route_admin_dates'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/dates$#',                       'admin_dates',         'route_admin_add_date'],

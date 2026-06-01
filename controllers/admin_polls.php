@@ -75,15 +75,31 @@ function route_admin_update_poll(string $uuid): void {
         redirect('/admin/polls/' . $uuid . '/settings');
     }
 
-    // Géocode des points GPS (départ / arrivée) si modifiés.
-    $start_addr = trim((string)($_POST['start_address'] ?? ''));
-    $end_addr   = trim((string)($_POST['end_address']   ?? ''));
-    [$start_lat, $start_lng, $start_geocoded] = geo_resolve($start_addr, $poll, 'start');
-    [$end_lat,   $end_lng,   $end_geocoded]   = geo_resolve($end_addr,   $poll, 'end');
+    // Géocode des points GPS uniquement si la feature est active ET que
+    // les champs ont été soumis (sinon on préserve l'existant, sinon
+    // désactiver puis re-sauver perdrait les adresses déjà saisies).
+    $addr_enabled = isset($_POST['addresses_enabled']) ? 1 : 0;
+    $start_addr = $poll['start_address'] ?? '';
+    $end_addr   = $poll['end_address']   ?? '';
+    $start_lat  = $poll['start_lat']     ?? null;
+    $start_lng  = $poll['start_lng']     ?? null;
+    $start_geocoded = (string)($poll['start_geocoded'] ?? '');
+    $end_lat    = $poll['end_lat']       ?? null;
+    $end_lng    = $poll['end_lng']       ?? null;
+    $end_geocoded   = (string)($poll['end_geocoded']   ?? '');
+    $geo_errors = [];
+    if ($addr_enabled && isset($_POST['start_address'])) {
+        $start_addr = trim((string)$_POST['start_address']);
+        [$start_lat, $start_lng, $start_geocoded] = geo_resolve($start_addr, $poll, 'start');
+        if ($start_addr !== '' && $start_lat === null) $geo_errors[] = 'départ';
+    }
+    if ($addr_enabled && isset($_POST['end_address'])) {
+        $end_addr = trim((string)$_POST['end_address']);
+        [$end_lat, $end_lng, $end_geocoded] = geo_resolve($end_addr, $poll, 'end');
+        if ($end_addr !== '' && $end_lat === null) $geo_errors[] = 'arrivée';
+    }
 
-    // Checkbox non cochée = absente du POST. Booléen en INTEGER 0/1.
     $assigns_public = isset($_POST['assignments_public']) ? 1 : 0;
-    $addr_enabled   = isset($_POST['addresses_enabled'])  ? 1 : 0;
 
     $stmt = db()->prepare("
         UPDATE polls
@@ -100,7 +116,41 @@ function route_admin_update_poll(string $uuid): void {
         $assigns_public, $addr_enabled,
         $poll['id'],
     ]);
+    if ($geo_errors) {
+        flash_set('err', 'Géocodage en échec pour : ' . implode(', ', $geo_errors)
+            . '. Voir data/geocode.log pour le détail. Bouton « Retenter » à côté du champ pour bypasser le cache.');
+    }
     flash_set('ok', 'Sondage mis à jour.');
+    redirect('/admin/polls/' . $uuid . '/settings');
+}
+
+/**
+ * Force un nouveau géocodage en supprimant l'entrée de cache pour
+ * l'adresse courante du sondage (start ou end), puis redirige vers
+ * Settings. Le prochain hit régénérera lat/lng.
+ */
+function route_admin_retry_geocode(string $uuid, string $kind): void {
+    $poll = find_poll($uuid);
+    require_poll_access($poll);
+    if (!in_array($kind, ['start', 'end'], true)) not_found();
+    $addr = (string)($poll[$kind . '_address'] ?? '');
+    if ($addr === '') {
+        flash_set('err', 'Pas d\'adresse à re-géocoder.');
+        redirect('/admin/polls/' . $uuid . '/settings');
+    }
+    // Purge l'entrée de cache pour cette adresse précise
+    $hash = hash('sha256', mb_strtolower(trim($addr)));
+    db()->prepare("DELETE FROM geocode_cache WHERE query_hash = ?")->execute([$hash]);
+
+    require_once __DIR__ . '/../services/geocoder.php';
+    $geo = geocode($addr);
+    if ($geo) {
+        $stmt = db()->prepare("UPDATE polls SET {$kind}_lat = ?, {$kind}_lng = ?, {$kind}_geocoded = ? WHERE id = ?");
+        $stmt->execute([$geo['lat'], $geo['lng'], $geo['display_name'], $poll['id']]);
+        flash_set('ok', "Géocodage OK : " . $geo['display_name']);
+    } else {
+        flash_set('err', "Géocodage toujours en échec. Voir data/geocode.log pour la cause.");
+    }
     redirect('/admin/polls/' . $uuid . '/settings');
 }
 
