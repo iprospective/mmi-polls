@@ -2,14 +2,16 @@ Options -Indexes
 DirectoryIndex index.php
 
 # LICENSE et CHANGELOG : servis en text/plain pour conformité AGPL.
+# charset=UTF-8 explicite, sinon les navigateurs affichent du mojibake
+# sur les accents (README et CHANGELOG sont riches en français).
 <Files "LICENSE">
-    ForceType text/plain
+    ForceType "text/plain; charset=UTF-8"
 </Files>
 <Files "CHANGELOG.md">
-    ForceType text/plain
+    ForceType "text/plain; charset=UTF-8"
 </Files>
 <Files "README.md">
-    ForceType text/plain
+    ForceType "text/plain; charset=UTF-8"
 </Files>
 
 <IfModule mod_rewrite.c>
