@@ -194,6 +194,47 @@ function db_migrate(PDO $pdo): void {
             UNIQUE(request_id, participant_id)
         );
         CREATE INDEX IF NOT EXISTS idx_swap_target_token ON swap_request_targets(token_hash);
+
+        -- Déplacement/échange initié par le manager depuis le calendrier
+        -- (drag'n'drop). Asymétrique avec swap_requests : ici l'initiateur
+        -- est le manager, pas un·e participant·e qui cherche un·e remplaçant·e.
+        -- Cas d'usage :
+        --   dst_pid NULL = déplacement de src_pid vers (dst_choice_id, dst_role) vide
+        --   dst_pid != NULL = échange entre src_pid et dst_pid sur leurs slots respectifs
+        -- L'application n'a lieu que quand toutes les personnes concernées
+        -- ont accepté (1 réponse pour move, 2 pour swap).
+        CREATE TABLE IF NOT EXISTS move_requests (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            poll_id        INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+            initiated_by   TEXT NOT NULL DEFAULT '',
+            src_pid        INTEGER NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
+            src_choice_id  INTEGER NOT NULL REFERENCES poll_choices(id) ON DELETE CASCADE,
+            src_role       TEXT NOT NULL CHECK (src_role IN ('primary', 'backup')),
+            dst_choice_id  INTEGER NOT NULL REFERENCES poll_choices(id) ON DELETE CASCADE,
+            dst_role       TEXT NOT NULL CHECK (dst_role IN ('primary', 'backup')),
+            dst_pid        INTEGER REFERENCES participants(id) ON DELETE SET NULL,
+            status         TEXT NOT NULL DEFAULT 'pending'
+                            CHECK (status IN ('pending', 'applied', 'declined', 'cancelled', 'expired')),
+            message        TEXT NOT NULL DEFAULT '',
+            created_at     INTEGER NOT NULL,
+            closed_at      INTEGER
+        );
+        CREATE INDEX IF NOT EXISTS idx_move_poll_status ON move_requests(poll_id, status);
+
+        -- 1 ligne par personne dont l'accord est requis (src toujours, dst
+        -- si swap). Token unique pour le lien email personnalisé.
+        CREATE TABLE IF NOT EXISTS move_request_responses (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id     INTEGER NOT NULL REFERENCES move_requests(id) ON DELETE CASCADE,
+            participant_id INTEGER NOT NULL REFERENCES participants(id)   ON DELETE CASCADE,
+            role_in_swap   TEXT NOT NULL CHECK (role_in_swap IN ('src', 'dst')),
+            token_hash     TEXT NOT NULL UNIQUE,
+            sent_at        INTEGER NOT NULL,
+            response       TEXT CHECK (response IN ('accept', 'decline')),
+            responded_at   INTEGER,
+            UNIQUE(request_id, participant_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_move_response_token ON move_request_responses(token_hash);
     ");
 
     // Migrations sur la table polls.

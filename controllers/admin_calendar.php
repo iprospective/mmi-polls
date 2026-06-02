@@ -6,6 +6,7 @@ require_once __DIR__ . '/../lib/helpers.php';
 require_once __DIR__ . '/../services/polls.php';
 require_once __DIR__ . '/../services/participants.php';
 require_once __DIR__ . '/../services/assignments.php';
+require_once __DIR__ . '/../services/move_requests.php';
 
 function route_admin_calendar(string $uuid): void {
     $poll = find_poll($uuid);
@@ -29,7 +30,7 @@ function route_admin_calendar(string $uuid): void {
     if ($selected_pid > 0) $params[] = $selected_pid;
 
     $stmt = $pdo->prepare("
-        SELECT d.day, c.label, c.sort_order AS c_order, a.role,
+        SELECT d.day, c.id AS choice_id, c.label, c.sort_order AS c_order, a.role,
                p.id AS pid, p.name, p.email
         FROM assignments a
         JOIN poll_choices c ON c.id = a.choice_id
@@ -42,10 +43,29 @@ function route_admin_calendar(string $uuid): void {
     $rows = $stmt->fetchAll();
 
     $by_day = [];
+    $by_day_meta = []; // [day][label][role] = ['pid'=>N, 'choice_id'=>N]
     foreach ($rows as $r) {
         $name = $r['name'] !== '' ? $r['name'] : explode('@', $r['email'])[0];
         $by_day[$r['day']][$r['label']][$r['role']] = $name;
+        $by_day_meta[$r['day']][$r['label']][$r['role']] = [
+            'pid'       => (int)$r['pid'],
+            'choice_id' => (int)$r['choice_id'],
+        ];
     }
+
+    // Structure complète des dates/slots (pour pouvoir afficher TOUS les
+    // créneaux du jour, même ceux sans assignation, en cibles de drop).
+    // En mode "filtré par participant", on garde la structure complète
+    // (sinon les autres créneaux disparaîtraient).
+    $dates_by_day = [];
+    foreach (poll_structure((int)$poll['id']) as $d) {
+        foreach ($d['choices'] as $c) {
+            $dates_by_day[$d['day']][] = ['choice_id' => (int)$c['id'], 'label' => $c['label']];
+        }
+    }
+
+    // Demandes de move en cours (badge + section action).
+    $pending_moves = list_pending_move_requests((int)$poll['id']);
 
     $span = $pdo->prepare("SELECT MIN(day) AS min_d, MAX(day) AS max_d FROM poll_dates WHERE poll_id = ?");
     $span->execute([$poll['id']]);
@@ -61,6 +81,8 @@ function route_admin_calendar(string $uuid): void {
         }
     }
 
+    $enable_dnd = !poll_is_closed($poll);
+
     render('admin/calendar', [
         'page_title'           => 'Calendrier — ' . $poll['title'],
         'poll'                 => $poll,
@@ -69,10 +91,15 @@ function route_admin_calendar(string $uuid): void {
         'prev_month'           => $prev_month,
         'next_month'           => $next_month,
         'by_day'               => $by_day,
+        'by_day_meta'          => $by_day_meta,
+        'dates_by_day'         => $dates_by_day,
+        'enable_dnd'           => $enable_dnd,
         'poll_min'             => $poll_min,
         'poll_max'             => $poll_max,
         'participants'         => $participants,
         'selected_pid'         => $selected_pid,
         'selected_participant' => $selected_participant,
+        'pending_moves'        => $pending_moves,
+        'include_calendar_dnd' => $enable_dnd,
     ]);
 }

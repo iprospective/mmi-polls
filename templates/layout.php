@@ -29,6 +29,9 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
   <script src="<?= e(asset_url('/public/map-render.js')) ?>" defer></script>
 <?php endif; ?>
+<?php if (!empty($include_calendar_dnd)): ?>
+  <script src="<?= e(asset_url('/public/calendar-dnd.js')) ?>" defer></script>
+<?php endif; ?>
 </head>
 <body>
 <header class="topbar">

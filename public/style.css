@@ -1302,6 +1302,44 @@ a.btn-ghost:hover { background: var(--accent-soft); color: var(--accent-hover); 
   white-space: nowrap;
 }
 
+/* Drag'n'drop sur le calendrier (admin uniquement) */
+.cal-slots.dnd-mode .dnd-draggable {
+  cursor: grab;
+  border-radius: 3px;
+  padding: 0 2px;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+.cal-slots.dnd-mode .dnd-draggable:hover { background: rgba(37, 99, 235, 0.08); }
+.cal-slots.dnd-mode .dnd-draggable:active { cursor: grabbing; }
+.cal-slots.dnd-mode .dnd-dragging { opacity: 0.4; transform: scale(0.95); }
+.cal-slots.dnd-mode .dnd-over {
+  background: rgba(37, 99, 235, 0.18);
+  outline: 2px dashed var(--accent);
+  outline-offset: 1px;
+}
+.cal-slots.dnd-mode .cal-empty-pair {
+  cursor: default;
+  opacity: 0.65;
+}
+.cal-slots.dnd-mode .cal-empty-pair:hover { opacity: 1; }
+
+/* Modal du drag'n'drop (HTML <dialog>) */
+.move-modal {
+  max-width: 480px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+}
+.move-modal::backdrop { background: rgba(15, 23, 42, 0.35); }
+.move-modal #move-summary {
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+}
+
 /* Filtre participant sur le calendrier admin */
 .cal-filter {
   display: flex;

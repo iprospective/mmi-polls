@@ -93,6 +93,12 @@ return [
     ['GET',  '#^/swap/([a-f0-9]+)$#',                                     'swaps',               'route_swap_respond_get'],
     ['POST', '#^/swap/([a-f0-9]+)$#',                                     'swaps',               'route_swap_respond_post'],
 
+    // Drag'n'drop d'astreintes depuis le calendrier (manager) avec validation
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/calendar/move$#',               'moves',               'route_admin_create_move_request'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/move/(\d+)/cancel$#',           'moves',               'route_admin_cancel_move_request'],
+    ['GET',  '#^/move/([a-f0-9]+)$#',                                     'moves',               'route_move_respond_get'],
+    ['POST', '#^/move/([a-f0-9]+)$#',                                     'moves',               'route_move_respond_post'],
+
     // Flux iCal — accessible par token (pas de session)
     ['GET',  '#^/ical/([a-f0-9]+)\.ics$#',                                'ical',                'route_ical_feed'],
 ];
