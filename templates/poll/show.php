@@ -9,6 +9,8 @@
   <div class="card description"><?= render_description($poll['description']) ?></div>
 <?php endif; ?>
 
+<?php require __DIR__ . '/../_slot_legend.php'; ?>
+
 <div class="card actions">
   <?php if ($me): ?>
     <p>Connecté·e en tant que <strong><?= e($me['email']) ?></strong>.</p>

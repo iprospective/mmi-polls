@@ -781,6 +781,38 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 }
 .geo-failed strong { color: var(--maybe); font-weight: 600; }
 
+/* Légende des horaires de créneaux (vue publique + /me) */
+.slot-legend summary { cursor: pointer; }
+.slot-legend-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0;
+}
+.slot-legend-list li {
+  padding: 0.35rem 0;
+  border-bottom: 1px dashed var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+.slot-legend-list li:last-child { border-bottom: none; }
+.slot-legend-list code {
+  background: var(--accent-soft);
+  padding: 0.1em 0.4em;
+  font-size: 0.9em;
+  border-radius: 4px;
+}
+.slot-legend-note {
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: var(--maybe-bg);
+  border-left: 3px solid var(--maybe);
+  border-radius: var(--radius-sm);
+  color: var(--fg-soft);
+}
+.slot-legend-note strong { color: var(--fg); }
+
 /* Carte Leaflet */
 #map {
   height: 70vh;

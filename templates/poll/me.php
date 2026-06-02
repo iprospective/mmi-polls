@@ -52,6 +52,9 @@
 <?php if (!$dates): ?>
   <p><em>Le sondage ne contient aucune date pour l'instant.</em></p>
 <?php else: ?>
+
+<?php require __DIR__ . '/../_slot_legend.php'; ?>
+
 <form method="post" action="/p/<?= e($poll['uuid']) ?>/me" class="card">
   <?= csrf_field() ?>
   <?php if ($closed): ?>
