@@ -10,6 +10,7 @@ require_once __DIR__ . '/../services/assignments.php';
 require_once __DIR__ . '/../services/notifications.php';
 require_once __DIR__ . '/../services/auto_fill.php';
 require_once __DIR__ . '/../services/activity_log.php';
+require_once __DIR__ . '/../services/swaps.php';
 
 function route_admin_assignments(string $uuid): void {
     $poll = find_poll($uuid);
@@ -28,6 +29,8 @@ function route_admin_assignments(string $uuid): void {
     $assigned_participants = array_values(array_filter($participants,
         fn($p) => isset($assigned_ids[(int)$p['id']])));
 
+    $open_swaps = list_open_swaps((int)$poll['id']);
+
     render('admin/assignments', [
         'page_title' => 'Astreintes — ' . $poll['title'],
         'poll' => $poll,
@@ -37,6 +40,7 @@ function route_admin_assignments(string $uuid): void {
         'votes' => $votes,
         'assigns' => $assigns,
         'notifs' => $notifs,
+        'open_swaps' => $open_swaps,
         'include_assignments' => true,
     ]);
 }

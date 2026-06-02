@@ -204,6 +204,58 @@ $toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
 
 </div>
 
+<?php if (!empty($open_swaps)): ?>
+<h2>Demandes de remplacement en cours (<?= count($open_swaps) ?>)</h2>
+<p class="muted small">
+  Les participant·e·s ont sollicité d'autres candidat·e·s pour reprendre leur créneau.
+  Premier·ère qui clique « J'accepte » dans son email gagne, et les astreintes se mettent à jour automatiquement.
+  Vous pouvez annuler une demande (utile si vous avez d'autres plans pour ce créneau).
+</p>
+<div class="grid-wrap">
+<table class="dates-table notif-status">
+  <thead>
+    <tr>
+      <th>Créneau</th>
+      <th>Demandeur·euse</th>
+      <th>Sollicité·e·s</th>
+      <th>Réponses</th>
+      <th>Depuis</th>
+      <th class="no-sort">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <?php foreach ($open_swaps as $s):
+      $r_name = $s['requester_name'] !== '' ? $s['requester_name'] : explode('@', $s['requester_email'])[0];
+      $awaiting = max(0, (int)$s['n_targets'] - (int)$s['n_declines']);
+    ?>
+      <tr>
+        <td>
+          <strong><?= e(fmt_day($s['day'])) ?></strong>
+          <span class="muted small"><?= e($s['day']) ?></span><br>
+          <?= e($s['slot_label']) ?>
+          <span class="role-badge role-<?= e($s['role']) ?>"><?= $s['role'] === 'primary' ? 'P' : 'S' ?></span>
+        </td>
+        <td><strong><?= e($r_name) ?></strong><br><span class="muted small"><?= e($s['requester_email']) ?></span></td>
+        <td class="num"><?= (int)$s['n_targets'] ?></td>
+        <td class="small">
+          <span class="muted"><?= (int)$s['n_declines'] ?> décliné</span> ·
+          <strong><?= $awaiting ?></strong> en attente
+        </td>
+        <td class="small"><?= e(date('d/m/Y H:i', (int)$s['created_at'])) ?></td>
+        <td class="actions-cell">
+          <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/swap/<?= (int)$s['id'] ?>/cancel" class="inline"
+                onsubmit="return confirm('Annuler cette demande de remplacement ? Les destinataires seront prévenu·e·s.');">
+            <?= csrf_field() ?>
+            <button type="submit" class="link danger">annuler</button>
+          </form>
+        </td>
+      </tr>
+    <?php endforeach; ?>
+  </tbody>
+</table>
+</div>
+<?php endif; ?>
+
 <h2>Notifications &amp; confirmations</h2>
 
 <?php if (!$poll['contact_email']): ?>

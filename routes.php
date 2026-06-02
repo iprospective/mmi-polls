@@ -83,6 +83,14 @@ return [
     ['GET',  '#^/p/([0-9a-f-]+)/confirm$#',                               'poll_confirm',        'route_poll_confirm_get'],
     ['POST', '#^/p/([0-9a-f-]+)/confirm$#',                               'poll_confirm',        'route_poll_confirm_post'],
 
+    // Demandes de remplacement d'astreinte (entre participant·e·s)
+    ['GET',  '#^/p/([0-9a-f-]+)/swap/new$#',                              'swaps',               'route_poll_swap_new_form'],
+    ['POST', '#^/p/([0-9a-f-]+)/swap/new$#',                              'swaps',               'route_poll_swap_new_submit'],
+    ['POST', '#^/p/([0-9a-f-]+)/swap/(\d+)/cancel$#',                     'swaps',               'route_poll_swap_cancel'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/swap/(\d+)/cancel$#',           'swaps',               'route_admin_swap_cancel'],
+    ['GET',  '#^/swap/([a-f0-9]+)$#',                                     'swaps',               'route_swap_respond_get'],
+    ['POST', '#^/swap/([a-f0-9]+)$#',                                     'swaps',               'route_swap_respond_post'],
+
     // Flux iCal — accessible par token (pas de session)
     ['GET',  '#^/ical/([a-f0-9]+)\.ics$#',                                'ical',                'route_ical_feed'],
 ];

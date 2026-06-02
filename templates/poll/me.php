@@ -15,18 +15,66 @@
 <?php if (!empty($my_assigns)): ?>
 <div class="card">
   <h2 style="margin-top:0;">Mes astreintes (<?= count($my_assigns) ?>)</h2>
+  <?php if (!$closed): ?>
+    <p class="muted small" style="margin-top: -0.25rem;">
+      💡 Pas dispo finalement ? Cliquez sur 🔄 pour demander un remplacement aux personnes qui s'étaient déclarées dispo sur le créneau.
+    </p>
+  <?php endif; ?>
   <ul class="assign-list">
     <?php foreach ($my_assigns as $a):
       $is_primary = $a['role'] === 'primary';
+      $swap_key = (int)$a['choice_id'] . ':' . $a['role'];
+      $open_swap = $swap_by_assign[$swap_key] ?? null;
     ?>
       <li>
         <span class="role-badge role-<?= e($a['role']) ?>"><?= $is_primary ? 'Principal·e' : 'Suppléant·e' ?></span>
         <strong><?= e(fmt_day($a['day'])) ?></strong>
         <span class="muted small"><?= e($a['day']) ?></span>
         — <?= e($a['label']) ?>
+        <?php if (!$closed): ?>
+          <?php if ($open_swap): ?>
+            <span class="swap-pending" title="Demande envoyée à <?= (int)$open_swap['n_targets'] ?> personne(s)">
+              🔄 demande en cours (<?= (int)$open_swap['n_targets'] - (int)$open_swap['n_declines'] ?> en attente)
+            </span>
+          <?php else: ?>
+            <a href="/p/<?= e($poll['uuid']) ?>/swap/new?cid=<?= (int)$a['choice_id'] ?>&amp;role=<?= e($a['role']) ?>"
+               class="link swap-link" title="Demander à quelqu'un·e de prendre votre place">
+              🔄 demander un remplacement
+            </a>
+          <?php endif; ?>
+        <?php endif; ?>
       </li>
     <?php endforeach; ?>
   </ul>
+
+  <?php if (!empty($my_swaps)): ?>
+    <h3 style="margin-bottom: 0.4rem;">Mes demandes en cours (<?= count($my_swaps) ?>)</h3>
+    <p class="muted small" style="margin-top: 0;">
+      Tant que personne n'a accepté, vous pouvez annuler une demande. Sinon le swap est appliqué automatiquement.
+    </p>
+    <ul class="assign-list">
+      <?php foreach ($my_swaps as $s):
+        $awaiting = max(0, (int)$s['n_targets'] - (int)$s['n_declines']);
+      ?>
+        <li>
+          <span class="role-badge role-<?= e($s['role']) ?>"><?= $s['role'] === 'primary' ? 'Principal·e' : 'Suppléant·e' ?></span>
+          <strong><?= e(fmt_day($s['day'])) ?></strong>
+          <span class="muted small"><?= e($s['day']) ?></span>
+          — <?= e($s['slot_label']) ?>
+          <span class="muted small">
+            · <?= (int)$s['n_targets'] ?> sollicité·e·s,
+            <?= (int)$s['n_declines'] ?> décliné,
+            <?= $awaiting ?> en attente
+          </span>
+          <form method="post" action="/p/<?= e($poll['uuid']) ?>/swap/<?= (int)$s['id'] ?>/cancel" class="inline"
+                onsubmit="return confirm('Annuler cette demande de remplacement ?');">
+            <?= csrf_field() ?>
+            <button type="submit" class="link">annuler</button>
+          </form>
+        </li>
+      <?php endforeach; ?>
+    </ul>
+  <?php endif; ?>
   <p style="margin-top: 1rem;">
     <a href="/p/<?= e($poll['uuid']) ?>/me/calendar" class="btn btn-ghost">📅 Voir mon calendrier mensuel</a>
     <?php if (poll_addresses_enabled($poll) && !empty($participant['latitude'])): ?>

@@ -20,7 +20,7 @@ function poll_assignments_map(int $poll_id): array {
 
 function assignments_for_participant(int $poll_id, int $participant_id): array {
     $stmt = db()->prepare("
-        SELECT d.day, c.label, a.role
+        SELECT d.day, c.label, c.id AS choice_id, a.role
         FROM assignments a
         JOIN poll_choices c ON c.id = a.choice_id
         JOIN poll_dates   d ON d.id = c.date_id

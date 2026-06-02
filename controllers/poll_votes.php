@@ -8,6 +8,7 @@ require_once __DIR__ . '/../services/assignments.php';
 require_once __DIR__ . '/../services/ical.php';
 require_once __DIR__ . '/../services/activity_log.php';
 require_once __DIR__ . '/../services/geocoder.php';
+require_once __DIR__ . '/../services/swaps.php';
 
 function route_poll_me(string $uuid): void {
     $poll = find_poll($uuid);
@@ -32,6 +33,17 @@ function route_poll_me(string $uuid): void {
         ? []
         : assignments_for_participant((int)$poll['id'], (int)$participant['id']);
     $ical_token = $my_assigns ? get_or_create_ical_token((int)$participant['id']) : '';
+
+    // Mes demandes de remplacement ouvertes (pour les afficher en bloc
+    // séparé + savoir, par ligne d'astreinte, si une demande est en cours).
+    $my_swaps = $my_assigns
+        ? list_my_open_swaps((int)$poll['id'], (int)$participant['id'])
+        : [];
+    $swap_by_assign = []; // key = "cid:role"
+    foreach ($my_swaps as $s) {
+        $swap_by_assign[(int)$s['choice_id'] . ':' . $s['role']] = $s;
+    }
+
     render('poll/me', [
         'page_title' => 'Mes choix — ' . $poll['title'],
         'poll' => $poll,
@@ -39,6 +51,8 @@ function route_poll_me(string $uuid): void {
         'participant' => $participant,
         'myvotes' => $myvotes,
         'my_assigns' => $my_assigns,
+        'my_swaps' => $my_swaps,
+        'swap_by_assign' => $swap_by_assign,
         'ical_token' => $ical_token,
     ]);
 }
