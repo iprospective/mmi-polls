@@ -107,6 +107,22 @@ function db_migrate(PDO $pdo): void {
             fetched_at   INTEGER NOT NULL
         );
 
+        -- Cache global de trajets (clé = hash de endpoints arrondis à
+        -- 5 décimales). Dédoublonné entre participants/sondages : deux
+        -- personnes avec la même adresse partagent l'entrée. distance_m,
+        -- duration_s = 0 et geometry vide pour un miss négatif (TTL court).
+        CREATE TABLE IF NOT EXISTS route_cache (
+            endpoints_hash TEXT PRIMARY KEY,
+            from_lat REAL NOT NULL, from_lng REAL NOT NULL,
+            to_lat   REAL NOT NULL, to_lng   REAL NOT NULL,
+            distance_m INTEGER NOT NULL DEFAULT 0,
+            duration_s INTEGER NOT NULL DEFAULT 0,
+            -- GeoJSON LineString coordinates JSON-encodés ([[lng, lat], …])
+            geometry   TEXT NOT NULL DEFAULT '',
+            backend    TEXT NOT NULL DEFAULT '',
+            fetched_at INTEGER NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS activity_log (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
             poll_id      INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE,

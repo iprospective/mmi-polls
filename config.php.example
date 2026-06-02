@@ -68,6 +68,16 @@ return [
         'backends' => ['photon', 'nominatim'],
     ],
 
+    'routing' => [
+        // Backends tentés dans l'ordre pour calculer le trajet routier
+        // entre deux points GPS. 'osrm' = route réaliste via service
+        // externe, 'haversine' = ligne droite (fallback sans dépendance).
+        'backends' => ['osrm', 'haversine'],
+        // Serveur OSRM. Le démo public n'a pas de SLA — pour la prod,
+        // self-host (https://github.com/Project-OSRM/osrm-backend).
+        'osrm_url' => 'https://router.project-osrm.org',
+    ],
+
     'notifications' => [
         // Message par défaut pré-rempli dans le formulaire d'envoi des
         // notifications d'astreintes. Vide = pas de pré-remplissage.

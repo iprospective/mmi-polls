@@ -58,6 +58,7 @@ return [
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/calendar$#',                    'admin_calendar',      'route_admin_calendar'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/activity$#',                    'admin_activity',      'route_admin_activity'],
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/map$#',                         'admin_map',           'route_admin_map'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/map/recompute$#',               'admin_map',           'route_admin_recompute_routes'],
 
     ['POST', '#^/admin/polls/([0-9a-f-]+)/contact-email$#',               'admin_notifications', 'route_admin_set_contact_email'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/assignments/notify$#',          'admin_notifications', 'route_admin_send_notifications'],

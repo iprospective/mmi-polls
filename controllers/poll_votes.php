@@ -9,6 +9,7 @@ require_once __DIR__ . '/../services/ical.php';
 require_once __DIR__ . '/../services/activity_log.php';
 require_once __DIR__ . '/../services/geocoder.php';
 require_once __DIR__ . '/../services/swaps.php';
+require_once __DIR__ . '/../services/routing.php';
 
 function route_poll_me(string $uuid): void {
     $poll = find_poll($uuid);
@@ -212,11 +213,35 @@ function route_poll_my_map(string $uuid): void {
         ];
     }
 
+    // Trajet du·de la participant·e : home → start → end → home.
+    // Seulement si départ ET arrivée du sondage sont géocodés ET le·la
+    // participant·e a une adresse.
+    $trip  = null;
+    $trips_payload = [];
+    $self_color = '#0284c7';
+    if ($poll['start_lat'] !== null && $poll['end_lat'] !== null
+        && $participant['latitude'] !== null) {
+        $trip = participant_trip($poll, $participant);
+        if ($trip['complete']) {
+            $self_name = $participant['name'] !== '' ? $participant['name'] : 'Moi';
+            $trips_payload[] = [
+                'pid'     => (int)$participant['id'],
+                'name'    => $self_name,
+                'color'   => $self_color,
+                'total_m' => $trip['total_m'],
+                'total_s' => $trip['total_s'],
+                'legs'    => $trip['legs'],
+            ];
+        }
+    }
+
     render('poll/me_map', [
         'page_title' => 'Carte — ' . $poll['title'],
         'poll'       => $poll,
         'participant' => $participant,
         'markers'    => $markers,
+        'trip'       => $trip,
+        'trips'      => $trips_payload,
         'include_map' => true,
     ]);
 }
