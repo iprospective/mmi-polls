@@ -1,6 +1,8 @@
 // Rendu Leaflet des markers issus du <div id="map-data"> JSON.
-// Couleurs par kind : start (vert), end (rouge), participant/self (bleu).
+// Couleurs par kind : start (vert), end (rouge), participant (bleu),
+// self (sky), focus (rose magenta avec icône maman 🤰).
 // Trajets (polylines) issus du <div id="trips-data"> JSON quand présent.
+// Le trajet du·de la « focus » est toujours visible (override du toggle).
 
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof L === 'undefined') return;
@@ -12,7 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
   try { markers = JSON.parse(dataEl.textContent); } catch (e) { return; }
   if (!Array.isArray(markers) || markers.length === 0) return;
 
-  // Init map sans setView : on ajuste avec fitBounds plus bas
+  const focusIconEl = document.getElementById('focus-icon-url');
+  const focusIconUrl = focusIconEl ? focusIconEl.textContent.trim() : '';
+
   const map = L.map(mapEl, { scrollWheelZoom: true });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -20,62 +24,90 @@ document.addEventListener('DOMContentLoaded', () => {
   }).addTo(map);
 
   const colors = {
-    start:       '#16a34a',  // vert
-    end:         '#dc2626',  // rouge
-    self:        '#0284c7',  // bleu sky pour soi-même
-    participant: '#2563eb',  // bleu standard pour les autres
+    start:       '#16a34a',
+    end:         '#dc2626',
+    self:        '#0284c7',
+    participant: '#2563eb',
+    focus:       '#db2777',
   };
 
   const layerMarkers = [];
   markers.forEach((m) => {
-    // Marker participant : couleur per-participant si fournie (carte admin
-    // avec trajets), sinon fallback sur la palette par kind.
-    const color = (m.kind === 'participant' && m.color) ? m.color : (colors[m.kind] || '#6b7280');
-    const icon = L.divIcon({
-      className: 'mm-pin',
-      html: `<div class="mm-pin-body" style="background:${color}"><div class="mm-pin-inner"></div></div>`,
-      iconSize: [22, 30],
-      iconAnchor: [11, 30],
-      popupAnchor: [0, -28],
+    const color = ((m.kind === 'participant' || m.kind === 'focus') && m.color)
+      ? m.color : (colors[m.kind] || '#6b7280');
+    let icon;
+    if (m.kind === 'focus') {
+      // Focus : pin plus large, image custom si dispo, sinon emoji 🤰.
+      const inner = focusIconUrl
+        ? `<img src="${focusIconUrl}" alt="" class="mm-pin-img">`
+        : `<span class="mm-pin-emoji">🤰</span>`;
+      icon = L.divIcon({
+        className: 'mm-pin mm-pin-focus',
+        html: `<div class="mm-pin-body mm-pin-body-focus" style="background:${color}">${inner}</div>`,
+        iconSize: [38, 48],
+        iconAnchor: [19, 48],
+        popupAnchor: [0, -46],
+        tooltipAnchor: [0, -42],
+      });
+    } else {
+      icon = L.divIcon({
+        className: 'mm-pin',
+        html: `<div class="mm-pin-body" style="background:${color}"><div class="mm-pin-inner"></div></div>`,
+        iconSize: [22, 30],
+        iconAnchor: [11, 30],
+        popupAnchor: [0, -28],
+        tooltipAnchor: [0, -26],
+      });
+    }
+    const marker = L.marker([m.lat, m.lng], { icon, riseOnHover: true }).addTo(map);
+    const popupHtml = `<strong>${escapeHtml(m.label)}</strong><br>` +
+                      `<small>${escapeHtml(m.desc || '')}</small><br>` +
+                      `<small class="muted">${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}</small>`;
+    marker.bindPopup(popupHtml);
+
+    // Label permanent (prénom seul, court, sans la longue description).
+    // direction:'top' pose le tooltip au-dessus du pin pour éviter le
+    // chevauchement avec d'autres marqueurs proches.
+    const labelClass = m.kind === 'focus' ? 'mm-label mm-label-focus' : 'mm-label';
+    marker.bindTooltip(escapeHtml(shortLabel(m.label)), {
+      permanent: true,
+      direction: 'top',
+      offset: m.kind === 'focus' ? [0, -42] : [0, -26],
+      className: labelClass,
     });
-    const marker = L.marker([m.lat, m.lng], { icon }).addTo(map);
-    const html = `<strong>${escapeHtml(m.label)}</strong><br>` +
-                 `<small>${escapeHtml(m.desc || '')}</small><br>` +
-                 `<small class="muted">${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}</small>`;
-    marker.bindPopup(html);
     layerMarkers.push(marker);
   });
 
-  // Trajets : 1 polyline par leg, regroupées en LayerGroup pour pouvoir
-  // toggle on/off. Geometry = [[lng,lat], …] (format GeoJSON / OSRM),
-  // Leaflet attend [lat, lng] donc on swap.
+  // Trajets : 1 polyline par leg. Le trajet du focus est sur sa propre
+  // layer ALWAYS-on. Les autres sur tripsLayer toggable.
   const tripsEl = document.getElementById('trips-data');
   let tripsLayer = null;
+  let focusTripLayer = null;
   if (tripsEl) {
     let trips;
     try { trips = JSON.parse(tripsEl.textContent); } catch (e) { trips = []; }
     tripsLayer = L.layerGroup();
+    focusTripLayer = L.layerGroup();
     trips.forEach((t) => {
-      t.legs.forEach((leg, i) => {
+      const target = t.is_focus ? focusTripLayer : tripsLayer;
+      t.legs.forEach((leg) => {
         const latlngs = leg.geometry.map(([lng, lat]) => [lat, lng]);
         if (latlngs.length < 2) return;
         const poly = L.polyline(latlngs, {
           color: t.color,
-          weight: 4,
-          opacity: 0.75,
-          // Pointillés pour leg start→end (partagé par tou·te·s), plein
-          // pour les legs propres au participant·e.
+          weight: t.is_focus ? 5 : 4,
+          opacity: t.is_focus ? 0.9 : 0.75,
           dashArray: leg.name === 'start_to_end' ? '6, 6' : null,
         });
-        const label = legLabel(leg.name);
-        const km = fmtKm(leg.distance_m);
-        poly.bindTooltip(`<strong>${escapeHtml(t.name)}</strong> · ${label} · ${km}`,
+        poly.bindTooltip(`<strong>${escapeHtml(t.name)}</strong> · ${legLabel(leg.name)} · ${fmtKm(leg.distance_m)}`,
           { sticky: true, direction: 'top' });
-        tripsLayer.addLayer(poly);
+        target.addLayer(poly);
       });
     });
+    focusTripLayer.addTo(map);
     tripsLayer.addTo(map);
 
+    // Toggle uniquement les trajets non-focus (la maman reste toujours visible).
     const toggle = document.getElementById('toggle-routes');
     if (toggle) {
       toggle.addEventListener('change', () => {
@@ -84,18 +116,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Zoom-responsive : ajoute mm-zoom-<bucket> sur le container pour
+  // que les labels et pins grossissent au zoom (réglé en CSS).
+  const updateZoomClass = () => {
+    const z = map.getZoom();
+    const bucket = z < 9 ? 'far' : (z < 12 ? 'mid' : (z < 15 ? 'near' : 'close'));
+    mapEl.classList.remove('mm-zoom-far', 'mm-zoom-mid', 'mm-zoom-near', 'mm-zoom-close');
+    mapEl.classList.add('mm-zoom-' + bucket);
+  };
+
   const group = L.featureGroup(layerMarkers);
   if (layerMarkers.length === 1) {
     map.setView(layerMarkers[0].getLatLng(), 12);
   } else {
-    // Inclure les trajets dans le fitBounds pour ne pas couper les routes
     const bounds = group.getBounds();
-    if (tripsLayer) {
-      tripsLayer.eachLayer(l => bounds.extend(l.getBounds()));
-    }
+    if (tripsLayer)      tripsLayer.eachLayer(l => bounds.extend(l.getBounds()));
+    if (focusTripLayer)  focusTripLayer.eachLayer(l => bounds.extend(l.getBounds()));
     map.fitBounds(bounds.pad(0.1));
   }
+  updateZoomClass();
+  map.on('zoomend', updateZoomClass);
 });
+
+function shortLabel(s) {
+  // Limite à ~14 caractères + ellipsis pour ne pas surcharger la carte.
+  s = String(s);
+  return s.length > 14 ? s.slice(0, 13) + '…' : s;
+}
 
 function legLabel(name) {
   return {

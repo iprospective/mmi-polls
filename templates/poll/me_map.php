@@ -54,5 +54,8 @@
   <?php if (!empty($trips)): ?>
     <div id="trips-data" style="display: none;"><?= htmlspecialchars(json_encode($trips, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?></div>
   <?php endif; ?>
+  <?php if (!empty($focus_icon_url)): ?>
+    <div id="focus-icon-url" style="display: none;"><?= e($focus_icon_url) ?></div>
+  <?php endif; ?>
   <div id="map"></div>
 <?php endif; ?>

@@ -219,20 +219,29 @@ function route_poll_my_map(string $uuid): void {
     $trip  = null;
     $trips_payload = [];
     $self_color = '#0284c7';
+    $is_focus = (poll_focus_participant_id($poll) === (int)$participant['id']);
     if ($poll['start_lat'] !== null && $poll['end_lat'] !== null
         && $participant['latitude'] !== null) {
         $trip = participant_trip($poll, $participant);
         if ($trip['complete']) {
             $self_name = $participant['name'] !== '' ? $participant['name'] : 'Moi';
             $trips_payload[] = [
-                'pid'     => (int)$participant['id'],
-                'name'    => $self_name,
-                'color'   => $self_color,
-                'total_m' => $trip['total_m'],
-                'total_s' => $trip['total_s'],
-                'legs'    => $trip['legs'],
+                'pid'      => (int)$participant['id'],
+                'name'     => $self_name,
+                'color'    => $is_focus ? '#db2777' : $self_color,
+                'is_focus' => $is_focus,
+                'total_m'  => $trip['total_m'],
+                'total_s'  => $trip['total_s'],
+                'legs'     => $trip['legs'],
             ];
         }
+    }
+    // Si je suis la personne focus, mon marker prend le kind 'focus' (icône dédiée).
+    if ($is_focus) {
+        foreach ($markers as &$m) {
+            if ($m['kind'] === 'self') $m['kind'] = 'focus';
+        }
+        unset($m);
     }
 
     render('poll/me_map', [
@@ -242,6 +251,7 @@ function route_poll_my_map(string $uuid): void {
         'markers'    => $markers,
         'trip'       => $trip,
         'trips'      => $trips_payload,
+        'focus_icon_url' => poll_focus_icon_url(),
         'include_map' => true,
     ]);
 }

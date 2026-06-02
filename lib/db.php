@@ -230,6 +230,10 @@ function db_migrate(PDO $pdo): void {
         // des créneaux. Vide = fallback sur les défauts (helper
         // poll_slot_hours_map). Format HH:MM. end < start = lendemain.
         'slot_hours' => "TEXT NOT NULL DEFAULT ''",
+        // ID du·de la participant·e mis·e en avant sur la carte (typiquement
+        // la maman). Son trajet est toujours affiché, son marker porte une
+        // icône dédiée. Voir poll_focus_participant_id() côté helpers.
+        'focus_participant_id' => "INTEGER REFERENCES participants(id) ON DELETE SET NULL",
     ] as $col => $sql_type) {
         if (!in_array($col, $present, true)) {
             $pdo->exec("ALTER TABLE polls ADD COLUMN $col $sql_type");

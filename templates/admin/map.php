@@ -43,6 +43,9 @@ usort($trips_sorted, fn($a, $b) => $a['total_m'] <=> $b['total_m']);
   <?php if ($trips_sorted): ?>
     <div id="trips-data" style="display: none;"><?= htmlspecialchars(json_encode($trips_sorted, JSON_UNESCAPED_UNICODE), ENT_QUOTES) ?></div>
   <?php endif; ?>
+  <?php if (!empty($focus_icon_url)): ?>
+    <div id="focus-icon-url" style="display: none;"><?= e($focus_icon_url) ?></div>
+  <?php endif; ?>
   <div id="map"></div>
 
   <?php if ($trips_sorted): ?>

@@ -36,25 +36,30 @@ function route_admin_map(string $uuid): void {
     $can_route = $poll['start_lat'] !== null && $poll['start_lng'] !== null
               && $poll['end_lat']   !== null && $poll['end_lng']   !== null;
 
+    $focus_pid = poll_focus_participant_id($poll);
+    $focus_color = '#db2777'; // rose magenta pour la maman
+
     $trips = []; // payload pour la carte : [{pid, name, color, total_m, legs:[{name,distance_m,duration_s,geometry}]}, …]
     $palette = [
-        '#2563eb', '#7c3aed', '#db2777', '#ea580c', '#ca8a04',
+        '#2563eb', '#7c3aed', '#ea580c', '#ca8a04',
         '#0d9488', '#65a30d', '#9333ea', '#0891b2', '#dc2626',
     ];
     $i = 0;
     foreach (poll_participants((int)$poll['id']) as $p) {
         if ($p['latitude'] === null || $p['longitude'] === null) continue;
         $name = $p['name'] !== '' ? $p['name'] : explode('@', $p['email'])[0];
-        $color = $palette[$i % count($palette)];
+        $is_focus = ((int)$p['id'] === $focus_pid);
+        $color = $is_focus ? $focus_color : $palette[$i % count($palette)];
         $markers[] = [
             'lat'   => (float)$p['latitude'],
             'lng'   => (float)$p['longitude'],
-            'kind'  => 'participant',
+            'kind'  => $is_focus ? 'focus' : 'participant',
             'pid'   => (int)$p['id'],
             'color' => $color,
             'label' => $name,
             'desc'  => $p['geocoded_address'] ?: $p['address'],
         ];
+        if (!$is_focus) $i++;
         if ($can_route) {
             $t = participant_trip($poll, $p);
             if ($t['complete']) {
@@ -62,13 +67,13 @@ function route_admin_map(string $uuid): void {
                     'pid'      => (int)$p['id'],
                     'name'     => $name,
                     'color'    => $color,
+                    'is_focus' => $is_focus,
                     'total_m'  => $t['total_m'],
                     'total_s'  => $t['total_s'],
                     'legs'     => $t['legs'],
                 ];
             }
         }
-        $i++;
     }
 
     render('admin/map', [
@@ -77,6 +82,7 @@ function route_admin_map(string $uuid): void {
         'markers'    => $markers,
         'trips'      => $trips,
         'can_route'  => $can_route,
+        'focus_icon_url' => poll_focus_icon_url(),
         'include_map' => true,
     ]);
 }

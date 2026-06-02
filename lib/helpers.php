@@ -175,6 +175,25 @@ function asset_url(string $path): string {
     return $path . $sep . 'v=' . $v;
 }
 
+/**
+ * ID du·de la participant·e « focus » du sondage (typiquement la maman
+ * dont on transporte le bébé), 0 si pas configuré. Cette personne a un
+ * marker dédié sur la carte et son trajet est toujours visible.
+ */
+function poll_focus_participant_id(array $poll): int {
+    return (int)($poll['focus_participant_id'] ?? 0);
+}
+
+/**
+ * URL absolue d'une icône custom pour le marker focus si l'asset existe
+ * dans public/, sinon null (le JS retombe sur un emoji par défaut).
+ * Permet à l'utilisateur de déposer son propre PNG sans toucher au code.
+ */
+function poll_focus_icon_url(): ?string {
+    $path = __DIR__ . '/../public/focus-pin.png';
+    return file_exists($path) ? asset_url('/public/focus-pin.png') : null;
+}
+
 function fmt_day(string $iso): string {
     static $jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
     static $mois  = ['', 'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];

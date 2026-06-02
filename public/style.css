@@ -881,6 +881,73 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .leaflet-popup-content small { display: block; font-size: 0.8rem; }
 .leaflet-popup-content .muted { color: var(--muted); }
 
+/* Pin focus (maman) : plus large, icône image ou emoji centré */
+.mm-pin-focus .mm-pin-body-focus {
+  width: 38px;
+  height: 48px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  border: 3px solid #fff;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  transform: rotate(-45deg);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mm-pin-focus .mm-pin-body-focus::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 0; height: 0;
+  border: 8px solid transparent;
+  border-top-color: inherit;
+  transform: translate(-50%, -2px) rotate(45deg);
+}
+.mm-pin-focus .mm-pin-emoji {
+  transform: rotate(45deg);
+  font-size: 18px;
+  line-height: 1;
+}
+.mm-pin-focus .mm-pin-img {
+  transform: rotate(45deg);
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Labels permanents (prénom sous chaque pin) — halo blanc pour la lisibilité */
+.mm-label {
+  background: rgba(255,255,255,0.92);
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg);
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.mm-label::before { display: none; } /* enlève la flèche par défaut Leaflet */
+.mm-label-focus {
+  background: #fce7f3;
+  color: #831843;
+  border: 1px solid #f9a8d4;
+  font-size: 12px;
+}
+
+/* Zoom-responsive : labels & pins grossissent quand on zoom */
+.mm-zoom-far .mm-label   { font-size: 10px; padding: 0 4px; opacity: 0.85; }
+.mm-zoom-mid .mm-label   { font-size: 11px; }
+.mm-zoom-near .mm-label  { font-size: 13px; padding: 2px 7px; }
+.mm-zoom-close .mm-label { font-size: 15px; padding: 3px 8px; }
+.mm-zoom-far .mm-label-focus   { font-size: 11px; }
+.mm-zoom-mid .mm-label-focus   { font-size: 13px; }
+.mm-zoom-near .mm-label-focus  { font-size: 15px; padding: 3px 8px; }
+.mm-zoom-close .mm-label-focus { font-size: 17px; padding: 4px 10px; }
+
 /* Trajets (polylines + récap) */
 .route-controls {
   display: flex;

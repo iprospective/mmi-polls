@@ -85,6 +85,27 @@ require __DIR__ . '/_admin_nav.php';
   <?php endif; ?>
   <?php endif; /* poll_addresses_enabled */ ?>
 
+  <h3>Participant·e mis·e en avant (facultatif)</h3>
+  <p class="muted small">Une personne spécifique dont le trajet est <strong>toujours affiché</strong> sur la carte (pas masqué par le toggle) et dont le marker porte une icône dédiée. Idéal pour la personne autour de qui tourne l'organisation (ex. maman dont on assure le transport).</p>
+  <label>Personne mise en avant
+    <select name="focus_participant_id">
+      <option value="0">— Aucune —</option>
+      <?php $cur_focus = (int)($poll['focus_participant_id'] ?? 0);
+      foreach ($participants as $pp):
+        $pn = $pp['name'] !== '' ? $pp['name'] : explode('@', $pp['email'])[0];
+      ?>
+        <option value="<?= (int)$pp['id'] ?>" <?= $cur_focus === (int)$pp['id'] ? 'selected' : '' ?>>
+          <?= e($pn) ?> &lt;<?= e($pp['email']) ?>&gt;
+        </option>
+      <?php endforeach; ?>
+    </select>
+  </label>
+  <?php if (poll_focus_icon_url()): ?>
+    <p class="muted small">Icône custom détectée : <code>/public/focus-pin.png</code>. Supprimez ce fichier pour repasser à l'emoji 🤰 par défaut.</p>
+  <?php else: ?>
+    <p class="muted small">Icône par défaut : emoji 🤰 dans un pin rose. Déposez un fichier dans <code>public/focus-pin.png</code> pour l'écraser avec une image perso.</p>
+  <?php endif; ?>
+
   <button type="submit">Enregistrer</button>
 </form>
 

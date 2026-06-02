@@ -101,12 +101,21 @@ function route_admin_update_poll(string $uuid): void {
 
     $assigns_public = isset($_POST['assignments_public']) ? 1 : 0;
 
+    // Focus participant : valide qu'il/elle appartient bien au sondage.
+    $focus_pid = (int)($_POST['focus_participant_id'] ?? 0);
+    if ($focus_pid > 0) {
+        $vp = db()->prepare("SELECT id FROM participants WHERE id = ? AND poll_id = ?");
+        $vp->execute([$focus_pid, $poll['id']]);
+        if (!$vp->fetch()) $focus_pid = 0;
+    }
+
     $stmt = db()->prepare("
         UPDATE polls
         SET title = ?, description = ?, closed_at = ?,
             start_address = ?, start_lat = ?, start_lng = ?, start_geocoded = ?,
             end_address   = ?, end_lat   = ?, end_lng   = ?, end_geocoded   = ?,
-            assignments_public = ?, addresses_enabled = ?
+            assignments_public = ?, addresses_enabled = ?,
+            focus_participant_id = ?
         WHERE id = ?
     ");
     $stmt->execute([
@@ -114,6 +123,7 @@ function route_admin_update_poll(string $uuid): void {
         $start_addr, $start_lat, $start_lng, $start_geocoded,
         $end_addr,   $end_lat,   $end_lng,   $end_geocoded,
         $assigns_public, $addr_enabled,
+        $focus_pid > 0 ? $focus_pid : null,
         $poll['id'],
     ]);
     if ($geo_errors) {
