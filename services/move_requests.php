@@ -41,6 +41,16 @@ function create_move_request(
         throw new RuntimeException('La personne source est déjà sur la case cible.');
     }
 
+    // Garde-fou : la·les personne·s qu'on déplace doit·doivent avoir voté
+    // yes ou maybe sur le créneau cible. Pas la peine de leur demander
+    // de prendre un slot qu'elles ont marqué « non » (perte de temps + ras-le-bol).
+    if (!participant_voted_for_slot($src_pid, $dst_choice_id)) {
+        throw new RuntimeException('La personne source n\'a pas indiqué être dispo (oui/peut-être) sur le créneau cible.');
+    }
+    if ($dst_pid > 0 && !participant_voted_for_slot($dst_pid, $src_choice_id)) {
+        throw new RuntimeException('La personne cible n\'a pas indiqué être dispo (oui/peut-être) sur le créneau source.');
+    }
+
     $now = time();
     $pdo->beginTransaction();
     $ins_req = $pdo->prepare(
@@ -237,6 +247,19 @@ function apply_move_atomic_in_tx(PDO $pdo, array $req): array {
         $ins->execute([(int)$req['src_choice_id'], $req['src_role'], $expected_dst]);
     }
     return ['ok' => true];
+}
+
+/**
+ * La personne a-t-elle voté yes ou maybe sur ce créneau ?
+ * Utilisé pour empêcher la création d'une demande de déplacement vers un
+ * créneau où la personne s'est explicitement déclarée indisponible.
+ */
+function participant_voted_for_slot(int $participant_id, int $choice_id): bool {
+    $stmt = db()->prepare(
+        "SELECT 1 FROM votes WHERE participant_id = ? AND choice_id = ? AND value IN ('yes', 'maybe')"
+    );
+    $stmt->execute([$participant_id, $choice_id]);
+    return (bool)$stmt->fetchColumn();
 }
 
 function move_owner_of(int $poll_id, int $choice_id, string $role): int {

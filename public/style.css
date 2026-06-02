@@ -948,6 +948,19 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .mm-zoom-near .mm-label-focus  { font-size: 15px; padding: 3px 8px; }
 .mm-zoom-close .mm-label-focus { font-size: 17px; padding: 4px 10px; }
 
+/* Highlight / dim au clic sur un pin ou une ligne du tableau */
+.mm-pin.mm-dim   { opacity: 0.3; transition: opacity 0.15s ease; }
+.mm-pin.mm-active .mm-pin-body { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--accent), 0 4px 10px rgba(0,0,0,0.4); }
+.mm-pin.mm-active .mm-pin-body-focus { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--accent), 0 4px 10px rgba(0,0,0,0.4); }
+.leaflet-marker-icon.mm-dim + .leaflet-tooltip,
+.mm-pin.mm-dim ~ .leaflet-tooltip { opacity: 0.35; }
+
+/* Filtre par participant·e : cache les pins/labels/polylines exclus */
+.leaflet-marker-icon.mm-hidden,
+.leaflet-marker-icon.mm-hidden + .leaflet-tooltip,
+.leaflet-tooltip.mm-hidden,
+.leaflet-interactive.mm-hidden { display: none !important; }
+
 /* Trajets (polylines + récap) */
 .route-controls {
   display: flex;
@@ -979,6 +992,44 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
   border-top: 1px dashed var(--border);
 }
 .trip-legs li:first-child { border-top: none; }
+
+/* Tableau récap des trajets sur la carte admin */
+.trip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.trip-table thead th {
+  background: #f1f5f9;
+  border-bottom: 1px solid var(--border-strong);
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--fg-soft);
+  font-size: 0.85rem;
+}
+.trip-table tbody td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.trip-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.trip-table .col-swatch   { width: 28px; padding-right: 0; text-align: center; }
+.trip-table .col-name     { width: auto; }
+.trip-table .col-total    { width: 90px; }
+.trip-table .col-duration { width: 80px; }
+.trip-table .col-leg      { width: 80px; color: var(--muted); }
+.trip-table tbody tr { cursor: pointer; transition: background 0.1s ease; }
+.trip-table tbody tr:hover { background: var(--accent-soft); }
+.trip-table tbody tr.trip-highlight { background: #e0e7ff; }
+.trip-table tbody tr.trip-row-focus { background: #fce7f3; }
+.trip-table tbody tr.trip-row-focus.trip-highlight { background: #fbcfe8; }
+.trip-focus-badge { margin-left: 0.25rem; font-size: 0.85rem; }
+
+@media (max-width: 700px) {
+  .trip-table { font-size: 0.8rem; min-width: 560px; }
+  .trip-table .col-total, .trip-table .col-duration, .trip-table .col-leg { width: auto; }
+}
 
 /* Bandeau mode brouillon des astreintes (page admin assignments) */
 .draft-banner {

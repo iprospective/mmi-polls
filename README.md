@@ -11,7 +11,11 @@ URL en prod : <https://polls.iprospective.fr>
 - Connexion par **magic-link** envoyé par email (pas de mot de passe)
 - Saisie / modification / suppression de ses disponibilités (Oui / Peut-être / Non) sur chaque créneau
 - Champ téléphone + sélection multiple de plateformes de contact (Telegram, Signal, WhatsApp, SMS)
+- Champ adresse (géocodée) — pour la prise en compte de la distance dans l'algo et l'affichage sur la carte
 - Vue « Mes astreintes » dès que des assignations ont été posées
+- **Demande de remplacement** : bouton 🔄 par astreinte qui propose à un·e candidat·e (yes/maybe sur ce créneau) de reprendre le slot par email ; premier·ère qui clique gagne
+- Vue calendrier perso + carte perso (trajet chez-soi → départ → arrivée → chez-soi avec distance totale)
+- Abonnement iCal personnel à ses astreintes (Google Calendar, Apple, Thunderbird…)
 - Page de confirmation/contestation des astreintes au clic du lien magique d'astreinte
 
 ### Pour les managers (rôle intermédiaire)
@@ -41,16 +45,30 @@ URL en prod : <https://polls.iprospective.fr>
 - Sélection manuelle : 1 principal·e + 1 suppléant·e par créneau, parmi les voteur·euse·s en Oui/Peut-être
 - Compteurs P/S mis à jour en live à chaque sélection
 - Impossible d'avoir la même personne aux deux rôles sur un même créneau
-- **Remplissage automatique** : algo round-robin équitable basé sur l'usage % (assignations / capacité) avec 4 tiers (50/75/90 %), priorité de libellé configurable (Nuit > Soirée > Journée par défaut)
+- **Remplissage automatique** : algo round-robin équitable basé sur l'usage % (assignations / capacité) avec 4 tiers (50/75/90 %), priorité de libellé configurable (Nuit > Soirée > Journée par défaut). Tiebreaker GPS : privilégie le·la plus proche du point de départ si la gestion d'adresses est active.
+- **Drag'n'drop sur le calendrier** pour déplacer une astreinte ou en échanger deux. Modal de confirmation, demande de validation envoyée à la·aux personne·s concernée·s par email, application atomique uniquement si toutes acceptent. Bloque les déplacements vers un créneau où la personne a voté « non ».
+- **Demandes de remplacement** initiées par le·la participant·e elle·lui-même depuis sa page perso (`/me`) — voir section participants.
 - Bouton « Vider toutes les astreintes » pour repartir de zéro
+- Horaires précis paramétrables par libellé de créneau (Journée/Soirée/Nuit avec chevauchement intentionnel)
 
 ### Notifications
 - Envoi par email à tous les participants assignés ou à une personne précise
-- Message personnalisé optionnel
+- Message personnalisé optionnel (avec message par défaut configurable dans `CONFIG.notifications.default_message`)
+- Email de test pour vérifier le rendu avant l'envoi réel
 - Chaque destinataire reçoit la liste de ses créneaux + un lien unique de confirmation/contestation
 - Page de confirmation/contestation accessible par token (pas besoin d'être loggué)
 - Email automatique au contact configuré du sondage en cas de signalement de problème
 - Statut visible côté admin (envoyé / confirmé / contesté + réponse textuelle)
+- **Override manager** : peut confirmer/contester/réinitialiser hors-mail pour les personnes qu'on a eu en direct ou sans internet (notif synthétique avec `responded_by='manager'`)
+- **Indicateur « À renotifier »** quand les astreintes ont changé après l'envoi du dernier email (badge ⚠️ côté manager)
+
+### Carte (géolocalisation)
+- Adresse de départ / d'arrivée du sondage géocodées (multi-backend : Photon puis Nominatim)
+- Adresse par participant·e géocodée → distance prise en compte dans l'auto-fill
+- **Vue carte admin** (`/admin/.../map`) : tous les pins + tous les trajets routiers (chez → départ → arrivée → chez) via OSRM avec cache. Tableau récap trié par distance totale, filtre par participant·e, click pour highlight.
+- **Vue carte perso** (`/p/UUID/me/map`) : trajet personnel + récap par leg
+- Labels permanents (prénom) zoomables, décalés en rosace si plusieurs adresses superposées
+- **Focus participant·e** (la « maman » dans le cas d'usage transport) : marker plus large, icône dédiée, trajet toujours visible
 
 ### Vue Participants
 - Tableau récap par personne (Oui / Peut-être / Non / Sans réponse / Principal / Suppléant / Usage %)
@@ -69,8 +87,10 @@ URL en prod : <https://polls.iprospective.fr>
 ## Pile technique
 
 - **PHP 8.0+** procédural, **PDO SQLite**
-- **HTML/CSS** statique (pas de build front), Quill 2.0 et Inter / Space Grotesk via CDN
+- **HTML/CSS** statique (pas de build front), Quill 2.0, Leaflet 1.9.4 + tuiles OpenStreetMap, Inter / Space Grotesk via CDN
 - **SMTP** maison via `fsockopen` (pas de PHPMailer), fallback en log fichier si SMTP indisponible
+- **Géocodage** : Photon (komoot) en priorité, Nominatim en fallback, cache local (TTL différenciés hits/miss)
+- **Routing** : OSRM public (`router.project-osrm.org`) avec cache local, fallback Haversine si OSRM down
 - **Pas de Composer**, pas de namespace, pas d'autoloader — `require_once` explicites
 
 ## Structure du projet
@@ -85,32 +105,44 @@ mmidate/
 ├── controllers/
 │   ├── home.php
 │   ├── admin_auth.php           # admin login/logout
-│   ├── admin_polls.php          # CRUD sondages
-│   ├── admin_dates.php          # dates et créneaux
-│   ├── admin_participants.php   # gestion participants
-│   ├── admin_assignments.php    # astreintes manuelles + auto-fill
-│   ├── admin_notifications.php  # envoi notif + email contact
+│   ├── admin_polls.php          # CRUD sondages + géocodage start/end
+│   ├── admin_dates.php          # dates, créneaux, horaires précis
+│   ├── admin_participants.php   # gestion participants + toggles AJAX
+│   ├── admin_assignments.php    # astreintes manuelles + auto-fill + bump stale
+│   ├── admin_notifications.php  # envoi notif + email contact + override manager
 │   ├── admin_settings.php       # paramètres du sondage
 │   ├── admin_managers.php       # validation comptes manager
+│   ├── admin_calendar.php       # vue calendrier mensuel
+│   ├── admin_activity.php       # log d'activité par sondage
+│   ├── admin_map.php            # carte avec trajets + recompute
 │   ├── manager_auth.php         # register/login/logout manager
 │   ├── manager_dashboard.php    # dashboard manager
 │   ├── poll_managers.php        # ajout/retrait manager d'un sondage
 │   ├── poll_public.php          # vue publique + magic-link
-│   ├── poll_votes.php           # /me du participant
-│   └── poll_confirm.php         # confirmation par token
+│   ├── poll_votes.php           # /me du participant + carte + calendrier
+│   ├── poll_confirm.php         # confirmation par token (email)
+│   ├── swaps.php                # demandes de remplacement entre participant·e·s
+│   ├── moves.php                # drag'n'drop calendrier (manager → validation)
+│   └── ical.php                 # flux iCal personnel par token
 ├── services/
 │   ├── polls.php                # find_poll, poll_structure
 │   ├── participants.php
 │   ├── votes.php
-│   ├── assignments.php
-│   ├── notifications.php        # send_notification_email, issue_notification
+│   ├── assignments.php          # + mark_participants_assignments_stale
+│   ├── notifications.php        # send + poll_confirmation_status + override
 │   ├── auto_fill.php            # algo round-robin tier-based
 │   ├── managers.php             # CRUD comptes manager + magic-link
-│   └── poll_managers.php        # M2M sondage ↔ manager
+│   ├── poll_managers.php        # M2M sondage ↔ manager
+│   ├── activity_log.php         # log_activity
+│   ├── geocoder.php             # multi-backend Photon/Nominatim + cache
+│   ├── routing.php              # OSRM + fallback Haversine + cache
+│   ├── ical.php                 # flux iCal RFC 5545
+│   ├── swaps.php                # demandes de remplacement + tokens + emails
+│   └── move_requests.php        # déplacement/échange initié manager
 ├── lib/
 │   ├── db.php                   # PDO + migrations idempotentes
 │   ├── auth.php                 # sessions admin/manager/participant
-│   ├── helpers.php              # csrf, render, escape, fmt_day, contact_methods
+│   ├── helpers.php              # csrf, render, escape, fmt_day, contact_methods, poll_focus_*
 │   ├── mailer.php               # SMTP maison + fallback log
 │   └── html_sanitize.php        # whitelist HTML via DOMDocument
 ├── public/
@@ -118,15 +150,23 @@ mmidate/
 │   ├── editor.js                # init Quill
 │   ├── assignments.js           # compteurs live P/S
 │   ├── sortable-table.js        # tri cliquable
+│   ├── contact-toggles.js       # toggles AJAX plateformes de contact
+│   ├── map-render.js            # markers Leaflet + polylines + highlight
+│   ├── calendar-dnd.js          # drag'n'drop des astreintes + modal
+│   ├── focus-pin.png            # (optionnel) icône custom pour le focus participant
 │   ├── logo.png                 # logo iProspective
 │   └── bg/                      # photos détourées (lynx, chamois, vautour, violon)
 ├── templates/
 │   ├── layout.php · home.php · error.php
+│   ├── _month_calendar.php      # partial grille mensuelle (avec mode dnd)
+│   ├── _slot_legend.php         # partial légende horaires
 │   ├── admin/                   # vues admin
 │   ├── manager/list.php         # dashboard manager
 │   ├── auth/                    # register, login manager
-│   └── poll/                    # vues publiques participant
-├── data/                        # gitignored : SQLite + mail.log
+│   ├── poll/                    # vues publiques participant
+│   ├── swap/                    # composition + landing demande de remplacement
+│   └── move/                    # landing demande de déplacement (drag'n'drop)
+├── data/                        # gitignored : SQLite + mail.log + geocode.log + routing.log
 ├── .htaccess                    # réécriture Apache + blocage fichiers sensibles
 └── routes.php
 ```
@@ -202,6 +242,20 @@ return [
     'auto_fill' => [
         'priority' => ['Nuit', 'Soirée', 'Journée'],
     ],
+    'addresses' => [
+        'enabled' => true,                              // master switch global
+    ],
+    'geocoder' => [
+        'backends' => ['photon', 'nominatim'],          // ordre d'essai
+    ],
+    'routing' => [
+        'backends' => ['osrm', 'haversine'],            // OSRM puis fallback
+        'osrm_url' => 'https://router.project-osrm.org',// self-host conseillé en prod
+    ],
+    'notifications' => [
+        'default_message' => '',                        // pré-rempli dans le formulaire d'envoi
+    ],
+    'asset_version' => 1,                                // bumper à chaque modif de CSS/JS
 ];
 ```
 

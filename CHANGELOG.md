@@ -2,6 +2,46 @@
 
 Historique des évolutions de mmidate, dans l'ordre chronologique. Format inspiré de [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-06-03 — Carte : trajets, filtre, highlight, focus participant·e
+
+### Added
+- **Trajets routiers complets sur la carte.** Nouveau service `services/routing.php` multi-backend (OSRM en priorité via `router.project-osrm.org`, Haversine en fallback). Pour chaque participant·e géolocalisé·e, calcul des 3 legs chez-soi → départ → arrivée → chez-soi avec géométrie GeoJSON complète. Cache global `route_cache` (clé = hash des endpoints arrondis à 5 décimales, dédoublonné entre participant·e·s / sondages), TTL 30j pour hits, 5min pour miss.
+- **Carte admin enrichie.** Polylines par participant·e (couleur dédiée, pointillé pour le leg start→end partagé), tableau récap trié par distance totale croissante (le plus proche d'abord), tooltips au survol des lignes (distance + durée + leg). Bouton « Recalculer trajets » qui purge le cache pour forcer un re-fetch OSRM.
+- **Filtre par participant·e sur la carte** (dropdown au-dessus). Affiche uniquement le pin et le trajet de la personne sélectionnée ; start/end et focus restent visibles.
+- **Highlight au clic.** Cliquer un pin OU une ligne du tableau met en avant le·la participant·e : son trajet est épaissi et opaque, les autres trajets et pins sont dimés, sa ligne de tableau est surlignée. Re-cliquer ou cliquer le fond de carte = reset.
+- **Carte personnelle `/p/UUID/me/map`.** Le·la participant·e voit son propre trajet avec carte récap (total + détail par leg avec durée). Indicateur `⚠️ vol d'oiseau` si OSRM était down et qu'on a fallback Haversine.
+- **Labels permanents zoomables.** Tooltip permanent (prénom) sous chaque pin, halo blanc pour la lisibilité sur tuiles. Sizing au zoom via classes `mm-zoom-far|mid|near|close` posées sur `#map` au `zoomend` de Leaflet — petit en zoom large, gros en proche.
+- **Labels décalés en rosace** quand les coords sont identiques (ou identiques à 5 décimales près). 8 positions radiales autour du pin pour ne plus superposer les prénoms.
+- **Focus participant·e** : nouveau champ `polls.focus_participant_id` configurable dans Paramètres du sondage (dropdown parmi les participant·e·s). Cette personne a un marker plus large avec emoji 🤰 (ou image perso via `public/focus-pin.png`), son trajet est sur une layer dédiée **toujours visible** (override du toggle). Pratique pour garder le contexte autour de la personne autour de qui tourne l'organisation (ex. maman dont on assure le transport).
+
+## 2026-06-03 — Drag'n'drop calendrier + manager override notifications
+
+### Added
+- **Drag'n'drop d'astreintes sur le calendrier admin.** Glisser une assignation depuis une case vers une autre : drop sur case vide = déplacement (demande à 1 personne), drop sur case occupée = échange (demande à 2 personnes). Modal de confirmation avec récap textuel + textarea pour un message libre. Drop sur soi-même ou sur le même slot dans l'autre rôle déjà tenu = bloqué côté UI. Drop refusé serveur si la personne n'a pas voté yes/maybe sur le créneau cible (évite de demander quelque chose que la personne a déclaré indisponible).
+  - Schéma : `move_requests` + `move_request_responses` (token par personne).
+  - Application atomique uniquement quand TOUTES les personnes concernées ont accepté. Re-vérification des propriétaires courants au moment d'appliquer pour détecter une divergence (status `expired`).
+  - Emails pour chaque étape (invite, applied, declined, cancelled, expired). Récap au `contact_email` du sondage si configuré.
+  - Section « Demandes en cours » sous le calendrier avec compteurs et bouton annuler.
+  - Bump `assignments_updated_at` des participant·e·s impacté·e·s → badge « À renotifier » apparaît automatiquement.
+- **Manager peut confirmer/contester hors-mail.** Sur `/admin/.../assignments`, la section « État des envois » devient un statut par personne assignée (avec OU sans notif envoyée). Trois actions par ligne : ✓ Confirmer / ✗ Signaler (prompt JS pour une note) / ↺ Réinitialiser. Pour les personnes sans notif (cas « pas d'internet »), création d'une notif synthétique avec un token bidon et `responded_by='manager'`. Activity log à chaque override. Nouveau champ `notifications.responded_by`.
+
+### Changed
+- **Adresse dans le récap coordonnées** des participant·e·s admin (colonne conditionnée à `poll_addresses_enabled`). Affiche l'adresse géocodée + lat/lng si localisée, sinon l'adresse brute + ⚠️ non-géolocalisée.
+
+### Fixed
+- **Tableau récap trajets : colonnes désalignées.** Refonte avec `<colgroup>` + largeurs fixes + 3 colonnes dédiées pour les legs au lieu d'une seule colonne « Détail » fourre-tout. Ajout d'attributs `data-l` pour le mode responsive mobile.
+
+## 2026-06-02 — Demandes de remplacement + indicateur « à renotifier »
+
+### Added
+- **Demandes de remplacement d'astreinte entre participant·e·s.** Sur sa page `/me`, un lien 🔄 par astreinte ouvre un formulaire qui pré-coche les candidat·e·s (yes/maybe sur ce créneau). Chaque destinataire reçoit un email avec un token unique vers `/swap/TOKEN`. Le·la premier·ère qui clique « J'accepte » déclenche un swap atomique de l'assignation.
+  - Schéma : `swap_requests` + `swap_request_targets`.
+  - Atomicité : transaction avec `UPDATE … WHERE status='open'` + `rowCount()` pour battre la concurrence. Si le manager a réassigné entretemps, status `expired`.
+  - Si l'accepteur tenait l'autre rôle du même créneau, il est libéré (un·e participant·e ne peut pas être à la fois P et S sur le même slot).
+  - 4 emails : invite, requester (accepté), accepteur (confirmation, mention si autre rôle libéré), too-late aux autres targets, annulation.
+  - Vue manager : section « Demandes en cours » sur `/admin/.../assignments` avec compteurs (sollicité·e·s / déclinés / en attente) et bouton annuler.
+- **Indicateur « À renotifier ».** Nouveau champ `participants.assignments_updated_at` bumpé à chaque save manuel, auto-fill ou clear d'astreintes (sur les pids effectivement impactés via diff before/after). Badge ⚠️ côté manager dans la liste des participants et dans le tableau des envois quand `assignments_updated_at > notification.sent_at` (les astreintes ont changé depuis l'envoi du dernier email).
+
 ## 2026-05-31 — Multi-manager, fix mobile définitif
 
 ### Fixed
