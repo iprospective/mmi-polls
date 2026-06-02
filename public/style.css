@@ -706,8 +706,10 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .notif-badge.status-sent              { background: #e0f2fe; color: #075985; }
 .notif-badge.status-confirmed-row     { background: var(--yes-bg); color: var(--yes); }
 .notif-badge.status-contested-row     { background: var(--maybe-bg); color: var(--maybe); }
+.notif-badge.notif-stale              { background: #fef3c7; color: #92400e; border: 1px dashed #d97706; }
 .notif-status tr.status-confirmed-row { background: #f0fdf4; }
 .notif-status tr.status-contested-row { background: #fffbeb; }
+.notif-status tr.notif-stale-row      { background: #fffbeb; }
 
 /* ---------- Nav admin (onglets par sondage) ---------- */
 .admin-poll-header {

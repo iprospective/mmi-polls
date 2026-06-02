@@ -295,13 +295,21 @@ $toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
         ];
         $s = $statuses[$n['status']] ?? $statuses['sent'];
         $name = $n['name'] !== '' ? $n['name'] : explode('@', $n['email'])[0];
+        $a_ts = (int)($n['assignments_updated_at'] ?? 0);
+        $stale = $a_ts > 0 && $a_ts > (int)$n['sent_at'];
       ?>
-        <tr class="<?= e($s['cls']) ?>">
+        <tr class="<?= e($s['cls']) ?><?= $stale ? ' notif-stale-row' : '' ?>">
           <td><strong><?= e($name) ?></strong><br><span class="muted small"><?= e($n['email']) ?></span></td>
           <td class="small"><?= e(date('d/m/Y H:i', (int)$n['sent_at'])) ?></td>
           <td><span class="notif-badge <?= e($s['cls']) ?>"><?= e($s['label']) ?></span>
             <?php if ($n['responded_at']): ?>
               <br><span class="muted small"><?= e(date('d/m/Y H:i', (int)$n['responded_at'])) ?></span>
+            <?php endif; ?>
+            <?php if ($stale): ?>
+              <br><span class="notif-badge notif-stale"
+                       title="Astreintes modifiées le <?= e(date('d/m/Y H:i', $a_ts)) ?>, après l'envoi de cette notification">
+                ⚠️ À renotifier
+              </span>
             <?php endif; ?>
           </td>
           <td><?php if ($n['reply']): ?><blockquote class="contest-reply"><?= nl2br(e($n['reply'])) ?></blockquote><?php endif; ?></td>

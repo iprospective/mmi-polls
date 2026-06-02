@@ -12,7 +12,7 @@ require_once __DIR__ . '/../lib/helpers.php';
  * Lance l'algo de remplissage auto pour un sondage. N'écrase pas les
  * assignations existantes, INSERT seulement ce qui manque.
  *
- * @return array{inserted_p:int, inserted_b:int}
+ * @return array{inserted_p:int, inserted_b:int, affected_pids:int[]}
  */
 function run_auto_fill_assignments(int $poll_id): array {
     $pdo = db();
@@ -176,6 +176,7 @@ function run_auto_fill_assignments(int $poll_id): array {
     // 4. Persistance.
     $inserted_p = 0;
     $inserted_b = 0;
+    $affected = [];
     if ($new_assigns) {
         $pdo->beginTransaction();
         $ins = $pdo->prepare("INSERT INTO assignments (choice_id, role, participant_id) VALUES (?, ?, ?)");
@@ -184,6 +185,7 @@ function run_auto_fill_assignments(int $poll_id): array {
                 try {
                     $ins->execute([$cid, $role, $pid]);
                     if ($role === 'primary') $inserted_p++; else $inserted_b++;
+                    $affected[(int)$pid] = true;
                 } catch (Throwable $e) {
                     // PK clash improbable (existing déjà filtré), on ignore.
                 }
@@ -191,5 +193,9 @@ function run_auto_fill_assignments(int $poll_id): array {
         }
         $pdo->commit();
     }
-    return ['inserted_p' => $inserted_p, 'inserted_b' => $inserted_b];
+    return [
+        'inserted_p'    => $inserted_p,
+        'inserted_b'    => $inserted_b,
+        'affected_pids' => array_keys($affected),
+    ];
 }

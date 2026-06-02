@@ -143,6 +143,41 @@ function db_migrate(PDO $pdo): void {
             UNIQUE(poll_id, participant_id)
         );
         CREATE INDEX IF NOT EXISTS idx_notif_token ON notifications(token_hash);
+
+        -- Demandes de remplacement : un·e participant·e veut céder une
+        -- astreinte. status 'open' = en attente, 'taken' = accepté par
+        -- taken_by_pid, 'cancelled' = retiré par requester/manager,
+        -- 'expired' = l'astreinte d'origine a disparu (manager l'a
+        -- réassignée pendant que la requête tournait).
+        CREATE TABLE IF NOT EXISTS swap_requests (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            poll_id        INTEGER NOT NULL REFERENCES polls(id)        ON DELETE CASCADE,
+            requester_pid  INTEGER NOT NULL REFERENCES participants(id) ON DELETE CASCADE,
+            choice_id      INTEGER NOT NULL REFERENCES poll_choices(id) ON DELETE CASCADE,
+            role           TEXT NOT NULL CHECK (role IN ('primary', 'backup')),
+            status         TEXT NOT NULL DEFAULT 'open'
+                            CHECK (status IN ('open', 'taken', 'cancelled', 'expired')),
+            message        TEXT NOT NULL DEFAULT '',
+            created_at     INTEGER NOT NULL,
+            closed_at      INTEGER,
+            taken_by_pid   INTEGER REFERENCES participants(id) ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_swap_poll_status ON swap_requests(poll_id, status);
+        CREATE INDEX IF NOT EXISTS idx_swap_requester   ON swap_requests(requester_pid);
+
+        -- Destinataires d'une demande de remplacement. Un token par
+        -- (request, target) : URL personnelle, traçabilité des réponses.
+        CREATE TABLE IF NOT EXISTS swap_request_targets (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id     INTEGER NOT NULL REFERENCES swap_requests(id) ON DELETE CASCADE,
+            participant_id INTEGER NOT NULL REFERENCES participants(id)  ON DELETE CASCADE,
+            token_hash     TEXT NOT NULL UNIQUE,
+            sent_at        INTEGER NOT NULL,
+            responded_at   INTEGER,
+            response       TEXT CHECK (response IN ('accept', 'decline')),
+            UNIQUE(request_id, participant_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_swap_target_token ON swap_request_targets(token_hash);
     ");
 
     // Migrations sur la table polls.
@@ -211,6 +246,13 @@ function db_migrate(PDO $pdo): void {
     if (!in_array('ical_token', $present, true)) {
         // Token pour l'abonnement iCal personnel (généré à la 1re demande).
         $pdo->exec("ALTER TABLE participants ADD COLUMN ical_token TEXT NOT NULL DEFAULT ''");
+    }
+    if (!in_array('assignments_updated_at', $present, true)) {
+        // Bumpé à chaque ajout/suppression/changement d'astreinte sur cette
+        // personne (save manuel, auto-fill, clear). Si > notification.sent_at,
+        // les managers voient un badge « À renotifier » : le contenu envoyé
+        // ne correspond plus aux astreintes actuelles.
+        $pdo->exec("ALTER TABLE participants ADD COLUMN assignments_updated_at INTEGER NOT NULL DEFAULT 0");
     }
     foreach ([
         'address'          => "TEXT NOT NULL DEFAULT ''",

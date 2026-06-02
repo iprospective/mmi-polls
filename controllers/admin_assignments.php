@@ -63,6 +63,24 @@ function route_admin_save_assignments(string $uuid): void {
     $vp->execute([$poll['id']]);
     $valid_part_ids = array_flip(array_map('intval', array_column($vp->fetchAll(), 'id')));
 
+    // Snapshot AVANT pour diff (qui a perdu/gagné une astreinte).
+    $before = poll_assignments_map((int)$poll['id']);
+
+    // Normalise le POST en map[cid][role] = pid (après validation).
+    $after = [];
+    foreach ($input as $cid => $role_map) {
+        $cid = (int)$cid;
+        if (!isset($valid_choice_ids[$cid])) continue;
+        if (!is_array($role_map)) continue;
+        $prim = (int)($role_map['primary'] ?? 0);
+        $back = (int)($role_map['backup']  ?? 0);
+        if ($prim > 0 && !isset($valid_part_ids[$prim])) $prim = 0;
+        if ($back > 0 && !isset($valid_part_ids[$back])) $back = 0;
+        if ($prim > 0 && $prim === $back) $back = 0;
+        if ($prim > 0) $after[$cid]['primary'] = $prim;
+        if ($back > 0) $after[$cid]['backup']  = $back;
+    }
+
     $pdo->beginTransaction();
     $del = $pdo->prepare("
         DELETE FROM assignments
@@ -75,23 +93,31 @@ function route_admin_save_assignments(string $uuid): void {
     $del->execute([$poll['id']]);
 
     $ins = $pdo->prepare("INSERT INTO assignments (choice_id, role, participant_id) VALUES (?, ?, ?)");
-    foreach ($input as $cid => $role_map) {
-        $cid = (int)$cid;
-        if (!isset($valid_choice_ids[$cid])) continue;
-        if (!is_array($role_map)) continue;
-
-        $prim = (int)($role_map['primary'] ?? 0);
-        $back = (int)($role_map['backup']  ?? 0);
-        if ($prim > 0 && !isset($valid_part_ids[$prim])) $prim = 0;
-        if ($back > 0 && !isset($valid_part_ids[$back])) $back = 0;
-        // Anti-doublon : interdit la même personne aux deux rôles.
-        // Si conflit, on garde le principal et on retire le suppléant.
-        if ($prim > 0 && $prim === $back) $back = 0;
-
-        if ($prim > 0) $ins->execute([$cid, 'primary', $prim]);
-        if ($back > 0) $ins->execute([$cid, 'backup',  $back]);
+    foreach ($after as $cid => $by_role) {
+        foreach ($by_role as $role => $pid) {
+            $ins->execute([$cid, $role, $pid]);
+        }
     }
     $pdo->commit();
+
+    // Diff before/after : tout participant dont l'ensemble (cid, role) change
+    // doit être marqué stale (côté ancien et côté nouveau).
+    $stale_pids = [];
+    $cids = array_unique(array_merge(array_keys($before), array_keys($after)));
+    foreach ($cids as $cid) {
+        foreach (['primary', 'backup'] as $role) {
+            $old = (int)($before[$cid][$role] ?? 0);
+            $new = (int)($after[$cid][$role]  ?? 0);
+            if ($old !== $new) {
+                if ($old) $stale_pids[$old] = true;
+                if ($new) $stale_pids[$new] = true;
+            }
+        }
+    }
+    if ($stale_pids) {
+        mark_participants_assignments_stale(array_keys($stale_pids));
+    }
+
     log_activity((int)$poll['id'], 'assign_save');
     flash_set('ok', 'Astreintes enregistrées.');
     redirect('/admin/polls/' . $uuid . '/assignments');
@@ -102,6 +128,9 @@ function route_admin_auto_fill_assignments(string $uuid): void {
     require_poll_access($poll);
     $res = run_auto_fill_assignments((int)$poll['id']);
     $total = $res['inserted_p'] + $res['inserted_b'];
+    if (!empty($res['affected_pids'])) {
+        mark_participants_assignments_stale($res['affected_pids']);
+    }
     log_activity((int)$poll['id'], 'assign_autofill', [
         'target'  => "+{$res['inserted_p']} principaux, +{$res['inserted_b']} suppléants",
         'payload' => $res,
@@ -118,6 +147,7 @@ function route_admin_auto_fill_assignments(string $uuid): void {
 function route_admin_clear_assignments(string $uuid): void {
     $poll = find_poll($uuid);
     require_poll_access($poll);
+    $affected = poll_assigned_participant_ids((int)$poll['id']);
     $stmt = db()->prepare("
         DELETE FROM assignments
         WHERE choice_id IN (
@@ -127,6 +157,7 @@ function route_admin_clear_assignments(string $uuid): void {
         )
     ");
     $stmt->execute([$poll['id']]);
+    if ($affected) mark_participants_assignments_stale($affected);
     log_activity((int)$poll['id'], 'assign_clear');
     flash_set('ok', 'Toutes les astreintes ont été supprimées.');
     redirect('/admin/polls/' . $uuid . '/assignments');

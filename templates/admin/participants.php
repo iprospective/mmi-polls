@@ -122,9 +122,24 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
         <?php endif; ?>
       </td>
       <td data-l="Notif" data-sort-value="<?= e($r['notif_status'] ?? '') ?>">
+        <?php
+          $a_ts = (int)($r['assignments_updated_at'] ?? 0);
+          $n_ts = (int)($r['notif_sent_at'] ?? 0);
+          $stale = $r['notif_status'] && $a_ts > 0 && $a_ts > $n_ts;
+        ?>
         <?php if ($r['notif_status']): ?>
           <span class="notif-badge status-<?= e($r['notif_status']) ?>-row">
             <?= ['sent' => 'Envoyé', 'confirmed' => 'Confirmé', 'contested' => 'Signalement'][$r['notif_status']] ?? e($r['notif_status']) ?>
+          </span>
+          <?php if ($stale): ?>
+            <br><span class="notif-badge notif-stale"
+                     title="Les astreintes ont changé depuis l'envoi du <?= e(date('d/m/Y H:i', $n_ts)) ?> (modif : <?= e(date('d/m/Y H:i', $a_ts)) ?>)">
+              ⚠️ À renotifier
+            </span>
+          <?php endif; ?>
+        <?php elseif ($a_ts > 0 && (int)$r['primary_count'] + (int)$r['backup_count'] > 0): ?>
+          <span class="notif-badge notif-stale" title="Astreintes posées le <?= e(date('d/m/Y H:i', $a_ts)) ?>, jamais notifié·e">
+            ⚠️ Jamais notifié·e
           </span>
         <?php else: ?>
           <span class="muted small">—</span>

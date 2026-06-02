@@ -7,7 +7,7 @@ require_once __DIR__ . '/../lib/mailer.php';
 
 function poll_notifications_status(int $poll_id): array {
     $stmt = db()->prepare("
-        SELECT n.*, p.name, p.email
+        SELECT n.*, p.name, p.email, p.assignments_updated_at
         FROM notifications n
         JOIN participants p ON p.id = n.participant_id
         WHERE n.poll_id = ?
