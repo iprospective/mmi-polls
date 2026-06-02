@@ -51,6 +51,35 @@ require __DIR__ . '/_admin_nav.php';
   </form>
 </details>
 
+<form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/dates/slot-hours" class="card">
+  <?= csrf_field() ?>
+  <h2 style="margin-top:0;">Horaires des créneaux</h2>
+  <p class="muted small">Précisez les plages horaires de chaque libellé de créneau. Le chevauchement est volontaire&nbsp;: il donne au conducteur·rice une marge avant/après son créneau pour le trajet, évitant qu'un retard ne déborde sur le créneau de la personne suivante. <code>end &lt; start</code> = passage au lendemain (ex&nbsp;: Nuit 22:00 → 09:00).</p>
+  <table class="dates-table">
+    <thead>
+      <tr><th>Libellé</th><th>Début</th><th>Fin</th></tr>
+    </thead>
+    <tbody>
+    <?php foreach ($slot_labels as $lbl):
+      $h = $current_hours[mb_strtolower($lbl)] ?? ['start' => '', 'end' => '']; ?>
+      <tr>
+        <td>
+          <input type="text" name="label[]" value="<?= e($lbl) ?>" required>
+        </td>
+        <td>
+          <input type="time" name="start[]" value="<?= e($h['start']) ?>" required>
+        </td>
+        <td>
+          <input type="time" name="end[]" value="<?= e($h['end']) ?>" required>
+        </td>
+      </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <p class="muted small">Pour ajouter un libellé qui n'est pas encore dans la liste, créez-le simplement comme nouveau créneau ci-dessous&nbsp;: il apparaîtra ici la prochaine fois.</p>
+  <button type="submit">Enregistrer les horaires</button>
+</form>
+
 <h2>Dates &amp; créneaux existants</h2>
 
 <?php if (!$dates): ?>

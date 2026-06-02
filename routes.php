@@ -35,6 +35,7 @@ return [
     ['GET',  '#^/admin/polls/([0-9a-f-]+)/dates$#',                       'admin_dates',         'route_admin_dates'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/dates$#',                       'admin_dates',         'route_admin_add_date'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/dates/bulk$#',                  'admin_dates',         'route_admin_add_dates_bulk'],
+    ['POST', '#^/admin/polls/([0-9a-f-]+)/dates/slot-hours$#',            'admin_dates',         'route_admin_save_slot_hours'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/dates/(\d+)/delete$#',          'admin_dates',         'route_admin_delete_date'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/dates/(\d+)/choices$#',         'admin_dates',         'route_admin_add_choice'],
     ['POST', '#^/admin/polls/([0-9a-f-]+)/choices/(\d+)/delete$#',        'admin_dates',         'route_admin_delete_choice'],

@@ -109,6 +109,47 @@ function addresses_globally_enabled(): bool {
 }
 
 /**
+ * Renvoie la map des horaires de créneaux pour un sondage, indexée
+ * par libellé en minuscules. Fusion de :
+ *   1. Défauts (Journée 7-20, Soirée 18-00, Nuit 22-09)
+ *   2. Overrides éventuels stockés dans poll.slot_hours (JSON)
+ *
+ * Format renvoyé : ['journée' => ['start' => '07:00', 'end' => '20:00'], …]
+ * Les chevauchements défaut sont volontaires : marge de transport pour
+ * éviter qu'un retard ne déborde sur le créneau suivant.
+ */
+function poll_slot_hours_map(array $poll): array {
+    $map = [
+        'journée' => ['start' => '07:00', 'end' => '20:00'],
+        'journee' => ['start' => '07:00', 'end' => '20:00'],
+        'jour'    => ['start' => '07:00', 'end' => '20:00'],
+        'soirée'  => ['start' => '18:00', 'end' => '00:00'],
+        'soiree'  => ['start' => '18:00', 'end' => '00:00'],
+        'soir'    => ['start' => '18:00', 'end' => '00:00'],
+        'nuit'    => ['start' => '22:00', 'end' => '09:00'],
+    ];
+    $stored = (string)($poll['slot_hours'] ?? '');
+    if ($stored !== '') {
+        $parsed = json_decode($stored, true);
+        if (is_array($parsed)) {
+            foreach ($parsed as $label => $hours) {
+                if (!is_array($hours)) continue;
+                $start = (string)($hours['start'] ?? '');
+                $end   = (string)($hours['end']   ?? '');
+                if (!preg_match('/^\d{2}:\d{2}$/', $start) || !preg_match('/^\d{2}:\d{2}$/', $end)) continue;
+                $map[mb_strtolower($label)] = ['start' => $start, 'end' => $end];
+            }
+        }
+    }
+    return $map;
+}
+
+function poll_slot_hours_lookup(array $poll, string $label): ?array {
+    $map = poll_slot_hours_map($poll);
+    return $map[mb_strtolower($label)] ?? null;
+}
+
+/**
  * Distance en km entre deux points (lat, lng) — formule Haversine.
  */
 function haversine_km(float $lat1, float $lng1, float $lat2, float $lng2): float {

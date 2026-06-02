@@ -9,11 +9,54 @@ function route_admin_dates(string $uuid): void {
     $poll = find_poll($uuid);
     require_poll_access($poll);
     $dates = poll_structure((int)$poll['id']);
+
+    // Liste des libellés uniques utilisés dans ce sondage (pour la
+    // section horaires des créneaux). On préfixe avec les défauts
+    // Journée/Soirée/Nuit même s'ils ne sont pas (encore) utilisés.
+    $labels = ['Journée', 'Soirée', 'Nuit'];
+    foreach ($dates as $d) foreach ($d['choices'] as $c) {
+        if (!in_array($c['label'], $labels, true)) $labels[] = $c['label'];
+    }
+    $current_hours = poll_slot_hours_map($poll);
+
     render('admin/dates', [
         'page_title' => 'Dates & créneaux — ' . $poll['title'],
         'poll' => $poll,
         'dates' => $dates,
+        'slot_labels' => $labels,
+        'current_hours' => $current_hours,
     ]);
+}
+
+function route_admin_save_slot_hours(string $uuid): void {
+    $poll = find_poll($uuid);
+    require_poll_access($poll);
+
+    $labels = $_POST['label'] ?? [];
+    $starts = $_POST['start'] ?? [];
+    $ends   = $_POST['end']   ?? [];
+    if (!is_array($labels) || !is_array($starts) || !is_array($ends)) {
+        flash_set('err', 'Données invalides.');
+        redirect('/admin/polls/' . $uuid . '/dates');
+    }
+
+    $map = [];
+    $n = min(count($labels), count($starts), count($ends));
+    for ($i = 0; $i < $n; $i++) {
+        $label = trim((string)$labels[$i]);
+        $start = trim((string)$starts[$i]);
+        $end   = trim((string)$ends[$i]);
+        if ($label === '') continue;
+        if (!preg_match('/^\d{2}:\d{2}$/', $start)) continue;
+        if (!preg_match('/^\d{2}:\d{2}$/', $end))   continue;
+        $map[$label] = ['start' => $start, 'end' => $end];
+    }
+
+    $json = $map ? json_encode($map, JSON_UNESCAPED_UNICODE) : '';
+    $stmt = db()->prepare("UPDATE polls SET slot_hours = ? WHERE id = ?");
+    $stmt->execute([$json, $poll['id']]);
+    flash_set('ok', count($map) . ' horaire(s) de créneau enregistré(s).');
+    redirect('/admin/polls/' . $uuid . '/dates');
 }
 
 function route_admin_add_date(string $uuid): void {

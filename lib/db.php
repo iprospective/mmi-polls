@@ -175,6 +175,10 @@ function db_migrate(PDO $pdo): void {
         // distance dans l'algo). Master switch global aussi nécessaire
         // (CONFIG.addresses.enabled). Voir poll_addresses_enabled().
         'addresses_enabled'  => "INTEGER NOT NULL DEFAULT 1",
+        // JSON encodant la map label -> {start, end} pour les horaires
+        // des créneaux. Vide = fallback sur les défauts (helper
+        // poll_slot_hours_map). Format HH:MM. end < start = lendemain.
+        'slot_hours' => "TEXT NOT NULL DEFAULT ''",
     ] as $col => $sql_type) {
         if (!in_array($col, $present, true)) {
             $pdo->exec("ALTER TABLE polls ADD COLUMN $col $sql_type");

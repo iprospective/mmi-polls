@@ -59,7 +59,7 @@ function build_ical_for_participant(array $participant, array $poll): string {
         $day = $a['day'];
         $label = $a['label'];
         $role  = $a['role'] === 'primary' ? 'Principal·e' : 'Suppléant·e';
-        [$dtstart, $dtend, $all_day] = ical_event_window($day, $label);
+        [$dtstart, $dtend, $all_day] = ical_event_window($day, $label, $poll);
         $uid = 'astreinte-' . $participant['id'] . '-' . md5($day . $label . $a['role']) . '@' . $host;
         $summary = $role . ' — ' . $label . ' (' . $poll['title'] . ')';
         $lines[] = 'BEGIN:VEVENT';
@@ -82,36 +82,27 @@ function build_ical_for_participant(array $participant, array $poll): string {
 }
 
 /**
- * Renvoie [dtstart, dtend, all_day]. dtstart/dtend en format YYYYMMDD
- * (all-day) ou YYYYMMDDTHHMMSS (avec heure locale TZID Europe/Paris).
+ * Renvoie [dtstart, dtend, all_day] à partir des horaires configurés
+ * pour le sondage (poll.slot_hours via poll_slot_hours_lookup).
+ * Si le libellé n'a pas d'horaire défini, fallback all-day.
+ * end <= start (en horaire pur) = passage au lendemain.
  */
-function ical_event_window(string $day, string $label): array {
-    $key = mb_strtolower($label);
-    $start = new DateTimeImmutable($day);
-    $next  = $start->modify('+1 day');
-    if ($key === 'journée' || $key === 'journee' || $key === 'jour') {
-        return [
-            $start->format('Ymd\T') . '090000',
-            $start->format('Ymd\T') . '190000',
-            false,
-        ];
+function ical_event_window(string $day, string $label, array $poll): array {
+    $start_date = new DateTimeImmutable($day);
+    $next_date  = $start_date->modify('+1 day');
+
+    $hours = poll_slot_hours_lookup($poll, $label);
+    if ($hours === null) {
+        return [$start_date->format('Ymd'), $next_date->format('Ymd'), true];
     }
-    if ($key === 'soirée' || $key === 'soiree' || $key === 'soir') {
-        return [
-            $start->format('Ymd\T') . '190000',
-            $start->format('Ymd\T') . '230000',
-            false,
-        ];
-    }
-    if ($key === 'nuit') {
-        return [
-            $start->format('Ymd\T') . '230000',
-            $next->format('Ymd\T')  . '070000',
-            false,
-        ];
-    }
-    // Libellé inconnu → all-day (DTEND exclusif → +1 jour)
-    return [$start->format('Ymd'), $next->format('Ymd'), true];
+
+    $start_hm = str_replace(':', '', $hours['start']) . '00';
+    $end_hm   = str_replace(':', '', $hours['end'])   . '00';
+    $dtstart  = $start_date->format('Ymd') . 'T' . $start_hm;
+    // Si end <= start (heure pure), la fin est le lendemain
+    $end_anchor = ($hours['end'] <= $hours['start']) ? $next_date : $start_date;
+    $dtend = $end_anchor->format('Ymd') . 'T' . $end_hm;
+    return [$dtstart, $dtend, false];
 }
 
 function ical_escape(string $s): string {
