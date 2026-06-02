@@ -265,6 +265,17 @@ function db_migrate(PDO $pdo): void {
             $pdo->exec("ALTER TABLE participants ADD COLUMN $col $sql_type");
         }
     }
+
+    // Migrations sur la table notifications.
+    $cols = $pdo->query("PRAGMA table_info(notifications)")->fetchAll();
+    $present = array_column($cols, 'name');
+    if (!in_array('responded_by', $present, true)) {
+        // Qui a posé la dernière réponse : '' (envoyé, pas répondu),
+        // 'participant' (clic du lien email), 'manager' (override admin
+        // depuis la page astreintes — utile quand la personne n'a pas
+        // d'internet et a confirmé/contesté hors-ligne).
+        $pdo->exec("ALTER TABLE notifications ADD COLUMN responded_by TEXT NOT NULL DEFAULT ''");
+    }
 }
 
 function uuid_v4(): string {

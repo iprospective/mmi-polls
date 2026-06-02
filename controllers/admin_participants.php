@@ -19,6 +19,7 @@ function route_admin_participants_list(string $uuid): void {
             p.id, p.name, p.email, p.created_at, p.votes_updated_at,
             p.phone, p.contact_method, p.hidden_in_public,
             p.assignments_updated_at,
+            p.address, p.latitude, p.longitude, p.geocoded_address,
             COALESCE(SUM(CASE WHEN v.value='yes'   THEN 1 ELSE 0 END), 0) AS yes_count,
             COALESCE(SUM(CASE WHEN v.value='maybe' THEN 1 ELSE 0 END), 0) AS maybe_count,
             COALESCE(SUM(CASE WHEN v.value='no'    THEN 1 ELSE 0 END), 0) AS no_count,

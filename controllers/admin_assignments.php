@@ -19,7 +19,7 @@ function route_admin_assignments(string $uuid): void {
     $participants = poll_participants((int)$poll['id']);
     $votes        = poll_votes_map((int)$poll['id']);
     $assigns      = poll_assignments_map((int)$poll['id']);
-    $notifs       = poll_notifications_status((int)$poll['id']);
+    $notifs       = poll_confirmation_status((int)$poll['id']);
 
     // Participants ayant au moins une assignation (pour le formulaire de notification).
     $assigned_ids = [];

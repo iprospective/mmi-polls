@@ -707,9 +707,10 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .notif-badge.status-confirmed-row     { background: var(--yes-bg); color: var(--yes); }
 .notif-badge.status-contested-row     { background: var(--maybe-bg); color: var(--maybe); }
 .notif-badge.notif-stale              { background: #fef3c7; color: #92400e; border: 1px dashed #d97706; }
-.notif-status tr.status-confirmed-row { background: #f0fdf4; }
-.notif-status tr.status-contested-row { background: #fffbeb; }
-.notif-status tr.notif-stale-row      { background: #fffbeb; }
+.notif-badge.status-never             { background: #f3f4f6; color: #6b7280; }
+.override-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+.override-actions button { font-size: 0.78rem; padding: 0.25rem 0.55rem; }
+.override-actions button[disabled] { opacity: 0.5; cursor: not-allowed; }
 
 /* ---------- Demandes de remplacement (swap) ---------- */
 .swap-link {
@@ -729,6 +730,10 @@ a.btn:hover { background: var(--accent-hover); color: #fff; text-decoration: non
 .check-group.swap-targets label { display: flex; align-items: center; gap: 0.45rem; }
 .check-group.swap-targets .v-yes,
 .check-group.swap-targets .v-maybe { padding: 0.05rem 0.4rem; border-radius: 999px; }
+.notif-status tr.status-confirmed-row { background: #f0fdf4; }
+.notif-status tr.status-contested-row { background: #fffbeb; }
+.notif-status tr.status-never-row     { background: #f9fafb; }
+.notif-status tr.notif-stale-row      { background: #fffbeb; }
 
 /* ---------- Nav admin (onglets par sondage) ---------- */
 .admin-poll-header {

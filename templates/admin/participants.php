@@ -274,6 +274,7 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
 <p class="muted small">Référentiel de contact : email, téléphone, plateformes préférées.
    Cliquer sur une colonne plateforme pour grouper les personnes joignables sur ce canal.</p>
 
+<?php $show_addr = poll_addresses_enabled($poll); ?>
 <div class="grid-wrap">
 <table class="participants-table contacts-table sortable">
   <thead>
@@ -281,6 +282,7 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
       <th>Nom ↕</th>
       <th>Email ↕</th>
       <th>Téléphone ↕</th>
+      <?php if ($show_addr): ?><th>Adresse ↕</th><?php endif; ?>
       <?php foreach (contact_methods() as $key => $label): ?>
         <th data-sort-type="num"><?= e($label) ?> ↕</th>
       <?php endforeach; ?>
@@ -304,6 +306,24 @@ $render_row = function (array $r, bool $is_orphan = false) use ($poll, $total_ch
             <span class="muted">—</span>
           <?php endif; ?>
         </td>
+        <?php if ($show_addr):
+          $addr_raw = trim((string)($r['address'] ?? ''));
+          $addr_geo = trim((string)($r['geocoded_address'] ?? ''));
+          $addr_lat = $r['latitude'];
+          $addr_lng = $r['longitude'];
+        ?>
+          <td data-l="Adresse" data-sort-value="<?= e(mb_strtolower($addr_geo ?: $addr_raw)) ?>">
+            <?php if ($addr_lat !== null && $addr_lng !== null): ?>
+              <?= e($addr_geo !== '' ? $addr_geo : $addr_raw) ?>
+              <br><span class="muted small">📍 <?= number_format((float)$addr_lat, 5) ?>, <?= number_format((float)$addr_lng, 5) ?></span>
+            <?php elseif ($addr_raw !== ''): ?>
+              <?= e($addr_raw) ?>
+              <br><span class="muted small">⚠️ non géolocalisée</span>
+            <?php else: ?>
+              <span class="muted">—</span>
+            <?php endif; ?>
+          </td>
+        <?php endif; ?>
         <?php foreach (contact_methods() as $key => $label):
           $has = in_array($key, $cms, true); ?>
           <td data-l="<?= e($label) ?>" class="check-col <?= $has ? 'cm-' . e($key) : '' ?>"

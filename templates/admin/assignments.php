@@ -327,35 +327,64 @@ $toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
 </form>
 
 <?php if ($notifs): ?>
-  <h3>État des envois</h3>
+  <h3>Statut par personne assignée</h3>
+  <p class="muted small">
+    Pour quelqu'un·e qui n'a pas internet ou que vous avez eu en direct,
+    les boutons <strong>✓ Confirmer</strong> / <strong>✗ Signaler</strong> permettent de
+    poser la réponse à sa place. <strong>↺ Réinitialiser</strong> rebascule en attente.
+  </p>
   <div class="grid-wrap">
   <table class="dates-table notif-status">
     <thead>
       <tr>
-        <th>Participant</th>
+        <th>Participant·e</th>
         <th>Envoyé le</th>
         <th>Statut</th>
         <th>Réponse</th>
+        <th class="no-sort">Override manager</th>
       </tr>
     </thead>
     <tbody>
-      <?php foreach ($notifs as $n):
+      <?php
         $statuses = [
-          'sent'      => ['label' => 'Envoyé',    'cls' => 'status-sent'],
-          'confirmed' => ['label' => 'Confirmé',  'cls' => 'status-confirmed-row'],
-          'contested' => ['label' => 'Contesté',  'cls' => 'status-contested-row'],
+          'sent'      => ['label' => 'Envoyé',          'cls' => 'status-sent'],
+          'confirmed' => ['label' => 'Confirmé',        'cls' => 'status-confirmed-row'],
+          'contested' => ['label' => 'Contesté',        'cls' => 'status-contested-row'],
         ];
-        $s = $statuses[$n['status']] ?? $statuses['sent'];
-        $name = $n['name'] !== '' ? $n['name'] : explode('@', $n['email'])[0];
-        $a_ts = (int)($n['assignments_updated_at'] ?? 0);
-        $stale = $a_ts > 0 && $a_ts > (int)$n['sent_at'];
+      foreach ($notifs as $n):
+        $name   = $n['name'] !== '' ? $n['name'] : explode('@', $n['email'])[0];
+        $a_ts   = (int)($n['assignments_updated_at'] ?? 0);
+        $has_notif = !empty($n['notif_id']);
+        $status  = $has_notif ? (string)$n['notif_status'] : 'never';
+        $sent_at = (int)($n['notif_sent_at'] ?? 0);
+        $resp_at = (int)($n['notif_responded_at'] ?? 0);
+        $resp_by = (string)($n['notif_responded_by'] ?? '');
+        $reply   = (string)($n['notif_reply'] ?? '');
+        $stale   = $has_notif && $a_ts > 0 && $a_ts > $sent_at;
+        $row_cls = $has_notif ? ($statuses[$status]['cls'] ?? '') : 'status-never-row';
       ?>
-        <tr class="<?= e($s['cls']) ?><?= $stale ? ' notif-stale-row' : '' ?>">
+        <tr class="<?= e($row_cls) ?><?= $stale ? ' notif-stale-row' : '' ?>">
           <td><strong><?= e($name) ?></strong><br><span class="muted small"><?= e($n['email']) ?></span></td>
-          <td class="small"><?= e(date('d/m/Y H:i', (int)$n['sent_at'])) ?></td>
-          <td><span class="notif-badge <?= e($s['cls']) ?>"><?= e($s['label']) ?></span>
-            <?php if ($n['responded_at']): ?>
-              <br><span class="muted small"><?= e(date('d/m/Y H:i', (int)$n['responded_at'])) ?></span>
+          <td class="small">
+            <?php if ($has_notif): ?>
+              <?= e(date('d/m/Y H:i', $sent_at)) ?>
+            <?php else: ?>
+              <span class="muted">jamais envoyé</span>
+            <?php endif; ?>
+          </td>
+          <td>
+            <?php if ($has_notif): ?>
+              <span class="notif-badge <?= e($statuses[$status]['cls']) ?>">
+                <?= e($statuses[$status]['label']) ?>
+              </span>
+              <?php if ($resp_by === 'manager'): ?>
+                <br><span class="muted small">posé par le manager</span>
+              <?php endif; ?>
+              <?php if ($resp_at): ?>
+                <br><span class="muted small"><?= e(date('d/m/Y H:i', $resp_at)) ?></span>
+              <?php endif; ?>
+            <?php else: ?>
+              <span class="notif-badge status-never">Non notifié·e</span>
             <?php endif; ?>
             <?php if ($stale): ?>
               <br><span class="notif-badge notif-stale"
@@ -364,7 +393,24 @@ $toggle_url = $_base . ($_qs ? '?' . http_build_query($_qs) : '');
               </span>
             <?php endif; ?>
           </td>
-          <td><?php if ($n['reply']): ?><blockquote class="contest-reply"><?= nl2br(e($n['reply'])) ?></blockquote><?php endif; ?></td>
+          <td><?php if ($reply): ?><blockquote class="contest-reply"><?= nl2br(e($reply)) ?></blockquote><?php endif; ?></td>
+          <td class="actions-cell">
+            <form method="post" action="/admin/polls/<?= e($poll['uuid']) ?>/notifications/<?= (int)$n['id'] ?>/override" class="override-actions">
+              <?= csrf_field() ?>
+              <button type="submit" name="action" value="confirm"
+                      <?= $status === 'confirmed' ? 'disabled' : '' ?>
+                      title="Marquer comme confirmé (hors-mail)">✓ Confirmer</button>
+              <button type="submit" name="action" value="contest" class="danger"
+                      onclick="var r = prompt('Note pour ce signalement (facultatif) :', ''); if (r === null) return false; this.form.reply.value = r; return true;"
+                      <?= $status === 'contested' ? 'disabled' : '' ?>
+                      title="Marquer comme contesté (hors-mail)">✗ Signaler</button>
+              <input type="hidden" name="reply" value="">
+              <?php if ($has_notif && $status !== 'sent'): ?>
+                <button type="submit" name="action" value="reset" class="link"
+                        title="Réinitialiser : repasse en attente de réponse">↺ Réinitialiser</button>
+              <?php endif; ?>
+            </form>
+          </td>
         </tr>
       <?php endforeach; ?>
     </tbody>
