@@ -171,16 +171,16 @@ function http_get(string $url, string $ua, array $headers = []): array {
 }
 
 function geocode_user_agent(): string {
-    $app = rtrim((string)($GLOBALS['CONFIG']['app_url'] ?? 'mmidate'), '/');
+    $app = rtrim((string)($GLOBALS['CONFIG']['app_url'] ?? 'MMIrelay'), '/');
     $contact = geocode_contact_email();
-    return "mmidate/1.0 ($app; $contact)";
+    return "MMIrelay/1.0 ($app; $contact)";
 }
 
 function geocode_contact_email(): string {
     $email = trim((string)($GLOBALS['CONFIG']['admin']['email'] ?? ''));
     if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) return $email;
     // Fallback : noreply@<domain de app_url>
-    $host = parse_url((string)($GLOBALS['CONFIG']['app_url'] ?? ''), PHP_URL_HOST) ?: 'mmidate.local';
+    $host = parse_url((string)($GLOBALS['CONFIG']['app_url'] ?? ''), PHP_URL_HOST) ?: 'MMIrelay.local';
     return 'noreply@' . $host;
 }
 

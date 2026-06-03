@@ -52,9 +52,9 @@ function route_admin_delete_manager(string $id): void {
 function notify_manager_validated(array $m): void {
     $app_url = rtrim($GLOBALS['CONFIG']['app_url'], '/');
     $name = $m['name'] !== '' ? $m['name'] : $m['email'];
-    $subject = '[mmidate] Votre compte manager a été validé';
+    $subject = '[MMIrelay] Votre compte manager a été validé';
     $body  = "Bonjour $name,\n\n";
-    $body .= "Votre compte manager mmidate vient d'être validé. Vous pouvez maintenant vous connecter :\n\n";
+    $body .= "Votre compte manager MMIrelay vient d'être validé. Vous pouvez maintenant vous connecter :\n\n";
     $body .= "$app_url/login\n\n";
     $body .= "Bonne organisation !\n";
     try { send_mail($m['email'], $subject, $body); }
@@ -63,9 +63,9 @@ function notify_manager_validated(array $m): void {
 
 function notify_manager_rejected(array $m, string $reason): void {
     $name = $m['name'] !== '' ? $m['name'] : $m['email'];
-    $subject = '[mmidate] Demande de compte manager refusée';
+    $subject = '[MMIrelay] Demande de compte manager refusée';
     $body  = "Bonjour $name,\n\n";
-    $body .= "Votre demande de compte manager mmidate a été refusée.\n";
+    $body .= "Votre demande de compte manager MMIrelay a été refusée.\n";
     if ($reason !== '') $body .= "\nMotif : $reason\n";
     $body .= "\nSi vous pensez qu'il s'agit d'une erreur, contactez l'administrateur·rice.\n";
     try { send_mail($m['email'], $subject, $body); }

@@ -372,14 +372,14 @@ function send_move_invite_email(array $poll, array $req, array $target, string $
     if ($role_in_swap === 'src') {
         // La personne « source » : on lui propose de bouger de src vers dst.
         if ($is_swap) {
-            $subject = '[mmidate] Proposition d\'échange d\'astreinte par ' . $initiated_by_label;
+            $subject = '[MMIrelay] Proposition d\'échange d\'astreinte par ' . $initiated_by_label;
             $body  = "Bonjour $t_name,\n\n";
             $body .= "$initiated_by_label propose d'échanger votre astreinte :\n";
             $body .= "  • Actuellement : $src_slot\n";
             $body .= "  • Vous prendriez à la place : $dst_slot\n";
             $body .= "  • " . trim(($req['dst_name'] ?? 'L\'autre personne')) . " prendrait votre créneau actuel\n\n";
         } else {
-            $subject = '[mmidate] Proposition de déplacement d\'astreinte par ' . $initiated_by_label;
+            $subject = '[MMIrelay] Proposition de déplacement d\'astreinte par ' . $initiated_by_label;
             $body  = "Bonjour $t_name,\n\n";
             $body .= "$initiated_by_label propose de déplacer votre astreinte :\n";
             $body .= "  • Actuellement : $src_slot\n";
@@ -387,7 +387,7 @@ function send_move_invite_email(array $poll, array $req, array $target, string $
         }
     } else {
         // dst : la personne qui devrait prendre src_slot en échange.
-        $subject = '[mmidate] Proposition d\'échange d\'astreinte par ' . $initiated_by_label;
+        $subject = '[MMIrelay] Proposition d\'échange d\'astreinte par ' . $initiated_by_label;
         $body  = "Bonjour $t_name,\n\n";
         $body .= "$initiated_by_label propose d'échanger votre astreinte avec celle de "
               . ($req['src_name'] ?? 'quelqu\'un') . " :\n";
@@ -405,7 +405,7 @@ function send_move_invite_email(array $poll, array $req, array $target, string $
 
 function send_move_cancelled_email(array $req, array $resp_row, string $by_label): void {
     $t_name = $resp_row['name'] !== '' ? $resp_row['name'] : explode('@', $resp_row['email'])[0];
-    $subject = '[mmidate] Demande d\'échange annulée par ' . $by_label;
+    $subject = '[MMIrelay] Demande d\'échange annulée par ' . $by_label;
     $body  = "Bonjour $t_name,\n\n";
     $body .= "La demande de déplacement/échange d'astreinte vous concernant a été annulée par $by_label.\n";
     $body .= "Rien à faire de votre côté. Merci !\n";
@@ -422,7 +422,7 @@ function notify_other_responders_of_close(array $req, int $skip_pid, string $rea
         if ((int)$r['participant_id'] === $skip_pid) continue;
         if ($r['response'] === 'decline') continue;
         $t_name = $r['name'] !== '' ? $r['name'] : explode('@', $r['email'])[0];
-        $subject = '[mmidate] Demande d\'échange clôturée';
+        $subject = '[MMIrelay] Demande d\'échange clôturée';
         $body  = "Bonjour $t_name,\n\n";
         $body .= "La demande d'échange d'astreinte $tail. Rien à faire de votre côté.\n";
         try { send_mail($r['email'], $subject, $body); }
@@ -434,7 +434,7 @@ function notify_applied(array $req): void {
     $app_url = rtrim($GLOBALS['CONFIG']['app_url'], '/');
     foreach ($req['responses'] as $r) {
         $t_name = $r['name'] !== '' ? $r['name'] : explode('@', $r['email'])[0];
-        $subject = '[mmidate] Échange d\'astreinte appliqué';
+        $subject = '[MMIrelay] Échange d\'astreinte appliqué';
         $body  = "Bonjour $t_name,\n\n";
         $body .= "Bonne nouvelle : l'échange/déplacement d'astreinte est désormais appliqué dans le sondage.\n";
         $body .= "Pensez à mettre à jour votre agenda perso le cas échéant.\n\n";
@@ -445,7 +445,7 @@ function notify_applied(array $req): void {
     // Récap au contact_email du sondage (si configuré).
     $contact = trim((string)($req['poll_contact'] ?? ''));
     if ($contact !== '' && filter_var($contact, FILTER_VALIDATE_EMAIL)) {
-        $subject = '[mmidate] Échange appliqué : ' . ($req['src_name'] ?: '?') . ' ↔ ' . ($req['dst_name'] ?: '(case vide)');
+        $subject = '[MMIrelay] Échange appliqué : ' . ($req['src_name'] ?: '?') . ' ↔ ' . ($req['dst_name'] ?: '(case vide)');
         $body = "Récap pour info :\n\n";
         $body .= "Sondage : « {$req['poll_title']} »\n";
         $body .= "Source : " . move_human_slot($req['src_day'], $req['src_label'], $req['src_role']) . " — était à : " . ($req['src_name'] ?: '?') . "\n";

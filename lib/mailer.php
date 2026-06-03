@@ -70,14 +70,14 @@ function smtp_send(array $cfg, string $to, string $subject, string $body): void 
     };
 
     $expect($read(), '220');
-    $expect($cmd("EHLO mmidate"), '250');
+    $expect($cmd("EHLO MMIrelay"), '250');
 
     if ($enc === 'tls') {
         $expect($cmd("STARTTLS"), '220');
         if (!stream_socket_enable_crypto($sock, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
             throw new RuntimeException("STARTTLS handshake failed");
         }
-        $expect($cmd("EHLO mmidate"), '250');
+        $expect($cmd("EHLO MMIrelay"), '250');
     }
 
     if (!empty($cfg['username'])) {

@@ -41,12 +41,12 @@ function build_ical_for_participant(array $participant, array $poll): string {
     $assigns = assignments_for_participant((int)$poll['id'], (int)$participant['id']);
     $name = $participant['name'] !== '' ? $participant['name'] : explode('@', $participant['email'])[0];
     $cal_name = 'Astreintes — ' . $poll['title'];
-    $host = parse_url($GLOBALS['CONFIG']['app_url'] ?? 'mmidate.local', PHP_URL_HOST) ?: 'mmidate.local';
+    $host = parse_url($GLOBALS['CONFIG']['app_url'] ?? 'MMIrelay.local', PHP_URL_HOST) ?: 'MMIrelay.local';
 
     $lines = [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
-        'PRODID:-//mmidate//' . $host . '//FR',
+        'PRODID:-//MMIrelay//' . $host . '//FR',
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
         'X-WR-CALNAME:' . ical_escape($cal_name),

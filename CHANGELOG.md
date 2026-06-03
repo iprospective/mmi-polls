@@ -2,11 +2,25 @@
 
 Historique des évolutions de mmidate, dans l'ordre chronologique. Format inspiré de [Keep a Changelog](https://keepachangelog.com/).
 
-## 2026-06-03 — Rebrand : mmidate → MMIrelay
+## 2026-06-03 — Rebrand global mmidate → MMIrelay
+
+### Changed
+- **Sweep complet des mentions « mmidate » côté utilisateur·rice·s** :
+  - Sujets d'emails `[mmidate]` → `[MMIrelay]` (notifications, swap, move, confirm, manager_auth, admin_managers, ical, logger…).
+  - Corps d'emails : « compte manager mmidate », « lien de connexion à mmidate », « planning à jour côté mmidate », « exception attrapée par mmidate ».
+  - Page titles par défaut, footer.
+  - iCal : `PRODID:-//MMIrelay//…//FR`, nom de fichier `MMIrelay-<uuid>.ics`.
+  - User-Agent du geocoder (`MMIrelay/1.0`), host fallback (`MMIrelay.local`), SMTP EHLO.
+  - README structure projet (`mmirelay/`), instructions de clone, paragraphe AGPL, exemple `from_name`.
+- *Gardés volontairement* :
+  - `session_name('mmidate')` dans `index.php` — changer le nom du cookie déconnecterait tou·te·s les utilisateur·rice·s actuel·le·s. Commentaire explicatif ajouté.
+  - Mentions « anciennement mmidate » dans le header de `index.php` et l'entête du README (référence historique).
+  - Historique du CHANGELOG : les entrées passées gardent leur formulation d'époque.
+
+## 2026-06-03 — Rebrand visuel : mmidate → MMIrelay
 
 ### Changed
 - **Nouveau nom : MMIrelay** (relai d'astreinte). Le préfixe perso « MMI » reste, le suffixe « relay » remplace « date » et porte mieux le sens de l'outil (rotation d'astreinte avec passation entre personnes). Typo handwritten **Caveat** (Google Fonts) sur « relay » en rose magenta (#db2777, cohérent avec la couleur du focus participant·e sur la carte). Logo iProspective et structure HTML inchangés. Layout, `<title>` par défaut, footer et page d'accueil mis à jour.
-- *Note* : les mentions « mmidate » dans le code (emails, commentaires, docs) restent pour l'instant — rename global à venir dans un commit dédié.
 
 ## 2026-06-03 — Verrou sur les votes des créneaux d'astreinte
 

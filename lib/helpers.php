@@ -45,7 +45,7 @@ function render(string $tpl, array $vars = []): void {
     ob_start();
     require __DIR__ . '/../templates/' . $__tpl . '.php';
     $content = ob_get_clean();
-    $title = $vars['page_title'] ?? 'mmidate';
+    $title = $vars['page_title'] ?? 'MMIrelay';
     require __DIR__ . '/../templates/layout.php';
 }
 

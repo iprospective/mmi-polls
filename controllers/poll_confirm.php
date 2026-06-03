@@ -52,7 +52,7 @@ function route_poll_confirm_post(string $uuid): void {
         if ($contact !== '' && filter_var($contact, FILTER_VALIDATE_EMAIL)) {
             $assigns = assignments_for_participant((int)$poll['id'], (int)$notif['participant_id']);
             $name = $notif['participant_name'] !== '' ? $notif['participant_name'] : $notif['participant_email'];
-            $subject = '[mmidate] ' . $name . ' signale un problème — ' . $poll['title'];
+            $subject = '[MMIrelay] ' . $name . ' signale un problème — ' . $poll['title'];
             $body  = "$name <{$notif['participant_email']}> a contesté ses astreintes pour le sondage « {$poll['title']} ».\n\n";
             $body .= "Ses astreintes actuelles :\n";
             foreach ($assigns as $a) $body .= "  • " . fmt_assignment_line($a) . "\n";

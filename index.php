@@ -1,6 +1,6 @@
 <?php
 /*
- * mmidate — outil de sondage type Doodle/Framadate.
+ * MMIrelay (anciennement mmidate) — outil d'astreinte par relai.
  * Copyright (C) 2026 iProspective
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -67,6 +67,9 @@ set_exception_handler(function (Throwable $e): void {
     }
 });
 
+// Nom du cookie de session : volontairement gardé à 'mmidate' (héritage)
+// pour ne pas déconnecter tou·te·s les utilisateur·rice·s actuel·le·s
+// lors du rebrand en MMIrelay.
 session_name('mmidate');
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'secure' => !empty($_SERVER['HTTPS'])]);
 session_start();

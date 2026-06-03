@@ -123,7 +123,7 @@ function send_notification_email(array $poll, array $participant, array $assigns
     $poll_url    = $app_url . '/p/' . $poll['uuid'];
     $name = $participant['name'] !== '' ? $participant['name'] : explode('@', $participant['email'])[0];
 
-    $subject = '[mmidate] Vos astreintes pour « ' . $poll['title'] . ' »';
+    $subject = '[MMIrelay] Vos astreintes pour « ' . $poll['title'] . ' »';
     $body  = "Bonjour $name,\n\n";
     $body .= "Les astreintes du sondage « {$poll['title']} » viennent d'être posées par l'organisateur.\n\n";
     if (!empty($assigns)) {

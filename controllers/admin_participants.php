@@ -276,7 +276,7 @@ function send_reminder_email(array $poll, array $participant): void {
     $app_url = rtrim($GLOBALS['CONFIG']['app_url'], '/');
     $link    = $app_url . '/p/' . $poll['uuid'] . '/auth?token=' . urlencode($token);
     $name = $participant['name'] !== '' ? $participant['name'] : explode('@', $participant['email'])[0];
-    $subject = '[mmidate] Rappel : indiquez vos disponibilités pour « ' . $poll['title'] . ' »';
+    $subject = '[MMIrelay] Rappel : indiquez vos disponibilités pour « ' . $poll['title'] . ' »';
     $body  = "Bonjour $name,\n\n";
     $body .= "Petit rappel pour le sondage « {$poll['title']} » : pensez à indiquer vos disponibilités.\n\n";
     $body .= "Lien de connexion direct :\n$link\n\n";

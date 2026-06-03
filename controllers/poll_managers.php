@@ -60,7 +60,7 @@ function route_poll_remove_manager(string $uuid, string $mid): void {
 function notify_manager_added_to_poll(array $manager, array $poll): void {
     $app_url = rtrim($GLOBALS['CONFIG']['app_url'], '/');
     $name = $manager['name'] !== '' ? $manager['name'] : $manager['email'];
-    $subject = '[mmidate] Vous avez été ajouté·e au sondage « ' . $poll['title'] . ' »';
+    $subject = '[MMIrelay] Vous avez été ajouté·e au sondage « ' . $poll['title'] . ' »';
     $body  = "Bonjour $name,\n\n";
     $body .= "Vous avez été ajouté·e comme manager du sondage « {$poll['title']} ».\n\n";
     $body .= "Vous pouvez maintenant l'administrer ici :\n$app_url/admin/polls/{$poll['uuid']}\n\n";

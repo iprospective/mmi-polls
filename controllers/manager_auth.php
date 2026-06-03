@@ -30,9 +30,9 @@ function route_register(): void {
     // Confirmation à la personne qui s'inscrit. Indépendant de admin.email :
     // évite que l'inscrit·e n'ait aucun feedback si l'admin n'a pas
     // configuré son adresse de notification.
-    $u_subject = '[mmidate] Votre compte manager est en attente de validation';
+    $u_subject = '[MMIrelay] Votre compte manager est en attente de validation';
     $u_body  = "Bonjour $name,\n\n";
-    $u_body .= "Votre demande de compte manager mmidate a bien été enregistrée.\n";
+    $u_body .= "Votre demande de compte manager MMIrelay a bien été enregistrée.\n";
     $u_body .= "L'administrateur·rice doit la valider avant que vous puissiez vous connecter.\n";
     $u_body .= "Vous recevrez un autre email dès que ce sera fait.\n\n";
     $u_body .= "Si vous n'avez pas demandé ce compte, ignorez ce message — aucune action n'est nécessaire.\n\n";
@@ -44,7 +44,7 @@ function route_register(): void {
     // logge dans mail.log pour que le sysop voie le souci et n'attende
     // pas vainement (on ne PEUT pas avertir l'admin sans son email).
     $admin_email = trim((string)($GLOBALS['CONFIG']['admin']['email'] ?? ''));
-    $subject = '[mmidate] Nouvelle inscription manager : ' . $name;
+    $subject = '[MMIrelay] Nouvelle inscription manager : ' . $name;
     $body  = "Une nouvelle personne souhaite obtenir un compte manager :\n\n";
     $body .= "  Nom   : $name\n";
     $body .= "  Email : $email\n\n";
@@ -100,7 +100,7 @@ function route_login_magic(): void {
         $link  = rtrim($GLOBALS['CONFIG']['app_url'], '/') . '/auth?token=' . urlencode($token);
         $subject = 'Lien de connexion manager';
         $body  = "Bonjour " . ($m['name'] !== '' ? $m['name'] : $m['email']) . ",\n\n";
-        $body .= "Voici votre lien de connexion à mmidate :\n\n$link\n\n";
+        $body .= "Voici votre lien de connexion à MMIrelay :\n\n$link\n\n";
         $body .= "Ce lien est valable " . (int)($GLOBALS['CONFIG']['magic_link_ttl'] / 60) . " minutes.\n";
         try { send_mail($m['email'], $subject, $body); }
         catch (Throwable $e) { mail_log($m['email'], '[magic-link failed] ' . $e->getMessage(), $body); }

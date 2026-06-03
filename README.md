@@ -102,7 +102,7 @@ URL en prod : <https://polls.iprospective.fr>
 ## Structure du projet
 
 ```
-mmidate/
+mmirelay/
 ├── index.php            # bootstrap + dispatcher (≈50 lignes)
 ├── routes.php           # tableau [METHOD, regex, controller, handler]
 ├── config.php(.example) # creds admin, SMTP, app_url, seuils
@@ -187,8 +187,8 @@ mmidate/
 ### Mise en route
 
 ```bash
-git clone gitlab:iprospective/tools/mmi-polls.git mmidate
-cd mmidate
+git clone gitlab:iprospective/tools/mmi-polls.git mmirelay
+cd mmirelay
 
 # Config
 cp config.php.example config.php
@@ -239,7 +239,7 @@ return [
         'username'   => '',
         'password'   => '',
         'from'       => 'no-reply@exemple.com',
-        'from_name'  => 'mmidate',
+        'from_name'  => 'MMIrelay',
     ],
     'magic_link_ttl' => 3600,
     'highlight' => [
@@ -307,7 +307,7 @@ Copyright © 2026 iProspective.
 Vous êtes libre d'utiliser, modifier et redistribuer ce logiciel sous les termes
 de l'AGPL-3.0. Voir [LICENSE](LICENSE) pour le texte complet.
 
-Particularité de l'AGPL : si vous modifiez mmidate et le **déployez comme service en
+Particularité de l'AGPL : si vous modifiez MMIrelay et le **déployez comme service en
 ligne** (même sans en distribuer le code source), vous devez rendre vos modifications
 accessibles aux utilisateur·rice·s du service. C'est la version « SaaS-safe » de la GPL.
 

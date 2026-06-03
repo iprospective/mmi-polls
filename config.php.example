@@ -46,7 +46,7 @@ return [
         'username'   => '',
         'password'   => '',
         'from'       => 'no-reply@example.com',
-        'from_name'  => 'mmidate',
+        'from_name'  => 'MMIrelay',
     ],
 
     // !! TODO incrémenter cette valeur À CHAQUE modification de fichier

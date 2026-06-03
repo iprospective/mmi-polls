@@ -383,7 +383,7 @@ function send_swap_invite_email(array $poll, array $requester, array $target, ar
     $t_name = $target['name']    !== '' ? $target['name']    : explode('@', $target['email'])[0];
     $slot_h = swap_slot_human($slot, $role);
 
-    $subject = '[mmidate] ' . $r_name . ' cherche un·e remplaçant·e — ' . $slot['label'] . ' du ' . fmt_day($slot['day']);
+    $subject = '[MMIrelay] ' . $r_name . ' cherche un·e remplaçant·e — ' . $slot['label'] . ' du ' . fmt_day($slot['day']);
     $body  = "Bonjour $t_name,\n\n";
     $body .= "$r_name ne peut finalement pas assurer son astreinte :\n";
     $body .= "  • $slot_h\n\n";
@@ -404,11 +404,11 @@ function send_swap_accepted_email_to_requester(array $req, array $accepter): voi
     $a_name = $accepter['name']     !== '' ? $accepter['name']      : explode('@', $accepter['email'])[0];
     $slot_h = swap_slot_human(['day' => $req['day'], 'label' => $req['slot_label']], $req['role']);
 
-    $subject = '[mmidate] ' . $a_name . ' reprend votre astreinte — ' . $req['slot_label'] . ' du ' . fmt_day($req['day']);
+    $subject = '[MMIrelay] ' . $a_name . ' reprend votre astreinte — ' . $req['slot_label'] . ' du ' . fmt_day($req['day']);
     $body  = "Bonjour $r_name,\n\n";
     $body .= "Bonne nouvelle : $a_name accepte de reprendre votre astreinte.\n";
     $body .= "  • $slot_h\n\n";
-    $body .= "C'est officiel, votre planning est à jour côté mmidate.\n";
+    $body .= "C'est officiel, votre planning est à jour côté MMIrelay.\n";
     $body .= "Pensez à mettre à jour votre agenda perso le cas échéant.\n\n";
     $body .= "Voir le sondage : $app_url/p/{$req['poll_uuid']}\n";
     $body .= "Merci !\n";
@@ -422,7 +422,7 @@ function send_swap_accepted_email_to_accepter(array $req, array $accepter, bool 
     $slot_h = swap_slot_human(['day' => $req['day'], 'label' => $req['slot_label']], $req['role']);
     $other_role_label = swap_role_label($req['role'] === 'primary' ? 'backup' : 'primary');
 
-    $subject = '[mmidate] C\'est noté : vous reprenez l\'astreinte de ' . $r_name;
+    $subject = '[MMIrelay] C\'est noté : vous reprenez l\'astreinte de ' . $r_name;
     $body  = "Bonjour $a_name,\n\n";
     $body .= "Merci d'avoir accepté l'astreinte de $r_name :\n";
     $body .= "  • $slot_h\n\n";
@@ -437,7 +437,7 @@ function send_swap_accepted_email_to_accepter(array $req, array $accepter, bool 
 function send_swap_too_late_email(array $req, array $target_row, string $accepter_label): void {
     $t_name = $target_row['name'] !== '' ? $target_row['name'] : explode('@', $target_row['email'])[0];
     $slot_h = swap_slot_human(['day' => $req['day'], 'label' => $req['slot_label']], $req['role']);
-    $subject = '[mmidate] Trop tard, ' . $accepter_label . ' a déjà accepté';
+    $subject = '[MMIrelay] Trop tard, ' . $accepter_label . ' a déjà accepté';
     $body  = "Bonjour $t_name,\n\n";
     $body .= "Pas la peine de répondre à la demande de remplacement sur :\n";
     $body .= "  • $slot_h\n\n";
@@ -448,7 +448,7 @@ function send_swap_too_late_email(array $req, array $target_row, string $accepte
 function send_swap_cancelled_email(array $req, array $target_row, string $cancelled_by_label): void {
     $t_name = $target_row['name'] !== '' ? $target_row['name'] : explode('@', $target_row['email'])[0];
     $slot_h = swap_slot_human(['day' => $req['day'], 'label' => $req['slot_label']], $req['role']);
-    $subject = '[mmidate] Demande de remplacement annulée';
+    $subject = '[MMIrelay] Demande de remplacement annulée';
     $body  = "Bonjour $t_name,\n\n";
     $body .= "La demande de remplacement pour le créneau suivant a été annulée par $cancelled_by_label :\n";
     $body .= "  • $slot_h\n\n";
@@ -463,7 +463,7 @@ function send_swap_manager_summary(array $req, array $accepter, ?string $contact
     $a_name = $accepter['name']      !== '' ? $accepter['name']      : explode('@', $accepter['email'])[0];
     $slot_h = swap_slot_human(['day' => $req['day'], 'label' => $req['slot_label']], $req['role']);
 
-    $subject = '[mmidate] Échange d\'astreinte : ' . $r_name . ' → ' . $a_name;
+    $subject = '[MMIrelay] Échange d\'astreinte : ' . $r_name . ' → ' . $a_name;
     $body  = "Pour info, un échange a eu lieu sur le sondage « {$req['poll_title']} » :\n\n";
     $body .= "  • $slot_h\n";
     $body .= "  • Cédé par : $r_name <{$req['requester_email']}>\n";

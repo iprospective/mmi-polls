@@ -109,9 +109,9 @@ function notify_admin_error(Throwable $e, string $context_msg, array $context_da
     }
     @touch($marker);
 
-    $app_url = rtrim((string)($GLOBALS['CONFIG']['app_url'] ?? 'mmidate'), '/');
-    $subject = '[mmidate] ⚠️ Erreur attrapée : ' . substr($context_msg, 0, 80);
-    $body  = "Une exception a été attrapée par mmidate :\n\n";
+    $app_url = rtrim((string)($GLOBALS['CONFIG']['app_url'] ?? 'MMIrelay'), '/');
+    $subject = '[MMIrelay] ⚠️ Erreur attrapée : ' . substr($context_msg, 0, 80);
+    $body  = "Une exception a été attrapée par MMIrelay :\n\n";
     $body .= "  Contexte : $context_msg\n";
     $body .= "  Classe   : " . get_class($e) . "\n";
     $body .= "  Message  : " . $e->getMessage() . "\n";

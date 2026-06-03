@@ -18,7 +18,7 @@ function route_ical_feed(string $token): void {
         // Sondage en mode brouillon : on rend un calendrier vide
         // pour que les éventuels abonnements restent fonctionnels
         // mais cessent d'afficher les astreintes.
-        $ics  = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//mmidate//draft//FR\r\n";
+        $ics  = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MMIrelay//draft//FR\r\n";
         $ics .= "X-WR-CALNAME:Astreintes (en attente de publication)\r\n";
         $ics .= "END:VCALENDAR\r\n";
     } else {
@@ -26,6 +26,6 @@ function route_ical_feed(string $token): void {
     }
 
     header('Content-Type: text/calendar; charset=UTF-8');
-    header('Content-Disposition: inline; filename="mmidate-' . $poll['uuid'] . '.ics"');
+    header('Content-Disposition: inline; filename="MMIrelay-' . $poll['uuid'] . '.ics"');
     echo $ics;
 }
