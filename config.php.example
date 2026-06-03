@@ -10,9 +10,11 @@ return [
     'admin' => [
         'username' => 'admin',
         'password' => 'changeme',
-        // Email où sont notifiées les nouvelles inscriptions manager
-        // (laisser vide pour ne rien envoyer).
-        'email'    => '',
+        // Email où sont notifiées les nouvelles inscriptions manager.
+        // ⚠️ Si laissé vide, l'admin ne sera PAS averti et devra checker
+        // /admin/managers manuellement. La trace est tout de même posée
+        // dans data/mail.log sous "[admin.email missing — notif perdue]".
+        'email'    => 'admin@example.com',
     ],
 
     // SQLite database file.

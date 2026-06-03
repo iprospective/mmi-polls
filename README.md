@@ -222,7 +222,7 @@ return [
     'admin' => [
         'username' => 'admin',
         'password' => '...',         // À CHANGER en prod
-        'email'    => '',            // Notif inscription manager
+        'email'    => 'vous@ex.com', // Notif inscription manager (⚠️ vide = pas de notif, juste trace dans mail.log)
     ],
     'db_path' => __DIR__ . '/data/app.sqlite',
     'smtp' => [

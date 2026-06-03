@@ -2,6 +2,14 @@
 
 Historique des évolutions de mmidate, dans l'ordre chronologique. Format inspiré de [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-06-03 — Fix inscription manager : email de confirmation muet
+
+### Fixed
+- **Inscription manager : silence radio.** À l'inscription via `/register`, aucun email n'était envoyé à l'inscrit·e (le flash UI promettait pourtant « Vous recevrez un email de confirmation »). En plus, la notif à l'admin global n'était envoyée que si `CONFIG.admin.email` était renseigné — sans warning si la conf manquait. Résultat en prod : on remplit le formulaire, rien ne part, on attend en vain.
+  - Le·la nouveau·elle inscrit·e reçoit désormais un email « compte en attente de validation, on vous prévient » immédiatement, indépendant de la config admin.
+  - Si `admin.email` n'est pas configuré, la notif perdue est tracée dans `data/mail.log` sous `[admin.email missing — notif perdue]` pour que le sysop voie le problème.
+  - `config.php.example` documente clairement l'importance de cette valeur.
+
 ## 2026-06-03 — Carte : trajets, filtre, highlight, focus participant·e
 
 ### Added

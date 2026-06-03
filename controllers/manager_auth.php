@@ -25,21 +25,38 @@ function route_register(): void {
     if (find_manager_by_email($email))                 { flash_set('err', 'Un compte avec cet email existe déjà.'); redirect('/register'); }
 
     $mid = create_pending_manager($email, $name, $pwd);
+    $app_url = rtrim($GLOBALS['CONFIG']['app_url'], '/');
 
-    // Notif à l'admin global, si configuré.
+    // Confirmation à la personne qui s'inscrit. Indépendant de admin.email :
+    // évite que l'inscrit·e n'ait aucun feedback si l'admin n'a pas
+    // configuré son adresse de notification.
+    $u_subject = '[mmidate] Votre compte manager est en attente de validation';
+    $u_body  = "Bonjour $name,\n\n";
+    $u_body .= "Votre demande de compte manager mmidate a bien été enregistrée.\n";
+    $u_body .= "L'administrateur·rice doit la valider avant que vous puissiez vous connecter.\n";
+    $u_body .= "Vous recevrez un autre email dès que ce sera fait.\n\n";
+    $u_body .= "Si vous n'avez pas demandé ce compte, ignorez ce message — aucune action n'est nécessaire.\n\n";
+    $u_body .= "Page de connexion (une fois validé) : $app_url/login\n";
+    try { send_mail($email, $u_subject, $u_body); }
+    catch (Throwable $e) { mail_log($email, '[register confirm failed] ' . $e->getMessage(), $u_body); }
+
+    // Notif à l'admin global. Si admin.email n'est pas configuré, on le
+    // logge dans mail.log pour que le sysop voie le souci et n'attende
+    // pas vainement (on ne PEUT pas avertir l'admin sans son email).
     $admin_email = trim((string)($GLOBALS['CONFIG']['admin']['email'] ?? ''));
+    $subject = '[mmidate] Nouvelle inscription manager : ' . $name;
+    $body  = "Une nouvelle personne souhaite obtenir un compte manager :\n\n";
+    $body .= "  Nom   : $name\n";
+    $body .= "  Email : $email\n\n";
+    $body .= "Valider / refuser depuis l'admin : $app_url/admin/managers\n";
     if ($admin_email !== '' && filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
-        $app_url = rtrim($GLOBALS['CONFIG']['app_url'], '/');
-        $subject = '[mmidate] Nouvelle inscription manager : ' . $name;
-        $body  = "Une nouvelle personne souhaite obtenir un compte manager :\n\n";
-        $body .= "  Nom   : $name\n";
-        $body .= "  Email : $email\n\n";
-        $body .= "Valider / refuser depuis l'admin : $app_url/admin/managers\n";
         try { send_mail($admin_email, $subject, $body); }
         catch (Throwable $e) { mail_log($admin_email, '[admin notif failed] ' . $e->getMessage(), $body); }
+    } else {
+        mail_log('(admin)', '[admin.email missing — notif perdue] ' . $subject, $body);
     }
 
-    flash_set('ok', 'Compte créé. Il doit être validé par l\'administrateur·rice avant utilisation. Vous recevrez un email de confirmation.');
+    flash_set('ok', 'Compte créé. Il doit être validé par l\'administrateur·rice avant utilisation. Un email de confirmation vient de vous être envoyé.');
     redirect('/login');
 }
 
