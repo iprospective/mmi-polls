@@ -3,10 +3,30 @@
 function send_mail(string $to, string $subject, string $body): void {
     $cfg = $GLOBALS['CONFIG']['smtp'];
     if (empty($cfg['host'])) {
+        // Mode dev / fallback : pas de host = on écrit le mail tel quel
+        // dans mail.log pour que le sysop puisse le consulter / le rejouer.
         mail_log($to, $subject, $body);
+        log_info('mail logged (no SMTP host configured)', ['to' => $to, 'subject' => $subject]);
         return;
     }
-    smtp_send($cfg, $to, $subject, $body);
+    try {
+        smtp_send($cfg, $to, $subject, $body);
+        log_info('mail sent', [
+            'to' => $to, 'subject' => $subject,
+            'host' => $cfg['host'], 'port' => (int)($cfg['port'] ?? 587),
+        ]);
+    } catch (Throwable $e) {
+        // Trace l'erreur ET conserve le mail dans mail.log pour le rejouer.
+        // notify_admin_error() utilise smtp_send() directement pour éviter
+        // de boucler ici en cas de panne SMTP (anti-spam horaire en plus).
+        notify_admin_error($e, 'SMTP send failed', [
+            'to' => $to, 'subject' => $subject,
+            'host' => $cfg['host'], 'port' => (int)($cfg['port'] ?? 587),
+            'enc'  => (string)($cfg['encryption'] ?? ''),
+        ]);
+        mail_log($to, '[SMTP failed: ' . $e->getMessage() . '] ' . $subject, $body);
+        throw $e; // l'appelant décide de la suite (la majorité catch et logge en plus)
+    }
 }
 
 function mail_log(string $to, string $subject, string $body): void {

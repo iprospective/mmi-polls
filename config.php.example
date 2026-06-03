@@ -20,6 +20,19 @@ return [
     // SQLite database file.
     'db_path' => __DIR__ . '/data/app.sqlite',
 
+    // Logger paramétrable. Toutes les erreurs catchées + exceptions non
+    // catchées sont écrites dans le fichier indiqué par 'path'.
+    //   'error' : seulement les erreurs (recommandé en prod)
+    //   'warn'  : + warnings (configs manquantes, SMTP partiellement OK…)
+    //   'info'  : + chaque mail envoyé, chaque action notable
+    //   'debug' : + détails de bas niveau
+    // Les exceptions critiques sont aussi envoyées par email à
+    // admin.email (anti-spam horaire pour ne pas inonder la boîte).
+    'log' => [
+        'level' => 'warn',
+        'path'  => __DIR__ . '/data/app.log',
+    ],
+
     // SMTP configuration. If 'host' is empty, magic links are written
     // to data/mail.log instead of being sent (useful in dev).
     'smtp' => [

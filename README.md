@@ -92,6 +92,7 @@ URL en prod : <https://polls.iprospective.fr>
 - **Géocodage** : Photon (komoot) en priorité, Nominatim en fallback, cache local (TTL différenciés hits/miss)
 - **Routing** : OSRM public (`router.project-osrm.org`) avec cache local, fallback Haversine si OSRM down
 - **Pas de Composer**, pas de namespace, pas d'autoloader — `require_once` explicites
+- **Logger paramétrable** (4 niveaux) avec notification email à l'admin sur exception non catchée + anti-spam horaire
 
 ## Structure du projet
 
@@ -144,6 +145,7 @@ mmidate/
 │   ├── auth.php                 # sessions admin/manager/participant
 │   ├── helpers.php              # csrf, render, escape, fmt_day, contact_methods, poll_focus_*
 │   ├── mailer.php               # SMTP maison + fallback log
+│   ├── logger.php               # logger paramétrable + notify_admin_error
 │   └── html_sanitize.php        # whitelist HTML via DOMDocument
 ├── public/
 │   ├── style.css                # tout le CSS
@@ -254,6 +256,10 @@ return [
     ],
     'notifications' => [
         'default_message' => '',                        // pré-rempli dans le formulaire d'envoi
+    ],
+    'log' => [
+        'level' => 'warn',                              // error|warn|info|debug
+        'path'  => __DIR__ . '/data/app.log',
     ],
     'asset_version' => 1,                                // bumper à chaque modif de CSS/JS
 ];

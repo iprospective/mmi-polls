@@ -34,11 +34,27 @@ if (PHP_SAPI === 'cli-server') {
 // --- Bootstrap ---------------------------------------------------------------
 $GLOBALS['CONFIG'] = require __DIR__ . '/config.php';
 
+require __DIR__ . '/lib/logger.php';
 require __DIR__ . '/lib/db.php';
 require __DIR__ . '/lib/helpers.php';
 require __DIR__ . '/lib/auth.php';
 require __DIR__ . '/lib/mailer.php';
 require __DIR__ . '/lib/html_sanitize.php';
+
+// Global exception handler : toute exception non catchée (PDO, etc.) est
+// loggée et envoyée à l'admin par email (avec anti-spam horaire). Affiche
+// ensuite une page d'erreur sobre côté utilisateur·rice.
+set_exception_handler(function (Throwable $e): void {
+    notify_admin_error($e, 'Uncaught exception', [
+        'method' => $_SERVER['REQUEST_METHOD'] ?? '?',
+        'uri'    => $_SERVER['REQUEST_URI'] ?? '?',
+    ]);
+    http_response_code(500);
+    if (!headers_sent()) header('Content-Type: text/html; charset=UTF-8');
+    echo "<!doctype html><meta charset=utf-8><title>Erreur</title>";
+    echo "<h1>Une erreur est survenue</h1>";
+    echo "<p>L'administrateur·rice a été averti·e. Réessayez dans un instant.</p>";
+});
 
 session_name('mmidate');
 session_set_cookie_params(['httponly' => true, 'samesite' => 'Lax', 'secure' => !empty($_SERVER['HTTPS'])]);

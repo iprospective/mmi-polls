@@ -2,6 +2,14 @@
 
 Historique des évolutions de mmidate, dans l'ordre chronologique. Format inspiré de [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-06-03 — Logger paramétrable + notif admin sur exceptions
+
+### Added
+- **`lib/logger.php`** : logger paramétrable avec 4 niveaux (`error` < `warn` < `info` < `debug`). Configuration via `CONFIG.log.level` et `CONFIG.log.path` (défaut `data/app.log`). Format une ligne ISO date + level + message + context JSON. API `log_error/warn/info/debug()` + `log_throwable($e)` pour aplatir un Throwable.
+- **`notify_admin_error(Throwable, $context_msg, $data)`** : envoie l'exception par email à `CONFIG.admin.email` (en plus du log). Anti-spam horaire par hash `(classe, message, contexte)` pour ne pas inonder la boîte si une erreur revient en boucle. N'utilise pas `send_mail()` pour éviter la récursion en cas de panne SMTP.
+- **Handler global d'exceptions non catchées** dans `index.php` : toute exception PHP qui remonte jusqu'au front controller est loggée + envoyée à l'admin, puis une page d'erreur sobre est affichée. Plus de silences inexplicables.
+- **Logs auto dans `send_mail()`** : `INFO mail sent` au succès, `ERROR SMTP send failed` à l'échec (avec host, port, encryption, fichier) + appel à `notify_admin_error()` + conservation du mail dans `mail.log` pour rejouer.
+
 ## 2026-06-03 — Fix inscription manager : email de confirmation muet
 
 ### Fixed
