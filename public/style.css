@@ -236,6 +236,15 @@ details.card[open] > summary { margin-bottom: 0.85rem; }
 .flash-ok  { background: var(--yes-bg);   border-color: #86efac; color: #14532d; }
 .flash-err { background: var(--no-bg);    border-color: #fca5a5; color: #7f1d1d; }
 
+/* Page de connexion unifiée */
+.login-hint {
+  background: var(--maybe-bg);
+  border-left: 3px solid #d97706;
+  color: #78350f;
+}
+.login-admin { background: #f8fafc; }
+.login-admin summary { color: var(--fg-soft); font-size: 0.9rem; }
+
 /* Forms */
 form label {
   display: block;

@@ -86,6 +86,12 @@ function notify_admin_error(Throwable $e, string $context_msg, array $context_da
     $ctx = array_merge($context_data, log_throwable($e));
     log_error($context_msg, $ctx);
 
+    // Toggle global : CONFIG.log.email_errors (défaut true). Permet de couper
+    // l'envoi d'emails d'erreur en dev / pendant les migrations / quand on
+    // bricolante, sans toucher au code.
+    $email_enabled = $GLOBALS['CONFIG']['log']['email_errors'] ?? true;
+    if (!$email_enabled) return;
+
     $admin_email = trim((string)($GLOBALS['CONFIG']['admin']['email'] ?? ''));
     if ($admin_email === '' || !filter_var($admin_email, FILTER_VALIDATE_EMAIL)) {
         log_warn('admin.email not configured, error not emailed', ['msg' => $context_msg]);

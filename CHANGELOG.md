@@ -2,6 +2,17 @@
 
 Historique des évolutions de mmidate, dans l'ordre chronologique. Format inspiré de [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-06-03 — Connexion unifiée + toggle email d'erreur + page 500 propre
+
+### Changed
+- **Page de connexion unifiée à `/login`.** Les utilisateur·rice·s lambda cliquaient « Connexion » en haut à droite en pensant remplir le sondage, alors que c'était la connexion manager. Le formulaire admin est maintenant aussi sur `/login` (dans un `<details>` repliable « Connexion administrateur·rice global·e »), avec un encart d'avertissement clair pour les participant·e·s : « Vous voulez répondre à un sondage ? Utilisez le lien du sondage de la forme `/p/<id>` ». La route `/admin/login` continue de marcher (rétrocompatibilité) et rend le même formulaire unifié. `templates/admin/login.php` supprimé (dead code).
+- **Lien "Admin" du topbar retiré** : la connexion admin se fait depuis `/login`, plus besoin d'un raccourci à part.
+
+### Added
+- **`CONFIG.log.email_errors`** (bool, défaut `true`) : toggle global pour activer/désactiver l'envoi par email des exceptions catchées. Pratique en dev / pendant les migrations.
+- **`notify_admin_error` partout** : les catches métier (`create_move_request`, `issue_swap_request`, auto-fill PK clash) sont désormais split en `RuntimeException | InvalidArgumentException` (erreur attendue → `log_warn`, pas de notif admin) vs `Throwable` (erreur inattendue → `notify_admin_error` + 500). L'utilisateur·rice voit toujours un message clair, l'admin reçoit un email seulement quand quelque chose d'inhabituel se produit.
+- **Page 500 propre** : le handler global d'exception utilise maintenant `templates/error.php` avec un message digne (« L'administrateur·rice a été averti·e par email. Réessayez. »), avec fallback HTML minimal si le rendu lui-même est cassé.
+
 ## 2026-06-03 — Logger paramétrable + notif admin sur exceptions
 
 ### Added

@@ -31,6 +31,10 @@ return [
     'log' => [
         'level' => 'warn',
         'path'  => __DIR__ . '/data/app.log',
+        // Envoie les exceptions catchées par email à admin.email
+        // (anti-spam horaire). Mettre false en dev / pendant les
+        // migrations pour ne pas spammer.
+        'email_errors' => true,
     ],
 
     // SMTP configuration. If 'host' is empty, magic links are written

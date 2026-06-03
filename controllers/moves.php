@@ -36,9 +36,24 @@ function route_admin_create_move_request(string $uuid): void {
     $label = manager_display_label();
     try {
         $req_id = create_move_request($poll, $src_cid, $src_role, $dst_cid, $dst_role, $message, $label);
-    } catch (Throwable $e) {
+    } catch (RuntimeException | InvalidArgumentException $e) {
+        // Erreur métier attendue (validation, état incohérent). Log warn,
+        // pas de notif admin (l'utilisateur·rice voit déjà le message).
+        log_warn('create_move_request rejected', log_throwable($e) + [
+            'src_cid' => $src_cid, 'src_role' => $src_role,
+            'dst_cid' => $dst_cid, 'dst_role' => $dst_role,
+        ]);
         http_response_code(409);
         echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        exit;
+    } catch (Throwable $e) {
+        // Erreur inattendue (PDO, etc.) : prévenir l'admin.
+        notify_admin_error($e, 'create_move_request crashed', [
+            'src_cid' => $src_cid, 'src_role' => $src_role,
+            'dst_cid' => $dst_cid, 'dst_role' => $dst_role,
+        ]);
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'error' => 'Erreur interne. L\'admin a été averti·e.']);
         exit;
     }
     log_activity((int)$poll['id'], 'move_request', [

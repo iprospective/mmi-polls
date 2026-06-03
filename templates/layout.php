@@ -56,7 +56,6 @@
       </form>
     <?php else: ?>
       <a href="/login">Connexion</a>
-      <a href="/admin/login" class="muted small">Admin</a>
     <?php endif; ?>
   </nav>
 </header>

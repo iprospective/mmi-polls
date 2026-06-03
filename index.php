@@ -42,18 +42,29 @@ require __DIR__ . '/lib/mailer.php';
 require __DIR__ . '/lib/html_sanitize.php';
 
 // Global exception handler : toute exception non catchée (PDO, etc.) est
-// loggée et envoyée à l'admin par email (avec anti-spam horaire). Affiche
-// ensuite une page d'erreur sobre côté utilisateur·rice.
+// loggée et envoyée à l'admin par email (avec anti-spam horaire et toggle
+// CONFIG.log.email_errors). Affiche ensuite une page 500 propre via le
+// template, ou un HTML minimal en dernier recours si le rendu lui-même
+// est cassé.
 set_exception_handler(function (Throwable $e): void {
-    notify_admin_error($e, 'Uncaught exception', [
-        'method' => $_SERVER['REQUEST_METHOD'] ?? '?',
-        'uri'    => $_SERVER['REQUEST_URI'] ?? '?',
-    ]);
+    try {
+        notify_admin_error($e, 'Uncaught exception', [
+            'method' => $_SERVER['REQUEST_METHOD'] ?? '?',
+            'uri'    => $_SERVER['REQUEST_URI'] ?? '?',
+        ]);
+    } catch (Throwable $_) { /* on continue : afficher la page 500 prime */ }
     http_response_code(500);
     if (!headers_sent()) header('Content-Type: text/html; charset=UTF-8');
-    echo "<!doctype html><meta charset=utf-8><title>Erreur</title>";
-    echo "<h1>Une erreur est survenue</h1>";
-    echo "<p>L'administrateur·rice a été averti·e. Réessayez dans un instant.</p>";
+    try {
+        render('error', [
+            'page_title' => 'Erreur — 500',
+            'message'    => 'Une erreur inattendue est survenue. L\'administrateur·rice a été averti·e par email. Réessayez dans un instant.',
+        ]);
+    } catch (Throwable $_) {
+        echo "<!doctype html><meta charset=utf-8><title>500</title>";
+        echo "<h1>500 — Erreur interne</h1>";
+        echo "<p>L'administrateur·rice a été averti·e. Réessayez dans un instant.</p>";
+    }
 });
 
 session_name('mmidate');

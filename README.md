@@ -260,6 +260,7 @@ return [
     'log' => [
         'level' => 'warn',                              // error|warn|info|debug
         'path'  => __DIR__ . '/data/app.log',
+        'email_errors' => true,                         // envoie les exceptions à admin.email (anti-spam horaire)
     ],
     'asset_version' => 1,                                // bumper à chaque modif de CSS/JS
 ];
@@ -267,11 +268,13 @@ return [
 
 ## Rôles
 
-| Rôle | Authentification | Périmètre |
-|---|---|---|
-| **Admin global** | username + password (config) | Tout (sondages + managers) |
-| **Manager** | mot de passe ou magic-link | Sondages dont il est dans `poll_managers` |
-| **Participant** | magic-link (par sondage) | Saisie/édition de ses propres réponses |
+| Rôle | Authentification | Périmètre | URL de connexion |
+|---|---|---|---|
+| **Admin global** | username + password (config) | Tout (sondages + managers) | `/login` (section dépliable) |
+| **Manager** | mot de passe ou magic-link | Sondages dont il est dans `poll_managers` | `/login` |
+| **Participant** | magic-link (par sondage) | Saisie/édition de ses propres réponses | `/p/<uuid>/login` (lien partagé) |
+
+La page `/login` est unifiée admin + manager pour éviter la confusion à l'arrivée. Les participant·e·s d'un sondage utilisent le lien du sondage qui leur a été partagé.
 
 ## Déploiement Apache
 

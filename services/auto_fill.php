@@ -187,7 +187,12 @@ function run_auto_fill_assignments(int $poll_id): array {
                     if ($role === 'primary') $inserted_p++; else $inserted_b++;
                     $affected[(int)$pid] = true;
                 } catch (Throwable $e) {
-                    // PK clash improbable (existing déjà filtré), on ignore.
+                    // PK clash improbable (existing déjà filtré). On loggue
+                    // en warn pour traçabilité au cas où ça se produirait,
+                    // mais sans notif admin (cas non bloquant).
+                    log_warn('auto_fill insert clash', log_throwable($e) + [
+                        'choice_id' => $cid, 'role' => $role, 'pid' => $pid,
+                    ]);
                 }
             }
         }

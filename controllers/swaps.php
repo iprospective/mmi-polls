@@ -105,8 +105,13 @@ function route_poll_swap_new_submit(string $uuid): void {
 
     try {
         $req_id = issue_swap_request($poll, $pid, $cid, $role, array_map('intval', $targets), $message);
-    } catch (Throwable $e) {
+    } catch (RuntimeException | InvalidArgumentException $e) {
+        log_warn('issue_swap_request rejected', log_throwable($e) + ['cid' => $cid, 'role' => $role]);
         flash_set('err', 'Demande impossible : ' . $e->getMessage());
+        redirect('/p/' . $uuid . '/me');
+    } catch (Throwable $e) {
+        notify_admin_error($e, 'issue_swap_request crashed', ['pid' => $pid, 'cid' => $cid, 'role' => $role]);
+        flash_set('err', 'Erreur interne. L\'admin a été averti·e.');
         redirect('/p/' . $uuid . '/me');
     }
 
