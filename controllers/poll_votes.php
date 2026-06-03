@@ -121,22 +121,53 @@ function route_poll_save_votes(string $uuid): void {
     $valid->execute([$poll['id']]);
     $valid_ids = array_flip(array_map('intval', array_column($valid->fetchAll(), 'id')));
 
+    // Créneaux où la personne est d'astreinte : on ne touche pas à ses votes
+    // dessus (l'astreinte serait orpheline ou silencieusement annulée).
+    // Pour modifier, elle doit passer par /swap/new (demande de remplacement).
+    $locked_q = $pdo->prepare("
+        SELECT DISTINCT a.choice_id
+        FROM assignments a
+        JOIN poll_choices c ON c.id = a.choice_id
+        JOIN poll_dates   d ON d.id = c.date_id
+        WHERE d.poll_id = ? AND a.participant_id = ?
+    ");
+    $locked_q->execute([$poll['id'], $participant['id']]);
+    $locked_cids = array_flip(array_map('intval', array_column($locked_q->fetchAll(), 'choice_id')));
+
     // Normalise le nouveau jeu de votes (filtré, trié) puis charge le courant
     // pour détecter si les votes ont effectivement changé. votes_updated_at ne
     // doit pas être bumpé si la personne a seulement modifié son nom / tél /
     // moyen de contact.
-    $new_votes = [];
-    foreach ($votes as $cid => $val) {
-        $cid = (int)$cid;
-        if (!isset($valid_ids[$cid])) continue;
-        if (!in_array($val, ['yes', 'no', 'maybe'], true)) continue;
-        $new_votes[$cid] = $val;
-    }
-    ksort($new_votes);
     $cur_v = $pdo->prepare("SELECT choice_id, value FROM votes WHERE participant_id = ?");
     $cur_v->execute([$participant['id']]);
     $current_votes = [];
     foreach ($cur_v as $row) $current_votes[(int)$row['choice_id']] = $row['value'];
+
+    $new_votes = [];
+    $blocked = 0;
+    foreach ($votes as $cid => $val) {
+        $cid = (int)$cid;
+        if (!isset($valid_ids[$cid])) continue;
+        if (!in_array($val, ['yes', 'no', 'maybe'], true)) continue;
+        // Verrou : si le vote existant change ET que le créneau a une
+        // astreinte, on garde l'ancien et on prévient.
+        if (isset($locked_cids[$cid])
+            && isset($current_votes[$cid])
+            && $current_votes[$cid] !== $val) {
+            $new_votes[$cid] = $current_votes[$cid];
+            $blocked++;
+            continue;
+        }
+        $new_votes[$cid] = $val;
+    }
+    // Pas de POST pour un cid existant verrouillé = pas de changement.
+    foreach ($current_votes as $cid => $val) {
+        if (isset($locked_cids[$cid]) && !isset($new_votes[$cid])) {
+            $new_votes[$cid] = $val;
+            $blocked++;
+        }
+    }
+    ksort($new_votes);
     ksort($current_votes);
     $votes_changed = ($current_votes !== $new_votes);
 
@@ -167,6 +198,9 @@ function route_poll_save_votes(string $uuid): void {
     $msg = $votes_changed ? 'Choix enregistrés.' : 'Profil enregistré (votes inchangés).';
     if ($geo_msg) $msg .= $geo_msg;
     flash_set('ok', $msg);
+    if ($blocked > 0) {
+        flash_set('err', "$blocked changement(s) ignoré(s) : vous êtes d'astreinte sur ces créneaux. Pour ne plus les assurer, demandez un remplacement (lien 🔄 dans « Mes astreintes »).");
+    }
     redirect('/p/' . $uuid . '/me');
 }
 

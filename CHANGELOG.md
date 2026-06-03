@@ -2,6 +2,14 @@
 
 Historique des évolutions de mmidate, dans l'ordre chronologique. Format inspiré de [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-06-03 — Verrou sur les votes des créneaux d'astreinte
+
+### Changed
+- **Vote figé sur les créneaux d'astreinte** côté participant·e. Avant, modifier son vote (de yes → no par exemple) sur un créneau où on était déjà d'astreinte cassait silencieusement la cohérence : le vote bougeait mais l'astreinte restait, personne n'était au courant. Maintenant :
+  - Côté UI : la ligne est marquée 🔒 (Principal·e/Suppléant·e), les radios disabled, et un lien `🔄 demander un remplacement` apparaît à côté du libellé. Si une demande de remplacement est déjà en cours sur ce créneau, on l'indique au lieu du lien.
+  - Côté backend : `route_poll_save_votes` filtre les changements sur les choice_id avec assignation pour l'utilisateur·rice. Les valeurs courantes sont préservées. Un flash err récap le nombre de changements ignorés avec rappel du flow de remplacement.
+  - L'admin/manager garde la possibilité de modifier les votes via `/admin/.../participants/<id>` (pas de verrou côté admin, l'override reste possible).
+
 ## 2026-06-03 — Connexion unifiée + toggle email d'erreur + page 500 propre
 
 ### Changed

@@ -161,22 +161,46 @@
       </tr>
     </thead>
     <tbody>
-      <?php foreach ($dates as $d):
+      <?php
+      // Construit l'index des cid d'astreinte → role pour verrouiller les
+      // lignes correspondantes (vote figé tant qu'on n'a pas remplaçant·e).
+      $locked_by_cid = [];
+      foreach (($my_assigns ?? []) as $a) {
+          $locked_by_cid[(int)$a['choice_id']] = $a['role'];
+      }
+      foreach ($dates as $d):
         $first = true;
         $rows = count($d['choices']);
         foreach ($d['choices'] as $c):
-          $current = $myvotes[$c['id']] ?? '';
-          $name = 'votes[' . (int)$c['id'] . ']';
+          $cid_int = (int)$c['id'];
+          $current = $myvotes[$cid_int] ?? '';
+          $name = 'votes[' . $cid_int . ']';
+          $locked = isset($locked_by_cid[$cid_int]);
+          $locked_role = $locked_by_cid[$cid_int] ?? '';
+          $disabled = $locked ? ' disabled' : '';
+          $has_open_swap = $locked && isset($swap_by_assign[$cid_int . ':' . $locked_role]);
       ?>
-        <tr>
+        <tr class="<?= $locked ? 'locked-row' : '' ?>">
           <?php if ($first): ?>
             <th class="date-cell" rowspan="<?= $rows ?>"><?= e(fmt_day($d['day'])) ?><br><span class="muted small"><?= e($d['day']) ?></span></th>
           <?php endif; $first = false; ?>
-          <td class="slot-cell"><?= e($c['label']) ?></td>
-          <td class="v-yes"><label><input type="radio" name="<?= e($name) ?>" value="yes" <?= $current === 'yes' ? 'checked' : '' ?>></label></td>
-          <td class="v-maybe"><label><input type="radio" name="<?= e($name) ?>" value="maybe" <?= $current === 'maybe' ? 'checked' : '' ?>></label></td>
-          <td class="v-no"><label><input type="radio" name="<?= e($name) ?>" value="no" <?= $current === 'no' ? 'checked' : '' ?>></label></td>
-          <td><label><input type="radio" name="<?= e($name) ?>" value="" <?= $current === '' ? 'checked' : '' ?>></label></td>
+          <td class="slot-cell">
+            <?= e($c['label']) ?>
+            <?php if ($locked): ?>
+              <br><span class="locked-badge" title="Vous êtes d'astreinte sur ce créneau, vote figé">
+                🔒 <?= $locked_role === 'primary' ? 'Principal·e' : 'Suppléant·e' ?>
+              </span>
+              <?php if (!$closed && !$has_open_swap): ?>
+                <br><a class="link small" href="/p/<?= e($poll['uuid']) ?>/swap/new?cid=<?= $cid_int ?>&amp;role=<?= e($locked_role) ?>">🔄 demander un remplacement</a>
+              <?php elseif ($has_open_swap): ?>
+                <br><span class="muted small">🔄 demande en cours</span>
+              <?php endif; ?>
+            <?php endif; ?>
+          </td>
+          <td class="v-yes"><label><input type="radio" name="<?= e($name) ?>" value="yes" <?= $current === 'yes' ? 'checked' : '' ?><?= $disabled ?>></label></td>
+          <td class="v-maybe"><label><input type="radio" name="<?= e($name) ?>" value="maybe" <?= $current === 'maybe' ? 'checked' : '' ?><?= $disabled ?>></label></td>
+          <td class="v-no"><label><input type="radio" name="<?= e($name) ?>" value="no" <?= $current === 'no' ? 'checked' : '' ?><?= $disabled ?>></label></td>
+          <td><label><input type="radio" name="<?= e($name) ?>" value="" <?= $current === '' ? 'checked' : '' ?><?= $disabled ?>></label></td>
         </tr>
       <?php endforeach; endforeach; ?>
     </tbody>

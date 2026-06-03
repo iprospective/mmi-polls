@@ -10,6 +10,7 @@ URL en prod : <https://polls.iprospective.fr>
 - Lien public par UUID partageable
 - Connexion par **magic-link** envoyé par email (pas de mot de passe)
 - Saisie / modification / suppression de ses disponibilités (Oui / Peut-être / Non) sur chaque créneau
+- **Vote figé sur les créneaux où on est d'astreinte** : impossible de modifier silencieusement sa dispo sur un slot assigné. Pour ne plus assurer un créneau, il faut passer par la demande de remplacement (🔄).
 - Champ téléphone + sélection multiple de plateformes de contact (Telegram, Signal, WhatsApp, SMS)
 - Champ adresse (géocodée) — pour la prise en compte de la distance dans l'algo et l'affichage sur la carte
 - Vue « Mes astreintes » dès que des assignations ont été posées
