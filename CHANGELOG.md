@@ -2,6 +2,12 @@
 
 Historique des évolutions de mmidate, dans l'ordre chronologique. Format inspiré de [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-06-03 — Rebrand : mmidate → MMIrelay
+
+### Changed
+- **Nouveau nom : MMIrelay** (relai d'astreinte). Le préfixe perso « MMI » reste, le suffixe « relay » remplace « date » et porte mieux le sens de l'outil (rotation d'astreinte avec passation entre personnes). Typo handwritten **Caveat** (Google Fonts) sur « relay » en rose magenta (#db2777, cohérent avec la couleur du focus participant·e sur la carte). Logo iProspective et structure HTML inchangés. Layout, `<title>` par défaut, footer et page d'accueil mis à jour.
+- *Note* : les mentions « mmidate » dans le code (emails, commentaires, docs) restent pour l'instant — rename global à venir dans un commit dédié.
+
 ## 2026-06-03 — Verrou sur les votes des créneaux d'astreinte
 
 ### Changed

@@ -149,15 +149,19 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   font-feature-settings: "ss01";
 }
 .brand-name {
-  font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+  font-family: "Caveat", "Patrick Hand", "Bradley Hand", cursive;
   font-weight: 700;
-  font-size: 1.3rem;
-  letter-spacing: -0.02em;
-  color: var(--muted);
+  font-size: 1.85rem;        /* Caveat a une x-height basse, on agrandit pour matcher MMI */
+  letter-spacing: 0.005em;
+  color: #db2777;            /* rose magenta (= couleur focus participant·e sur la carte) */
+  position: relative;
+  top: 0.12em;               /* aligne le baseline visuel de Caveat avec celui de Fraunces */
+  line-height: 1;
 }
+.brand-mark { gap: 0.12em; }  /* léger espace entre MMI et relay */
 @media (max-width: 480px) {
   .brand-prefix { font-size: 1.4rem; }
-  .brand-name   { font-size: 1.1rem; }
+  .brand-name   { font-size: 1.5rem; top: 0.1em; }
   .brand-logo   { height: 32px; }
 }
 .topbar nav { display: flex; gap: 1.25rem; align-items: center; }

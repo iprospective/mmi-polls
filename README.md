@@ -1,6 +1,10 @@
-# mmidate
+# MMIrelay
 
-Outil de sondage type Doodle/Framadate, écrit en PHP procédural sur SQLite, **sans dépendance Composer ni framework**. Pensé pour les besoins concrets d'une petite équipe (10–50 participants, quelques dizaines de créneaux par sondage), avec attention particulière à la **gestion d'astreintes** (sélection principal·e + suppléant·e par créneau, remplissage automatique, notifications par email avec confirmation).
+> *Anciennement « mmidate ». Nouveau nom, même outil.*
+
+Outil **d'astreinte par relai** : sondage de disponibilités → attribution des créneaux principal·e + suppléant·e → notifications avec confirmation → demandes de remplacement entre participant·e·s ou orchestrées par le·la manager.
+
+Écrit en PHP procédural sur SQLite, **sans dépendance Composer ni framework**. Pensé pour les besoins concrets d'une petite équipe (10–50 participants, quelques dizaines de créneaux par sondage), avec un cas d'usage de cœur : organiser une astreinte de transport pour une future maman vers la maternité (rotation entre proches, le·la « focus » dont le trajet est toujours visible sur la carte).
 
 URL en prod : <https://polls.iprospective.fr>
 
