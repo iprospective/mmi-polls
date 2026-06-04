@@ -2,6 +2,13 @@
 
 Historique des évolutions de mmidate, dans l'ordre chronologique. Format inspiré de [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-06-03 — Topbar : lien « Connexion participant·e » contextuel
+
+### Changed
+- **Lien « Connexion » du topbar renommé « Connexion admin »** pour clarifier qu'il vise les organisateur·rice·s (manager/admin).
+- **Nouveau lien contextuel « Connexion participant·e »** qui apparaît **uniquement sur les pages de sondage** (`/p/<uuid>/…`), juste avant « Connexion admin », et pointe vers `/p/<uuid>/login`. Si la personne est déjà connectée en participant·e sur ce sondage, le lien est remplacé par « Mes choix » + email + bouton de déconnexion.
+- Lève l'ambiguïté principale du flow de connexion : les visiteur·euse·s qui arrivent sur une page de sondage voient immédiatement la bonne action à faire.
+
 ## 2026-06-03 — Rebrand global mmidate → MMIrelay
 
 ### Changed

@@ -54,8 +54,27 @@
         <?= csrf_field() ?>
         <button type="submit" class="link">Déconnexion</button>
       </form>
-    <?php else: ?>
-      <a href="/login">Connexion</a>
+    <?php else:
+      // Sur une page sondage (/p/<uuid>/…), proposer en premier le lien
+      // de connexion participant·e (le bon flux pour qui veut juste répondre).
+      $_req_path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+      $_poll_uuid_in_url = '';
+      if (preg_match('#^/p/([0-9a-f-]+)(?:/|$)#', $_req_path, $_m)) {
+          $_poll_uuid_in_url = $_m[1];
+      }
+      $_participant_sess = $_poll_uuid_in_url ? participant_session($_poll_uuid_in_url) : null;
+    ?>
+      <?php if ($_poll_uuid_in_url && !$_participant_sess): ?>
+        <a href="/p/<?= e($_poll_uuid_in_url) ?>/login">Connexion participant·e</a>
+      <?php elseif ($_participant_sess): ?>
+        <a href="/p/<?= e($_poll_uuid_in_url) ?>/me">Mes choix</a>
+        <span class="muted small">· <?= e($_participant_sess['email'] ?? '') ?></span>
+        <form method="post" action="/p/<?= e($_poll_uuid_in_url) ?>/logout" class="inline">
+          <?= csrf_field() ?>
+          <button type="submit" class="link">Déconnexion</button>
+        </form>
+      <?php endif; ?>
+      <a href="/login">Connexion admin</a>
     <?php endif; ?>
   </nav>
 </header>
