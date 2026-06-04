@@ -2,6 +2,13 @@
 
 Historique des évolutions de mmidate, dans l'ordre chronologique. Format inspiré de [Keep a Changelog](https://keepachangelog.com/).
 
+## 2026-06-03 — Topbar : un seul lien « Connexion » sur les pages de sondage
+
+### Changed
+- **Un seul lien de connexion sur `/p/<uuid>/…`** au lieu de deux. Le lien « Connexion » mène à `/p/<uuid>/login`, qui présente d'abord le formulaire participant·e (cas le plus fréquent), puis dans un `<details>` repliable « Vous êtes organisateur·rice ? », les formulaires manager (mot de passe + magic-link) et admin global (dans un deuxième `<details>` imbriqué). Hiérarchie visuelle claire : participant prioritaire, autres rôles accessibles mais discrets.
+- Si la personne est déjà connectée en participant·e sur ce sondage, le topbar affiche directement « Mes choix » + email + bouton Déconnexion.
+- Hors page de sondage : topbar inchangé, lien « Connexion admin » direct vers `/login`.
+
 ## 2026-06-03 — Topbar : lien « Connexion participant·e » contextuel
 
 ### Changed
